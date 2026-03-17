@@ -1,0 +1,16 @@
+{
+  "name": "adddog-tools",
+  "owner": { "name": "adddog" },
+  "plugins": [
+    {
+      "name": "claude-plugin-pnpm",
+      "source": {
+        "source": "npm",
+        "package": "@adddog/claude-plugin-pnpm",
+        "version": ">=0.0.1"
+      },
+      "description": "Agent teams, workspace-aware fixing, and changeset shipping for pnpm monorepos",
+      "keywords": ["pnpm", "monorepo", "agent-teams"]
+    }
+  ]
+}

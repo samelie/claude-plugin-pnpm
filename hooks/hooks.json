@@ -1,0 +1,40 @@
+{
+  "_comment": "Template: merge relevant sections into .claude/settings.local.json when activating a team. Not all teams need all hooks. Remove hooks you don't need.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/check-team-scope.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-verify.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if all tasks are complete. If any tasks remain incomplete, respond with {\"decision\": \"block\", \"reason\": \"Incomplete tasks: <list>\"}. If all done, respond with {\"decision\": \"approve\"}."
+          }
+        ]
+      }
+    ]
+  }
+}
