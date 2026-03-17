@@ -38,7 +38,7 @@ This will:
 
 ## Step 3: Knowledge refresh (optional)
 
-If the `/arcana:absorb` skill is available, invoke it for each changed package that has source files (not just config/docs):
+If the `/arcana:arcana-absorb` skill is available, invoke it for each changed package that has source files (not just config/docs):
 
 ```
 Skill tool: absorb <package-path>
@@ -47,7 +47,7 @@ Skill tool: absorb <package-path>
 - Generates/updates `<package>/knowledge/*.md`
 - Indexes into knowledge store
 
-If `/arcana:absorb` is not available, skip this step.
+If `/arcana:arcana-absorb` is not available, skip this step.
 
 If a package has no meaningful source changes (only config, lockfiles, etc.), skip absorb for it.
 
