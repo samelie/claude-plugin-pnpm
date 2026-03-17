@@ -5,7 +5,7 @@ Claude Code plugin for pnpm monorepos. Provides agent team orchestration, worksp
 ## Install
 
 ```bash
-claude plugin add @adddog/claude-plugin-pnpm
+claude plugin install claude-plugin-pnpm
 ```
 
 Install at your pnpm monorepo root.

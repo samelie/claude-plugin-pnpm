@@ -1,6 +1,6 @@
 {
   "name": "claude-plugin-pnpm",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Agent teams, workspace-aware fixing, and changeset shipping for pnpm monorepos",
   "author": { "name": "adddog", "url": "https://github.com/samelie" },
   "repository": "https://github.com/samelie/claude-plugin-pnpm",
@@ -12,6 +12,5 @@
     "./agents/quarterback.md",
     "./agents/full-monorepo-pnpm.md",
     "./agents/pnpm-workspace-filter.md"
-  ],
-  "hooks": "./hooks/hooks.json"
+  ]
 }
