@@ -30,8 +30,9 @@
         "matcher": "*",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Check if all tasks are complete. If any tasks remain incomplete, respond with {\"decision\": \"block\", \"reason\": \"Incomplete tasks: <list>\"}. If all done, respond with {\"decision\": \"approve\"}."
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/stop-verify.sh",
+            "timeout": 10
           }
         ]
       }
