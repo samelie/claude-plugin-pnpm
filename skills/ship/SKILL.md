@@ -24,16 +24,15 @@ Meta-skill for "feature complete" — generates a changeset (for humans/changelo
 
 ## Step 2: Changeset
 
-Invoke the `/changeset` skill:
+Invoke the `/changeset` skill with each detected package path so it skips re-scanning:
 
-```
-Skill tool: changeset
-```
+- **Single package**: `Skill tool: changeset, args: "<package-path>"`
+- **Multiple packages**: invoke once per package, or omit the path arg to let `/changeset` scan all changes itself
 
-This will:
-- Read diffs per package
-- Draft bump types + descriptions
-- Present for user review
+The changeset skill will:
+- Read diffs scoped to the package directory
+- Classify bump type (major/minor/patch) with interactive confirmation when ambiguous
+- Draft descriptions and present for user review
 - Write `.changeset/<id>.md`
 
 ## Step 3: Knowledge refresh (optional)

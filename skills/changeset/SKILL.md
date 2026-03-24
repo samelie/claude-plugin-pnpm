@@ -1,13 +1,25 @@
 ---
 name: changeset
-description: "Generate @changesets/cli changeset from git diff. Triggers: changeset, add changeset, describe changes"
+description: "Generate @changesets/cli changeset from git diff. Triggers: changeset, add changeset, describe changes. Accepts an optional path argument to scope to a specific package (e.g. `/changeset paradocx/apps/webui`)."
 ---
 
-# /changeset
+# /changeset [path]
 
 Generate a `.changeset/<id>.md` file describing current changes using @changesets/cli conventions.
 
-## Step 1: Detect changed packages
+An optional `path` argument narrows the scope to a single package. The path can be absolute or relative to the repo root, and can point anywhere inside a package directory — the skill resolves it to the nearest ancestor with a `package.json` or `pyproject.toml`.
+
+## Step 1: Resolve target packages
+
+### If a path argument was provided
+
+1. Normalize the path relative to the repo root (strip absolute prefix if needed)
+2. Walk up from that path to find the nearest `package.json` or `pyproject.toml`
+3. Read the `name` field as the package identifier (for Python packages without `package.json`, use directory name)
+4. Scope all subsequent git diffs to that package's directory
+5. If no `package.json`/`pyproject.toml` is found, tell the user the path doesn't resolve to a workspace package and stop
+
+### If no path argument was provided (default — scan all changes)
 
 1. Determine diff scope:
    - Feature branch (not `main`): `git diff --name-only main...HEAD`
@@ -24,11 +36,28 @@ Generate a `.changeset/<id>.md` file describing current changes using @changeset
 For each affected package:
 
 1. Read the relevant diff (`git diff` scoped to that package's directory)
-2. Determine bump type from change nature:
-   - `patch`: bug fix, tweak, dependency update, docs
-   - `minor`: new feature, new export, new command
-   - `major`: breaking change, removed API, renamed export
-3. Draft a concise description focused on "what changed and why" — one line per package
+2. Analyze the diff to classify the bump type. Use these signals:
+
+   **major** (breaking) — high confidence when you see:
+   - Removed or renamed public exports, functions, types, or CLI commands
+   - Changed function signatures (removed params, changed return types)
+   - Removed fields from public interfaces/schemas
+   - Migration files that alter existing data structures
+
+   **minor** (new functionality) — high confidence when you see:
+   - New exported functions, components, types, or commands
+   - New optional parameters added to existing APIs
+   - New files that add capabilities without touching existing interfaces
+
+   **patch** (fix/tweak) — high confidence when you see:
+   - Bug fixes (conditional logic changes, null checks, error handling)
+   - Internal refactors that don't change public API
+   - Dependency updates, docs, config, tests
+
+3. If the signals are mixed or ambiguous (e.g., a new feature that also changes an existing interface, or a refactor that might affect consumers), present the user with your best guess and reasoning, and ask them to pick:
+   > "I'd lean **minor** — new `retryPolicy` option on `createPipeline()`, but it also changes the default timeout from 30s→60s which could break callers relying on the old default. Should this be **minor** or **major**?"
+
+4. Draft a concise description focused on "what changed and why" — one line per package
 
 ## Step 3: Check for existing changesets
 
