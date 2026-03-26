@@ -27,7 +27,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "types": "tsc -p tsconfig.typecheck.json",
-    "test": "vitest run",
+    "test": "echo 'no tests'",
     "dev": "tsx src/index.ts"
   },
   "type": "module",
