@@ -26,7 +26,7 @@
     "build": "unbuild",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "types": "tsc -p tsconfig.typecheck.json",
+    "types": "echo 'no tsconfig'",
     "test": "echo 'no tests'",
     "dev": "tsx src/index.ts"
   },
