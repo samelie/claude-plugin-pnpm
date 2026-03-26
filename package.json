@@ -3,8 +3,13 @@
   "version": "0.0.4",
   "description": "Claude Code plugin for pnpm monorepos — agent teams, workspace-aware fixing, changeset shipping",
   "license": "MIT",
-  "author": { "name": "adddog" },
-  "repository": { "type": "git", "url": "https://github.com/samelie/claude-plugin-pnpm" },
+  "author": {
+    "name": "adddog"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samelie/claude-plugin-pnpm"
+  },
   "files": [
     ".claude-plugin",
     "skills",
@@ -14,5 +19,22 @@
     "README.md",
     "CHANGELOG.md"
   ],
-  "publishConfig": { "access": "public" }
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "unbuild",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "types": "tsc -p tsconfig.typecheck.json",
+    "test": "vitest run",
+    "dev": "tsx src/index.ts"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">= 22",
+    "pnpm": ">= 10",
+    "npm": ">= 11"
+  },
+  "private": true
 }
