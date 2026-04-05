@@ -1,6 +1,6 @@
 ---
 name: team-creation
-description: "Scope a problem and create a multi-agent team plan with roles, task lists, and spawn prompt. Triggers: team, agent team, multi-agent, create team, team plan, orchestrate agents, team template, team-creation, parallel team"
+description: "Scope a problem and create a multi-agent team plan with roles, task lists, and spawn prompt. Triggers: team, agent team, multi-agent, create team, team plan, orchestrate agents, team template, team-creation, parallel team, as a team, team up, work as a team"
 ---
 
 # /team-creation — Scope, Plan, and Structure a Multi-Agent Team

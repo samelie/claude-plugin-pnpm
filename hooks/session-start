@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# session-start - SessionStart hook for team
+# Creates session directory in $TMPDIR and symlinks from project root.
+# Previous sessions expire naturally with temp directory cleanup.
+
+TMPBASE="${TMPDIR:-/tmp}"
+SESSION_DIR="${TMPBASE}/team-kit-session-$(date +%Y%m%d-%H%M%S)"
+
+# Clean up previous session link/directory
+if [ -L team-session ]; then
+  rm -f team-session
+elif [ -d team-session ]; then
+  rm -rf team-session
+fi
+
+# Create new session in temp
+mkdir -p "$SESSION_DIR"
+echo "{\"startedAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"tmpPath\": \"${SESSION_DIR}\"}" > "$SESSION_DIR/meta.json"
+
+# Symlink from project root - agents use team-session/ paths transparently
+ln -s "$SESSION_DIR" team-session
+
+# Build context
+BASE="Team session directory ready at team-session/ (backed by ${SESSION_DIR}). Use write-findings and read-findings skills to exchange data between agents."
+
+if [ -f .claude/team-domain.md ]; then
+  DOMAIN_RAW=$(cat .claude/team-domain.md)
+  FULL_CTX=$(printf '%s\n\n--- DOMAIN CONTEXT ---\n%s' "$BASE" "$DOMAIN_RAW")
+else
+  FULL_CTX="$BASE"
+fi
+
+# JSON-encode the context string safely
+json_encode() {
+  if command -v jq &>/dev/null; then
+    printf '%s' "$1" | jq -Rs .
+  elif command -v python3 &>/dev/null; then
+    printf '%s' "$1" | python3 -c "import json, sys; print(json.dumps(sys.stdin.read()))"
+  else
+    # fallback: escape basics for JSON string
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s=$(printf '%s' "$s" | awk '{if(NR>1) printf "\\n"; printf "%s", $0}')
+    printf '"%s"' "$s"
+  fi
+}
+
+ENCODED=$(json_encode "$FULL_CTX")
+echo "{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":${ENCODED}}}"

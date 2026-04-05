@@ -1,7 +1,7 @@
 {
   "name": "claude-plugin-pnpm",
-  "version": "0.0.4",
-  "description": "Agent teams, workspace-aware fixing, and changeset shipping for pnpm monorepos",
+  "version": "0.0.5",
+  "description": "Agent teams, workspace-aware fixing, changeset shipping, and team-role agents (architect, coder, reviewer, tester, auditor) for pnpm monorepos",
   "author": { "name": "adddog", "url": "https://github.com/samelie" },
   "repository": "https://github.com/samelie/claude-plugin-pnpm",
   "license": "MIT",
@@ -11,6 +11,15 @@
     "./agents/planner.md",
     "./agents/quarterback.md",
     "./agents/full-monorepo-pnpm.md",
-    "./agents/pnpm-workspace-filter.md"
+    "./agents/pnpm-workspace-filter.md",
+    "./agents/team-architect.md",
+    "./agents/team-auditor.md",
+    "./agents/team-coder.md",
+    "./agents/team-finisher.md",
+    "./agents/team-researcher.md",
+    "./agents/team-reviewer.md",
+    "./agents/team-security-auditor.md",
+    "./agents/team-tester.md",
+    "./agents/team-verifier.md"
   ]
 }

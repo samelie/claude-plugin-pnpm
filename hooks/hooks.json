@@ -1,33 +1,44 @@
 {
-  "_comment": "Template: merge relevant sections into .claude/settings.local.json when activating a team. Not all teams need all hooks. Remove hooks you don't need.",
   "hooks": {
-    "PreToolUse": [
+    "SessionStart": [
       {
-        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/check-team-scope.sh",
-            "timeout": 10
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"",
+            "timeout": 5000,
+            "continueOnError": true
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "^(Edit|Write|MultiEdit)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/check-team-scope\"",
+            "timeout": 3000,
+            "continueOnError": true
           }
         ]
       }
     ],
     "SubagentStop": [
       {
-        "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-verify.sh",
-            "timeout": 10
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/check-status-protocol\"",
+            "timeout": 3000,
+            "continueOnError": true
           }
         ]
       }
     ],
     "Stop": [
       {
-        "matcher": "*",
         "hooks": [
           {
             "type": "command",

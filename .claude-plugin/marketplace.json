@@ -9,8 +9,8 @@
         "package": "@adddog/claude-plugin-pnpm",
         "version": ">=0.0.3"
       },
-      "description": "Agent teams, workspace-aware fixing, and changeset shipping for pnpm monorepos",
-      "keywords": ["pnpm", "monorepo", "agent-teams"]
+      "description": "Agent teams, workspace-aware fixing, changeset shipping, and team-role agents for pnpm monorepos",
+      "keywords": ["pnpm", "monorepo", "agent-teams", "team-planning"]
     }
   ]
 }

@@ -1,0 +1,86 @@
+#!/usr/bin/env sh
+#
+# PreToolUse hook: Scope enforcement for team agents.
+#
+# Reads .claude/team-scope.json and blocks Edit/Write to files outside
+# the agent's allowed paths. Fail-open: if scope file is missing or
+# unparseable, allows the action.
+#
+# Input: JSON on stdin with tool_name and tool_input fields.
+# Output: JSON hookSpecificOutput with allow/deny decision.
+
+INPUT=$(cat)
+
+# Fail-open: no scope file means no enforcement
+SCOPE_FILE=".claude/team-scope.json"
+if [ ! -f "$SCOPE_FILE" ]; then
+  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"No scope file found"}}'
+  exit 0
+fi
+
+# Extract tool name
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)
+if [ -z "$TOOL_NAME" ]; then
+  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"Could not determine tool name"}}'
+  exit 0
+fi
+
+# Only enforce on Edit and Write
+case "$TOOL_NAME" in
+  Edit|Write|MultiEdit) ;;
+  *)
+    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
+    exit 0
+    ;;
+esac
+
+# Extract the file path from tool input
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.path // empty' 2>/dev/null)
+if [ -z "$FILE_PATH" ]; then
+  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"Could not determine file path"}}'
+  exit 0
+fi
+
+# Always allow writes to the session directory
+case "$FILE_PATH" in
+  */team-session/*)
+    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"team-session/ is always writable"}}'
+    exit 0
+    ;;
+esac
+
+# Check if the file matches any allowed path pattern in team-scope.json
+# Scope file format: {"agents":{"coder-1":{"allowed_paths":["src/auth/*","src/utils/hash.ts"]},...}}
+AGENT_NAME=$(echo "$INPUT" | jq -r '.agent_name // empty' 2>/dev/null)
+if [ -z "$AGENT_NAME" ]; then
+  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"Could not determine agent name"}}'
+  exit 0
+fi
+
+# Get allowed paths for this agent
+ALLOWED_PATHS=$(jq -r ".agents[\"$AGENT_NAME\"].allowed_paths[]? // empty" "$SCOPE_FILE" 2>/dev/null)
+if [ -z "$ALLOWED_PATHS" ]; then
+  # No paths defined for this agent - check if agent is in read-only list
+  IS_READONLY=$(jq -r ".readonly_agents[]? // empty" "$SCOPE_FILE" 2>/dev/null | grep -Fx "$AGENT_NAME")
+  if [ -n "$IS_READONLY" ]; then
+    echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Agent '$AGENT_NAME' is read-only and cannot modify files\"}}"
+    exit 0
+  fi
+  # No paths and not read-only = allow (fail-open)
+  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"No scope restrictions for this agent"}}'
+  exit 0
+fi
+
+# Check if file matches any allowed pattern
+MATCH="no"
+echo "$ALLOWED_PATHS" | while IFS= read -r pattern; do
+  case "$FILE_PATH" in
+    $pattern) MATCH="yes"; break ;;
+  esac
+done
+
+if [ "$MATCH" = "yes" ]; then
+  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
+else
+  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"File '$FILE_PATH' is outside agent '$AGENT_NAME' allowed paths\"}}"
+fi

@@ -16,6 +16,8 @@
     "agents",
     "team-templates",
     "hooks",
+    "rules",
+    "docs",
     "README.md",
     "CHANGELOG.md"
   ],

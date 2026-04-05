@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+#
+# SubagentStop hook: Enforces the STATUS protocol.
+#
+# Every team agent must end with a STATUS line:
+#   STATUS: CLEAN
+#   STATUS: PARTIAL
+#   STATUS: ERRORS_REMAINING: <count>
+#
+# If the status line is missing, blocks the agent from stopping.
+# Fail-open: if input can't be parsed, allows the stop.
+#
+# Input: JSON on stdin with agent output/transcript.
+# Output: JSON hookSpecificOutput with allow/deny decision.
+
+INPUT=$(cat)
+
+# Fail-open: if no team session exists, don't enforce
+if [ ! -d "team-session" ]; then
+  echo '{"hookSpecificOutput":{"hookEventName":"SubagentStop","permissionDecision":"allow","permissionDecisionReason":"No team session active"}}'
+  exit 0
+fi
+
+# Extract the agent's final output/transcript
+TRANSCRIPT=$(echo "$INPUT" | jq -r '.transcript // .output // .content // empty' 2>/dev/null)
+if [ -z "$TRANSCRIPT" ]; then
+  echo '{"hookSpecificOutput":{"hookEventName":"SubagentStop","permissionDecision":"allow","permissionDecisionReason":"Could not parse agent output"}}'
+  exit 0
+fi
+
+# Check for STATUS line
+if echo "$TRANSCRIPT" | grep -qE 'STATUS:\s*(CLEAN|PARTIAL|ERRORS_REMAINING:\s*[0-9]+)'; then
+  echo '{"hookSpecificOutput":{"hookEventName":"SubagentStop","permissionDecision":"allow","permissionDecisionReason":"STATUS protocol satisfied"}}'
+  exit 0
+fi
+
+# No STATUS line found - block the stop
+echo "{\"hookSpecificOutput\":{\"hookEventName\":\"SubagentStop\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Missing STATUS line. Before stopping, your final message must end with one of: 'STATUS: CLEAN', 'STATUS: ERRORS_REMAINING: <count> errors in <packages>', or 'STATUS: PARTIAL — completed N/M tasks, remaining: <list>'.\"}}}"

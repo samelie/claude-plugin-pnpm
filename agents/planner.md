@@ -12,12 +12,23 @@ You are a planning agent. You receive a task description + app context and gener
 2. Read `${CLAUDE_PLUGIN_ROOT}/team-templates/PLANNER.md` — the planning methodology
 3. Use `${CLAUDE_PLUGIN_ROOT}/team-templates/team-template-base.md` as the output template
 
+## Arcana: Gather Project Knowledge First
+
+Before planning, search Arcana for existing context on the affected packages and features:
+
+1. `arcana_search("<task topic>")` — hybrid semantic+keyword search for prior work, gotchas, architecture decisions
+2. `arcana_search("<package name>")` — package-specific knowledge (data flows, conventions, known issues)
+3. `arcana_read` on top 2-3 results for full content
+4. Incorporate Arcana findings into your plan — reference known gotchas, follow documented patterns, avoid repeating past mistakes
+
+This is critical. Arcana contains hard-won knowledge from prior sessions that can't be derived from code alone: debugging root causes, performance gotchas, integration quirks, architectural rationale.
+
 ## Your Inputs
 
 You will receive:
 
 1. **Task description** — what needs to be done (feature, refactor, audit, etc.)
-2. **App context** — relevant codebase paths, patterns, types, package names
+2. **App context** — relevant codebase paths, patterns, types, package names (augmented by Arcana results)
 3. **Package scope** — which pnpm packages are affected
 
 ## Your Outputs
