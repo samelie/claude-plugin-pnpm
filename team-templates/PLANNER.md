@@ -18,7 +18,7 @@ You will receive:
 
 ## Your Outputs
 
-Generate these artifacts in `.claude/team-templates/generated/{team-name}/`:
+Generate these artifacts in `team-session/{team-name}/`:
 
 ### 1. `team-plan.md` — The executable team template
 
@@ -158,7 +158,7 @@ Each agent prompt must include:
 1. **Identity**: "You are {name} for team {team-name}"
 2. **Role**: what they do and don't do
 3. **Task references**: which task IDs they own
-4. **Context loading**: "Read `.claude/team-templates/generated/{team-name}/team-plan.md`"
+4. **Context loading**: "Read `team-session/{team-name}/team-plan.md`"
 5. **File scope**: their `files_owned` paths
 6. **Reporting**: who to message when done (QB or lead)
 7. **Rules**: monorepo rules from FRAMEWORK.md
@@ -248,7 +248,7 @@ Before outputting:
 ## Output Directory
 
 ```
-.claude/team-templates/generated/{team-name}/
+team-session/{team-name}/
 ├── team-plan.md          # The executable team template
 ├── team-scope.json       # Hook config (if hooks enabled)
 └── settings.hooks.json   # Hook wiring (if hooks enabled)
@@ -256,4 +256,4 @@ Before outputting:
 
 The lead agent reads `team-plan.md` and follows its orchestration checklist.
 If hooks are enabled, the lead merges `settings.hooks.json` into `.claude/settings.local.json`
-and copies `team-scope.json` to `.claude/team-scope.json` before spawning agents.
+and copies `team-scope.json` to `team-session/{team-name}/team-scope.json` before spawning agents.

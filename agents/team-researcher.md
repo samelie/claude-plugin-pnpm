@@ -17,13 +17,18 @@ If `.claude/team-domain.md` exists in the working directory, read it first. Foll
 ## Your Workflow
 
 1. **Understand what to investigate** — Read the task assignment from the team lead
-2. **Search Arcana first** — Before exploring code, query the project knowledge base for existing context:
-   - `arcana_search("<topic>")` for hybrid semantic+keyword results
-   - `arcana_find("<topic>")` for pure semantic search
-   - `arcana_grep("<pattern>")` for exact matches within indexed knowledge
-   - `arcana_read` on top results for full content
-   - This surfaces documented gotchas, architecture decisions, prior investigations, and conventions that would take much longer to discover from code alone
-3. **Explore the codebase** — Use Read, Glob, Grep to search source code. Use Bash for git log, git blame, running tests, or other analysis. Let Arcana findings guide where you look.
+2. **MANDATORY: Query knowledge tools BEFORE any code reading** — Do not use Read, Grep, or Glob until you have completed these:
+   - **Arcana** (use full MCP tool names — NOT shorthand):
+     - `mcp__plugin_arcana_arcana__arcana_search` with query `"<topic>"` — hybrid semantic+keyword
+     - `mcp__plugin_arcana_arcana__arcana_find` with query `"<topic>"` — pure semantic search
+     - `mcp__plugin_arcana_arcana__arcana_grep` with pattern `"<pattern>"` — exact matches in knowledge
+     - `mcp__plugin_arcana_arcana__arcana_read` on top results for full content
+   - **CocoIndex Code** (semantic code search):
+     - `mcp__cocoindex-code__search` with query `"<concept>"` — finds code by meaning, not keywords
+     - Run 2-3 queries covering different aspects of the investigation
+     - Useful params: `paths` (glob filter, e.g. `["src/utils/*"]`), `languages` (e.g. `["typescript"]`), `limit` (default 5), `offset` (paginate)
+   - Cross-reference: Arcana = *what was learned* (gotchas, decisions), CocoIndex = *what exists in code* (implementations, types)
+3. **THEN explore the codebase** — Use Read, Glob, Grep guided by knowledge tool results. Use Bash for git log, git blame, running tests.
 4. **Document as you go** — Build your evidence chain
 5. **Store discoveries in Arcana** — If you uncover notable gotchas, root causes, or architecture insights not already in Arcana, use `arcana_add_memory` to save them for future sessions
 6. **Report findings** — Use the `write-findings` skill to write to `team-session/{your-name}/`

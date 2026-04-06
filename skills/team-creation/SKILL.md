@@ -164,18 +164,56 @@ If team-sized: proceed to Step 3.
 
 ---
 
-## Step 3: Gather context for the planner
+## Step 3: Research + Plan (parallel dispatch)
 
-Before invoking the planner agent, assemble:
+This is where the real work begins. Dispatch **two agents in parallel**:
+
+### 3a: Researcher — deep context gathering (background)
+
+Dispatch a `team-researcher` agent in the background to explore the affected packages via Arcana + CocoIndex + code. This runs while brainstorming (if active) or while you assemble the planner prompt.
+
+```
+Agent(
+  subagent_type = "claude-plugin-pnpm:team-researcher",
+  model = "opus",
+  run_in_background = true,
+  name = "scout",
+  prompt = """
+  Investigate the following for an upcoming team planning session:
+
+  Task: {task description}
+  Affected packages: {package list or best guess}
+
+  Your job:
+  1. Query Arcana for prior work, gotchas, architecture decisions on these packages
+  2. Query CocoIndex Code for existing implementations, key types, module boundaries
+  3. Explore code to map: entry points, data flows, coupling between modules
+  4. Document everything in findings.md — the planner will read this
+
+  Focus on what a planner needs to know to decompose this into agent tasks:
+  - Which files exist and what they do
+  - Where the module boundaries are
+  - What gotchas or constraints exist
+  - What patterns are already established
+  """
+)
+```
+
+### 3b: Assemble planner context
+
+While the researcher runs, assemble what you already know:
 
 1. **Task description** — from user input or brainstorming output
 2. **Affected packages** — `git diff --name-only` or from brainstorming scope
-3. **Key file paths** — read relevant source to understand structure
-4. **Constraints** — from brainstorming acceptance criteria or user input
+3. **Constraints** — from brainstorming acceptance criteria or user input
+
+Wait for the researcher to complete. Read its `findings.md` output.
 
 ---
 
 ## Step 4: Invoke the planner agent
+
+**The planner is THE agent for initial planning.** Do not use `team-architect` here — the planner produces both the human-readable design and the executable team plan.
 
 ```
 Agent(
@@ -185,28 +223,35 @@ Agent(
   Task: {task description}
 
   Affected packages: {list}
-  Key paths: {list}
   Constraints: {from brainstorming or user}
 
+  ## Researcher findings
+  {paste or summarize the researcher's findings.md here}
+
   Generate a complete team plan following FRAMEWORK.md.
-  Output to .claude/team-templates/generated/{team-name}/
+  Output to team-session/{team-name}/
+
+  The researcher already queried Arcana and CocoIndex — use their findings
+  as your starting point. You should STILL query both tools yourself for
+  anything the researcher may have missed, but don't duplicate their work.
   """
 )
 ```
 
 The planner produces:
+- `design.md` — human-readable architecture summary (components, data flow, gotchas)
 - `team-plan.md` — full plan with roles, tasks, ownership, phases
 - `team-scope.json` — hook config (if hooks needed)
 - `settings.hooks.json` — hook wiring (if hooks needed)
 
 ### Present for review
 
-Read the generated `team-plan.md` and present:
+Read **both** `design.md` and `team-plan.md`. Present the design first (humans read this), then the plan summary:
 
-> **Team: {name}**
-> {description}
+> **Design: {name}**
+> {key points from design.md — components, approach, risks}
 >
-> **Agents:**
+> **Team Plan:**
 > | Name | Role | Model | Phase |
 > |------|------|-------|-------|
 > | ... | ... | ... | ... |
@@ -215,7 +260,8 @@ Read the generated `team-plan.md` and present:
 > **Phases:** {count}
 > **File ownership:** {summary — no overlaps}
 >
-> Full plan: `.claude/team-templates/generated/{name}/team-plan.md`
+> Full design: `team-session/{name}/design.md`
+> Full plan: `team-session/{name}/team-plan.md`
 >
 > Want to adjust anything, or approve to get the spawn prompt?
 
@@ -229,7 +275,7 @@ If user approves → Step 5.
 This is the **terminal output** of the skill. Generate a ready-to-paste natural language prompt that will create and execute the team:
 
 ```
-Read `.claude/team-templates/generated/{team-name}/team-plan.md`.
+Read `team-session/{team-name}/team-plan.md`.
 Create a team named "{team-name}" using TeamCreate.
 Press Shift+Tab to enable delegate mode.
 Spawn agents per template. You are lead — orchestrate and gate phases only. Do NOT implement.
@@ -265,14 +311,16 @@ Present this to the user:
 - **Replace writing-plans** — redirects to it for single-agent tasks
 - **Force brainstorming** — skips it when the problem is already well-scoped
 
-## Relationship to Other Skills
+## Relationship to Other Skills and Agents
 
-| Skill | Relationship |
+| Skill / Agent | Relationship |
 |-------|-------------|
 | `superpowers:brainstorming` | Invoked in Step 2c when problem is vague. Brainstorming scopes the problem; this skill structures the team. |
 | `superpowers:writing-plans` | For single-agent tasks. If team-size check fails, redirect there instead. |
 | `superpowers:dispatching-parallel-agents` | Covers execution. The spawn prompt this skill produces is designed to be executed following that pattern. |
-| `claude-plugin-pnpm:planner` agent | Invoked in Step 4 to generate the team plan artifacts. |
+| `team-researcher` agent | Dispatched in Step 3a (background) for deep context gathering via Arcana + CocoIndex before the planner runs. |
+| `planner` agent | Invoked in Step 4 to generate design.md + team-plan.md. THE agent for initial planning — do not use team-architect here. |
+| `team-architect` agent | NOT used during initial planning. Used mid-execution by the lead when a specific module needs deeper investigation before coders start. |
 
 ## Edge Cases
 
@@ -280,6 +328,7 @@ Present this to the user:
 |-----------|--------|
 | Agent teams not enabled | Show enable command, stop |
 | No template matches shortcut | Fall through to custom/brainstorm path |
+| Researcher returns nothing useful | Planner still runs its own Arcana + CocoIndex queries — researcher findings are additive, not required |
 | Planner fails | Show error, offer retry or manual planning |
 | User wants to modify plan | Edit and re-present |
 | Not team-sized after brainstorming | Redirect to `writing-plans` |

@@ -8,11 +8,19 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up".
 
 ## Available Team Agents
 
+### Planning phase (used by team-creation skill)
+
 | Agent | subagent_type | Role |
 |-------|--------------|------|
-| `team-architect` | `claude-plugin-pnpm:team-architect` | Design + decompose into subtasks |
+| `planner` | `claude-plugin-pnpm:planner` | **THE** initial planning agent — produces design.md + team-plan.md. Always use this, not team-architect, for initial planning. |
+| `team-researcher` | `claude-plugin-pnpm:team-researcher` | Read-only investigation via Arcana + CocoIndex + code. Dispatched in background before planner for deep context. |
+
+### Execution phase (dispatched by team lead)
+
+| Agent | subagent_type | Role |
+|-------|--------------|------|
+| `team-architect` | `claude-plugin-pnpm:team-architect` | Deep-dive module analyst — used mid-execution when a specific subsystem needs investigation before coders start. NOT for initial planning. |
 | `team-coder` | `claude-plugin-pnpm:team-coder` | Implement assigned subtasks |
-| `team-researcher` | `claude-plugin-pnpm:team-researcher` | Read-only investigation |
 | `team-reviewer` | `claude-plugin-pnpm:team-reviewer` | Code review |
 | `team-tester` | `claude-plugin-pnpm:team-tester` | Write + run tests |
 | `team-auditor` | `claude-plugin-pnpm:team-auditor` | Post-implementation audit |
