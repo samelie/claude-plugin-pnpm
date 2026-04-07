@@ -111,6 +111,27 @@ curl -s https://registry.npmjs.org/-/package/@adddog/claude-plugin-pnpm/dist-tag
 # {"latest":"0.1.0"}
 ```
 
+### hooks.json schema: `matcher` is REQUIRED on every hook entry
+
+Per [official hook-development docs](https://github.com/anthropics/claude-code/blob/main/plugins/plugin-dev/skills/hook-development/SKILL.md), **every entry needs a `matcher` field** — including event types that aren't tool-specific like `SessionStart`, `Stop`, `SubagentStop`. Use `"*"` as a wildcard. Missing matchers cause schema validation failures that surface as generic `<Event>:<matcher> hook error` messages without useful detail.
+
+Also: use pipe-delimited matchers (`"Edit|Write|MultiEdit"`) not regex anchors (`"^(Edit|Write|MultiEdit)$"`). The docs show the former; the latter may silently not match.
+
+```json
+{
+  "hooks": {
+    "SessionStart": [{
+      "matcher": "*",
+      "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"" }]
+    }],
+    "PreToolUse": [{
+      "matcher": "Edit|Write|MultiEdit",
+      "hooks": [{ "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/check-team-scope\"" }]
+    }]
+  }
+}
+```
+
 ### npm publish loses executable bits — always prefix hook commands with `bash`/`sh`
 
 Scripts with exec bit (`755`) in source arrive as `644` after `npm publish` → install. If `hooks/hooks.json` invokes `"${CLAUDE_PLUGIN_ROOT}/hooks/session-start"` directly, Claude Code gets `permission denied` (exit 126) and surfaces it as `SessionStart:startup hook error`.

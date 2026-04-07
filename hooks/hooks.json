@@ -2,43 +2,43 @@
   "hooks": {
     "SessionStart": [
       {
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"",
-            "timeout": 5000,
-            "continueOnError": true
+            "timeout": 5000
           }
         ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "^(Edit|Write|MultiEdit)$",
+        "matcher": "Edit|Write|MultiEdit",
         "hooks": [
           {
             "type": "command",
             "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/check-team-scope\"",
-            "timeout": 3000,
-            "continueOnError": true
+            "timeout": 3000
           }
         ]
       }
     ],
     "SubagentStop": [
       {
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/check-status-protocol\"",
-            "timeout": 3000,
-            "continueOnError": true
+            "timeout": 3000
           }
         ]
       }
     ],
     "Stop": [
       {
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
