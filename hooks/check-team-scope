@@ -2,18 +2,25 @@
 #
 # PreToolUse hook: Scope enforcement for team agents.
 #
-# Reads .claude/team-scope.json and blocks Edit/Write to files outside
-# the agent's allowed paths. Fail-open: if scope file is missing or
-# unparseable, allows the action.
+# Discovers team-scope.json under $CLAUDE_PROJECT_DIR/team-session/*/team-scope.json
+# (newest mtime wins) and blocks Edit/Write to files outside the agent's allowed
+# paths. Fail-open: if no scope file exists or it's unparseable, allows the action.
+#
+# Note: if multiple team-session/*/team-scope.json exist, uses newest. Running
+# concurrent teams in a single project is not supported — scopes would interleave.
+# Use separate working directories for parallel teams.
 #
 # Input: JSON on stdin with tool_name and tool_input fields.
 # Output: JSON hookSpecificOutput with allow/deny decision.
 
 INPUT=$(cat)
 
-# Fail-open: no scope file means no enforcement
-SCOPE_FILE=".claude/team-scope.json"
-if [ ! -f "$SCOPE_FILE" ]; then
+# Discover scope file under team-session/. Newest mtime wins.
+SCOPE_DIR="${CLAUDE_PROJECT_DIR:-.}/team-session"
+SCOPE_FILE=$(find "$SCOPE_DIR" -maxdepth 3 -name 'team-scope.json' -type f 2>/dev/null \
+  | xargs -I{} stat -f '%m %N' {} 2>/dev/null \
+  | sort -rn | head -1 | cut -d' ' -f2-)
+if [ -z "$SCOPE_FILE" ] || [ ! -f "$SCOPE_FILE" ]; then
   echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"No scope file found"}}'
   exit 0
 fi
@@ -71,13 +78,18 @@ if [ -z "$ALLOWED_PATHS" ]; then
   exit 0
 fi
 
-# Check if file matches any allowed pattern
+# Check if file matches any allowed pattern.
+# Use heredoc (not pipe) so MATCH persists in the parent shell — piping into
+# `while read` runs the loop in a subshell and loses variable assignments.
 MATCH="no"
-echo "$ALLOWED_PATHS" | while IFS= read -r pattern; do
+while IFS= read -r pattern; do
+  [ -z "$pattern" ] && continue
   case "$FILE_PATH" in
     $pattern) MATCH="yes"; break ;;
   esac
-done
+done <<EOF
+$ALLOWED_PATHS
+EOF
 
 if [ "$MATCH" = "yes" ]; then
   echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'

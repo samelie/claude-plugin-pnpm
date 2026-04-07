@@ -1,6 +1,6 @@
 {
   "name": "@adddog/claude-plugin-pnpm",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "description": "Claude Code plugin for pnpm monorepos — agent teams, workspace-aware fixing, changeset shipping",
   "license": "MIT",
   "author": {

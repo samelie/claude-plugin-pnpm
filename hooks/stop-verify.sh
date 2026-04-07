@@ -10,8 +10,11 @@
 
 set -euo pipefail
 
-# Non-team conversations: always approve
-if [ ! -f ".claude/team-scope.json" ]; then
+# Non-team conversations: always approve.
+# Team context is detected by any team-session/*/team-scope.json existing.
+SCOPE_DIR="${CLAUDE_PROJECT_DIR:-.}/team-session"
+SCOPE_FILE=$(find "$SCOPE_DIR" -maxdepth 3 -name 'team-scope.json' -type f 2>/dev/null | head -1)
+if [ -z "$SCOPE_FILE" ]; then
   echo '{"decision": "approve"}'
   exit 0
 fi

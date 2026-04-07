@@ -98,9 +98,7 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 }
 ```
 
-### 4. `settings.hooks.json` — Hook wiring for this team
-
-Copy of hook settings to merge into `.claude/settings.local.json`.
+The plugin's `hooks/hooks.json` already wires `PreToolUse`/`SubagentStop`/`Stop` — no per-team hook file needed. The scope hook auto-discovers `team-session/*/team-scope.json`.
 
 ## Rules
 

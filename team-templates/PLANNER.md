@@ -52,38 +52,7 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 }
 ```
 
-### 3. `settings.hooks.json` — Hook wiring for this team
-
-Copy of hook settings to merge into `.claude/settings.local.json`:
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [{
-          "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/check-team-scope.sh",
-          "timeout": 10
-        }]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "matcher": "*",
-        "hooks": [{
-          "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-verify.sh",
-          "timeout": 10
-        }]
-      }
-    ]
-  }
-}
-```
-
-Adjust paths and add/remove hooks based on team needs. Not all teams need all hooks.
+Hook wiring note: the plugin's `hooks/hooks.json` already registers `PreToolUse`, `SubagentStop`, `SessionStart`, and `Stop` hooks. They run automatically whenever the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json` — nothing to wire per team.
 
 ---
 
@@ -233,9 +202,8 @@ Before outputting:
 [ ] Defined file ownership with non-overlapping globs
 [ ] Chose agent count (prefer fewer)
 [ ] Decided QB: yes/no based on team size + task complexity
-[ ] Decided hooks: yes/no based on team size + risk
-[ ] Generated team-scope.json (if hooks enabled)
-[ ] Generated settings.hooks.json (if hooks enabled)
+[ ] Decided scope enforcement: yes/no based on team size + risk
+[ ] Generated team-scope.json (if scope enforcement enabled)
 [ ] Generated team-plan.md with ALL required sections
 [ ] Each task has verify command + acceptance criteria
 [ ] Agent prompts include identity, tasks, scope, rules
@@ -249,11 +217,9 @@ Before outputting:
 
 ```
 team-session/{team-name}/
+├── design.md             # Human-readable architecture summary
 ├── team-plan.md          # The executable team template
-├── team-scope.json       # Hook config (if hooks enabled)
-└── settings.hooks.json   # Hook wiring (if hooks enabled)
+└── team-scope.json       # Scope config (if scope enforcement enabled)
 ```
 
-The lead agent reads `team-plan.md` and follows its orchestration checklist.
-If hooks are enabled, the lead merges `settings.hooks.json` into `.claude/settings.local.json`
-and copies `team-scope.json` to `team-session/{team-name}/team-scope.json` before spawning agents.
+The lead agent reads `team-plan.md` and follows its orchestration checklist. If scope enforcement is enabled, `team-scope.json` is written to `team-session/{team-name}/` — the plugin's hooks discover it automatically via the `team-session/*/team-scope.json` glob.

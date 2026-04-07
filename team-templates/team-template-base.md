@@ -31,7 +31,7 @@ hooks:
 ## How to Execute
 
 ```
-Read `.claude/team-templates/{your-template}.md`.
+Read `team-session/{team-name}/team-plan.md`.
 Create a team named "{team-name}" using TeamCreate.
 Press Shift+Tab to enable delegate mode (restricts lead to coordination-only tools).
 Spawn agents per template. You are lead — orchestrate and gate phases only. Do NOT implement.
@@ -197,15 +197,15 @@ For each task, define:
 
 ## Hooks (Quality Gates)
 
-Configure in `.claude/settings.json` or `.claude/settings.local.json`:
+Hooks are wired via the plugin's own `hooks/hooks.json` — always active when the plugin is enabled. No per-team setup needed.
 
-### TaskCompleted hook
-Runs when any task is marked complete. Exit code 2 = reject completion + send feedback.
-Use for mechanical checks: build, test, lint.
+| Hook | Event | What it does |
+|------|-------|-------------|
+| `check-team-scope` | PreToolUse (Edit/Write) | Blocks edits outside the agent's declared `files_owned`. Discovers scope from `team-session/*/team-scope.json`. |
+| `check-status-protocol` | SubagentStop | Ensures sub-agents report STATUS before stopping |
+| `stop-verify.sh` | Stop | Blocks lead from stopping if tasks remain incomplete |
 
-### TeammateIdle hook
-Runs when teammate goes idle. Exit code 2 = send feedback + keep working.
-Use for: ensuring agent reported to QB before idling.
+To enable scope enforcement for a team, write `team-scope.json` to `team-session/{team-name}/`. The hook picks it up automatically.
 
 **QB role retained** for subjective review (code quality, pattern adherence, requirement correctness). Hooks handle mechanical checks only.
 
@@ -285,7 +285,7 @@ Prefer fewer agents with grouped tasks over many micro-task agents.
 ### Lead spawn command (you paste this to start)
 
 ```
-Read `.claude/team-templates/{your-template}.md`.
+Read `team-session/{team-name}/team-plan.md`.
 Create a team named "{team-name}" using TeamCreate.
 Press Shift+Tab to enable delegate mode.
 Spawn agents per template. You are lead — orchestrate and gate phases only. Do NOT implement.
@@ -320,7 +320,7 @@ You are implementer "{agent-name}" for team "{team-name}".
 Your tasks: {list task IDs}
 
 Instructions:
-- Read `.claude/team-templates/{your-template}.md` for full task details
+- Read `team-session/{team-name}/team-plan.md` for full task details
 - Read ALL reference files before modifying anything
 - You will work in plan mode first. Submit your plan for lead approval before implementing.
 - Only modify files listed in your task's files_owned

@@ -99,7 +99,7 @@ If any are unclear → brainstorm first.
 
 ## Step 2a: List mode
 
-Read `.claude/team-templates/` and present:
+Read `${CLAUDE_PLUGIN_ROOT}/team-templates/` and present:
 
 ```
 Available team templates:
@@ -122,9 +122,9 @@ Map shortcut to file:
 
 | Shortcut | Template |
 |----------|---------|
-| `health` | `.claude/team-templates/monorepo-health.md` |
-| `deep-clean` | `.claude/team-templates/monorepo-deep-clean.md` |
-| `knip-audit` | `.claude/team-templates/knip-config-audit.md` |
+| `health` | `${CLAUDE_PLUGIN_ROOT}/team-templates/monorepo-health.md` |
+| `deep-clean` | `${CLAUDE_PLUGIN_ROOT}/team-templates/monorepo-deep-clean.md` |
+| `knip-audit` | `${CLAUDE_PLUGIN_ROOT}/team-templates/knip-config-audit.md` |
 
 1. Read the template
 2. Present summary (name, agents, phases, cost estimate)
@@ -241,8 +241,7 @@ Agent(
 The planner produces:
 - `design.md` — human-readable architecture summary (components, data flow, gotchas)
 - `team-plan.md` — full plan with roles, tasks, ownership, phases
-- `team-scope.json` — hook config (if hooks needed)
-- `settings.hooks.json` — hook wiring (if hooks needed)
+- `team-scope.json` — scope config (if scope enforcement needed; plugin hooks auto-discover it)
 
 ### Present for review
 
@@ -284,7 +283,7 @@ Spawn agents per template. You are lead — orchestrate and gate phases only. Do
 For template mode, point to the template file instead:
 
 ```
-Read `.claude/team-templates/{template}.md`.
+Read `${CLAUDE_PLUGIN_ROOT}/team-templates/{template}.md`.
 Create a team named "{team-name}" using TeamCreate.
 Press Shift+Tab to enable delegate mode.
 Spawn agents per template. You are lead — orchestrate and gate phases only. Do NOT implement.

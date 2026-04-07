@@ -88,7 +88,7 @@ Hooks provide structural guardrails beyond prompt instructions.
 | `SubagentStop` | `subagent-stop-verify.sh` | Agent must have reported STATUS before stopping |
 | `Stop` | (optional) | Lead can't stop until all tasks complete |
 
-Hook config goes in `.claude/settings.local.json` (not committed — per-team).
+Scope enforcement comes from the plugin's own `hooks/hooks.json` — always active when the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json`. No per-team wiring needed.
 
 ### Hook input/output contract
 

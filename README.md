@@ -40,7 +40,7 @@ The plugin includes a complete agent team framework for orchestrating multi-agen
 
 1. Describe your task to Claude
 2. The `planner` agent reads FRAMEWORK.md + PLANNER.md
-3. Outputs a complete `team-plan.md` + optional `team-scope.json` and `settings.hooks.json`
+3. Outputs `design.md` + `team-plan.md` + optional `team-scope.json` to `team-session/{team-name}/`
 4. Lead agent executes the plan
 
 ## Hooks
@@ -52,7 +52,7 @@ Quality gates enforced at the Claude Code hook level:
 | `check-team-scope.sh` | PreToolUse (Edit/Write) | Enforce file edits stay within team's package scope |
 | `subagent-stop-verify.sh` | SubagentStop | Ensure agents report STATUS before stopping |
 
-Hooks are wired via `hooks.json`. Merge relevant sections into `.claude/settings.local.json` when activating a team.
+Hooks are wired automatically via the plugin's `hooks/hooks.json` — always active when the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json` (written by the planner). No per-team wiring needed.
 
 ## Prerequisites
 
