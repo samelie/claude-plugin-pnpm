@@ -49,8 +49,10 @@ Quality gates enforced at the Claude Code hook level:
 
 | Hook | Event | Purpose |
 |------|-------|---------|
-| `check-team-scope.sh` | PreToolUse (Edit/Write) | Enforce file edits stay within team's package scope |
-| `subagent-stop-verify.sh` | SubagentStop | Ensure agents report STATUS before stopping |
+| `session-start` | SessionStart | Creates `team-session/` symlink to a fresh tmpdir |
+| `check-team-scope` | PreToolUse (Edit/Write) | Enforce file edits stay within team's package scope |
+| `check-status-protocol` | SubagentStop | Ensure agents report STATUS before stopping |
+| `stop-verify.sh` | Stop | Block lead from stopping with incomplete tasks |
 
 Hooks are wired automatically via the plugin's `hooks/hooks.json` — always active when the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json` (written by the planner). No per-team wiring needed.
 
@@ -59,3 +61,77 @@ Hooks are wired automatically via the plugin's `hooks/hooks.json` — always act
 - pnpm workspace monorepo
 - `@changesets/cli` (for `/ship` and `/changeset` skills)
 - `python3` (for hook scripts)
+
+## Publishing & Updating — Gotchas
+
+Hard-won notes from shipping this plugin. Skip the hour of debugging.
+
+### `claude plugin update` does NOT fetch from npm
+
+It only checks `~/.claude/plugins/npm-cache/package-lock.json`. If that lockfile is stale, update reports "already at latest" against a fake latest. To actually pull a new version:
+
+```bash
+# 1. Bump the dep range (see next gotcha about why ^0.0.x is broken)
+vim ~/.claude/plugins/npm-cache/package.json
+
+# 2. Force-clear npm's metadata cache (otherwise ETARGET on just-published versions)
+npm cache clean --force
+
+# 3. Reinstall deps in npm-cache
+(cd ~/.claude/plugins/npm-cache && rm -rf node_modules package-lock.json && npm install)
+
+# 4. Uninstall + reinstall the plugin so Claude picks up the new cached version
+claude plugin uninstall claude-plugin-pnpm@adddog-tools --scope project
+rm -rf ~/.claude/plugins/cache/adddog-tools/claude-plugin-pnpm/
+claude plugin install claude-plugin-pnpm@adddog-tools --scope project
+```
+
+### `^0.0.x` caps at `<0.1.0` — minor bumps are silently skipped
+
+Semver caret on a zero-major zero-minor version is narrower than you'd expect: `^0.0.2` matches `>=0.0.2 <0.0.3`. Bumping `0.0.4 → 0.1.0` is invisible to that range. When bumping past `0.0.x`, manually update `~/.claude/plugins/npm-cache/package.json` to `^0.1.0`.
+
+### `claude plugin list` shows cache DIRECTORY names, not actual versions
+
+After installing `0.1.0`, list may report `Version: 0.0.5` — that's the cache subdirectory name, not the package.json version inside. Verify the real version with:
+
+```bash
+cat ~/.claude/plugins/cache/adddog-tools/claude-plugin-pnpm/*/package.json | grep version
+```
+
+### Publishing a scoped package without auth returns 404, not 401
+
+`npm publish @scope/pkg` with no login returns `E404 Not Found`. Run `npm whoami` first to confirm auth. 2FA-enabled accounts additionally need `--otp=<code>` or browser flow.
+
+### CDN cache lag on `npm view`
+
+Immediately after publish, `npm view @pkg version` may still report the previous version for several minutes (CDN). Bypass with the raw registry:
+
+```bash
+curl -s https://registry.npmjs.org/-/package/@adddog/claude-plugin-pnpm/dist-tags
+# {"latest":"0.1.0"}
+```
+
+### npm publish loses executable bits — always prefix hook commands with `bash`/`sh`
+
+Scripts with exec bit (`755`) in source arrive as `644` after `npm publish` → install. If `hooks/hooks.json` invokes `"${CLAUDE_PLUGIN_ROOT}/hooks/session-start"` directly, Claude Code gets `permission denied` (exit 126) and surfaces it as `SessionStart:startup hook error`.
+
+**Fix**: prefix every hook command with its interpreter. Never rely on the exec bit in published tarballs:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [{
+      "hooks": [{
+        "type": "command",
+        "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\""
+      }]
+    }]
+  }
+}
+```
+
+Match the interpreter to the script's shebang (`bash` for `#!/usr/bin/env bash`, `sh` for `#!/usr/bin/env sh`). This also means hook scripts don't need shebangs to be honored — the interpreter is chosen explicitly in `hooks.json`.
+
+### Plugin changes take effect on next session start, not mid-session
+
+Hooks, skills, and agents are loaded once when a Claude Code session starts. After reinstalling the plugin, current sessions keep running the old code. Start a new session in the project to pick up changes.

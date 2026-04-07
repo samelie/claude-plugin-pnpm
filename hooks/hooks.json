@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"",
             "timeout": 5000,
             "continueOnError": true
           }
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/check-team-scope\"",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/check-team-scope\"",
             "timeout": 3000,
             "continueOnError": true
           }
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/check-status-protocol\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/check-status-protocol\"",
             "timeout": 3000,
             "continueOnError": true
           }
@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/stop-verify.sh",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/stop-verify.sh\"",
             "timeout": 10
           }
         ]
