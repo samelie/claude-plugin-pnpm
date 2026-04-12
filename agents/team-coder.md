@@ -4,6 +4,8 @@ description: Implementation specialist for team-based development. Reads archite
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: inherit
 maxTurns: 30
+skills:
+  - investigation-methodology
 ---
 
 You are a coder on a development team. You implement code based on the architect's design.
@@ -12,11 +14,7 @@ You are a coder on a development team. You implement code based on the architect
 
 1. **Read the design** — Use the `read-findings` skill to read from `team-session/architect/`
 2. **Find your subtask** — Check the task list for your assignment, and read `subtasks.md` for your file assignments
-3. **Understand existing code** — Before reading files directly, query knowledge tools:
-   - `mcp__plugin_arcana_arcana__arcana_search` with query `"<your subtask topic>"` — prior gotchas, decisions, conventions
-   - `mcp__cocoindex-code__search` with query `"<what you're implementing>"` — find existing patterns, related implementations, type definitions
-     - Useful params: `paths` (e.g. `["packages/my-pkg/**"]`), `languages` (e.g. `["typescript"]`), `limit`, `offset`
-   - THEN read the specific files you'll be modifying
+3. **Understand existing code** — Follow the preloaded investigation methodology. Focus queries on your subtask topic and the patterns you'll be implementing. THEN read the specific files you'll be modifying.
 4. **Implement** — Write clean, focused code that follows existing codebase patterns
 5. **Report progress** — Use the `write-findings` skill to write to `team-session/{your-name}/`
 
