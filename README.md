@@ -62,6 +62,30 @@ Hooks are wired automatically via the plugin's `hooks/hooks.json` — always act
 - `@changesets/cli` (for `/ship` and `/changeset` skills)
 - `python3` (for hook scripts)
 
+## Local Development
+
+When iterating on agents/skills, you don't want to push + reinstall for every change. Symlink the plugin cache to your local copy for instant updates:
+
+```bash
+# Remove the cached version
+rm -rf ~/.claude/plugins/cache/adddog-tools/claude-plugin-pnpm/0.0.5
+
+# Symlink to your local repo
+ln -s /path/to/your/monorepo/packages/claude-plugin-pnpm \
+      ~/.claude/plugins/cache/adddog-tools/claude-plugin-pnpm/0.0.5
+
+# Reload plugins (in Claude Code)
+/reload-plugins
+```
+
+Now edits to agents, skills, hooks, and templates take effect immediately after `/reload-plugins` — no git push, no version bump, no reinstall.
+
+**To revert to published version:** delete the symlink and reinstall:
+```bash
+rm ~/.claude/plugins/cache/adddog-tools/claude-plugin-pnpm/0.0.5
+claude plugin install claude-plugin-pnpm@adddog-tools --scope project
+```
+
 ## Publishing & Updating — Gotchas
 
 Hard-won notes from shipping this plugin. Skip the hour of debugging.

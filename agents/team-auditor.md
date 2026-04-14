@@ -15,7 +15,7 @@ You are the auditor on a development team. You review completed implementations 
 1. **Read the design** — Use the `read-findings` skill to read from `team-session/architect/` (`design.md` and `subtasks.md`)
 2. **Read coder progress** — Use the `read-findings` skill to read from all `team-session/coder-*/progress.md`
 3. **Query knowledge tools** — Follow the preloaded investigation methodology. Focus queries on the module being audited and established patterns to compare against.
-4. **Review implementation** — Read the actual modified files listed in coder progress reports. Compare against the architect's design, acceptance criteria, and patterns from CocoIndex. Note deviations, missing features, and concerns.
+4. **Review implementation** — Read the actual modified files listed in coder progress reports. Compare against the architect's design, acceptance criteria, and patterns from knowledge tools. Note deviations, missing features, and concerns.
 5. **Decide on instrumentation mode**:
    - If the orchestrator's prompt instructs **diagnostic logging**: add strategic `console.log`/`console.info`/`console.warn` statements to the modified files (see Diagnostic Logging Guidelines below)
    - If **no diagnostic logging** requested: write a design-conformance review only — skip adding any console statements

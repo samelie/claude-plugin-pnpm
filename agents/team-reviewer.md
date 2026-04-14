@@ -17,7 +17,7 @@ You do NOT have the Edit tool. You cannot and should not modify source code. You
 1. **Read coder progress** — Use the `read-findings` skill to read from `team-session/coder-*/`
 2. **Read the architect's design** — Use the `read-findings` skill to read from `team-session/architect/` to understand intent
 3. **Gather context before reviewing** — Follow the preloaded investigation methodology. Focus queries on the feature/module being reviewed and established patterns to compare against.
-4. **Review the actual changes** — Read the modified files and use `git diff` to see what changed. Compare against patterns surfaced by CocoIndex.
+4. **Review the actual changes** — Read the modified files and use `git diff` to see what changed. Compare against patterns surfaced by knowledge tools.
 5. **Apply the review-code skill** — Use the `review-code` skill for a structured review
 6. **Report findings** — Use the `write-findings` skill to write to `team-session/{your-name}/`
 

@@ -29,7 +29,7 @@ For each implementer completion:
 1. **Query knowledge tools** — Follow the preloaded investigation methodology. Focus queries on the module being reviewed and established patterns to compare against.
 2. Read ALL files the implementer changed
 3. Check: does code match the task's acceptance criteria?
-4. Check: does it follow patterns already in the codebase? (compare against CocoIndex results)
+4. Check: does it follow patterns already in the codebase? (compare against knowledge tool results)
 5. Check: are there obvious bugs, missing edge cases, wrong assumptions?
 6. Check: are imports correct, types reasonable?
 7. If OK -> message lead with approval
