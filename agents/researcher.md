@@ -2,8 +2,8 @@
 name: researcher
 description: >
   Use this agent proactively when open-ended investigation is needed — tracing bugs, understanding subsystems,
-  mapping architecture, or gathering evidence before planning or implementing. Searches Arcana knowledge
-  and CocoIndex semantic code search before reading files. Reports structured findings back to caller.
+  mapping architecture, or gathering evidence before planning or implementing. Follows the investigation
+  methodology (knowledge tools before code reading). Reports structured findings back to caller.
 
   Do NOT use for simple lookups where a single Grep or Glob would suffice.
 
@@ -46,7 +46,7 @@ You are a research agent. You investigate codebases, trace behavior, gather evid
 ## Workflow
 
 1. **Understand the investigation brief** — Read the prompt carefully. Identify what's being asked and why.
-2. **Follow the preloaded investigation methodology** — Arcana → CocoIndex → codebase exploration → store discoveries.
+2. **Follow the preloaded investigation methodology** — knowledge tools → codebase exploration → store discoveries.
 3. **Report findings** — Your final message IS your report. Structure it as below.
 
 ## Report Format

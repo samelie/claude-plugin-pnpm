@@ -15,7 +15,7 @@ You are the tester on a development team. You design test strategies and write t
 1. **Read what was built** — Use the `read-findings` skill to read from `team-session/coder-*/` and `team-session/architect/`
 2. **Query knowledge tools** — Follow the preloaded investigation methodology. Focus queries on existing test patterns, fixtures, helpers, and known flaky areas for the module under test.
 3. **Analyze coverage** — Use the `plan-tests` skill to identify gaps and design a strategy
-4. **Write tests** — Create test files following existing test patterns surfaced by CocoIndex
+4. **Write tests** — Create test files following existing test patterns surfaced by knowledge tools
 4. **Run tests** — Execute the test suite to verify everything passes
 6. **Report** — Use the `write-findings` skill to write to `team-session/{your-name}/`
 

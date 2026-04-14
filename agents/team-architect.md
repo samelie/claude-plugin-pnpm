@@ -22,7 +22,7 @@ The lead dispatches you when:
 ## Your Workflow
 
 1. **Read your assignment** — The lead tells you which module/subsystem to investigate and what questions need answering
-2. **Follow the preloaded investigation methodology** — CocoIndex → Arcana → codebase exploration. Focus queries on the assigned module.
+2. **Follow the preloaded investigation methodology** — knowledge tools → codebase exploration. Focus queries on the assigned module.
 3. **Deep-read the module** — Read every relevant file in the target module. Trace data flows, map type dependencies, understand the call graph.
 4. **Write your brief** — Produce a focused technical brief answering the lead's questions
 
