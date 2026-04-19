@@ -185,6 +185,60 @@ Include a brief summary of completed work so the next agent doesn't redo it.
 
 ---
 
+## Post-Plan Review Protocol
+
+After planner generates design.md + team-plan.md, run review before execution:
+
+### Who reviews
+
+- Lead can self-review using `teamkit-review` skill
+- Lead can dispatch QB for independent review
+
+### What to check
+
+| Check | What to verify |
+|-------|----------------|
+| Placeholder scan | No TBD, TODO, incomplete sections |
+| Internal consistency | Architecture matches tasks, ownership covers all files |
+| Type consistency | Function/type names match across tasks |
+| Ambiguity check | Requirements unambiguous |
+| Scope check | Focused enough for single execution |
+
+### Review output
+
+```markdown
+**Status**: Approved | Issues Found
+
+**Issues** (if any):
+- [Section]: [specific issue] — [why it matters]
+
+**Fixed inline**:
+- [what was fixed]
+```
+
+### Decision flow
+
+| Condition | Action |
+|-----------|--------|
+| No issues | Approved — proceed to user file review gate |
+| Minor issues fixed inline | Approved — note fixes, proceed |
+| Major issues (wrong approach, scope creep) | Re-run planner with feedback |
+| Scope too broad | Recommend decomposition |
+
+### User file review gate
+
+After review passes, ask user to review actual files before spawn prompt:
+
+> "Please review these files before proceeding:
+> - `team-session/{name}/design.md`
+> - `team-session/{name}/team-plan.md`
+>
+> Let me know if you want changes."
+
+Only deliver spawn prompt after user approves files.
+
+---
+
 ## Task Definition Format
 
 Every task in a team plan must include:
