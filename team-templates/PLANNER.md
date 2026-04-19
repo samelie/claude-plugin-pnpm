@@ -10,9 +10,12 @@
 You will receive:
 
 1. **Task description** — what needs to be done (feature, refactor, audit, etc.)
-2. **App context** — relevant codebase paths, patterns, types, package names
-3. **Package scope** — which pnpm packages are affected
-4. **FRAMEWORK.md** — the invariant rules you must follow (read it first at `${CLAUDE_PLUGIN_ROOT}/team-templates/FRAMEWORK.md`)
+2. **Chosen approach** — the approach user selected from options (from teamkit-explore)
+3. **Key decisions** — specific decisions made during approach exploration
+4. **App context** — relevant codebase paths, patterns, types, package names
+5. **Package scope** — which pnpm packages are affected
+6. **Constraints** — from requirements clarification (from teamkit-clarify)
+7. **FRAMEWORK.md** — the invariant rules you must follow (read it first at `${CLAUDE_PLUGIN_ROOT}/team-templates/FRAMEWORK.md`)
 
 ---
 
@@ -190,6 +193,42 @@ Task(
 
 ---
 
+## No Placeholders Rule
+
+These are plan failures — never write them:
+
+| Forbidden Pattern | Example |
+|-------------------|---------|
+| `TBD` | "Error handling: TBD" |
+| `TODO` | "TODO: add validation" |
+| `...` (as placeholder) | "implements: ..." |
+| `[placeholder]` | "returns [type]" |
+| Incomplete sections | Section header with no content |
+| Vague requirements | "add appropriate error handling" |
+| "Similar to Task N" | Must repeat actual code — reader may read tasks out of order |
+| Steps without code | If step changes code, show the code |
+| Undefined references | Types, functions, methods not defined anywhere |
+
+**Zero tolerance.** If you catch yourself writing any of these, stop and fill in the actual content.
+
+---
+
+## Type Consistency Check
+
+After generating tasks, verify names match across all documents:
+
+| Check | Example Issue |
+|-------|---------------|
+| Function names | `clearLayers()` in design, `clearFullLayers()` in task |
+| Type names | `CacheConfig` in design, `CacheOptions` in task |
+| Method signatures | Different parameter counts between tasks |
+| Module names | `cache-utils` vs `cacheUtils` |
+| Property names | `userId` vs `user_id` |
+
+**Rule**: Pick one name, use it everywhere. Cross-reference design.md and team-plan.md.
+
+---
+
 ## Planner Checklist
 
 Before outputting:
@@ -210,6 +249,58 @@ Before outputting:
 [ ] Implementers use mode: "plan"
 [ ] Finalization agents use dedicated subagent types + sonnet
 ```
+
+---
+
+## Self-Review Before Output
+
+Run this checklist on your own output before returning:
+
+### 1. Placeholder Scan
+Search design.md and team-plan.md for:
+- TBD, TODO, `...`, `[placeholder]`
+- Empty or incomplete sections
+- Vague requirements ("add appropriate X")
+
+**Action**: If found → fill in actual content.
+
+### 2. Internal Consistency
+Verify parts align:
+- Every component in design.md has corresponding task(s)
+- Every file mentioned in tasks has an owner
+- blockedBy dependencies respect phase ordering
+- Agent count matches task distribution
+
+**Action**: If inconsistent → reconcile.
+
+### 3. Type Consistency
+Verify names match:
+- Function names identical across tasks
+- Type names identical across tasks
+- Method signatures consistent
+- Module names consistent
+
+**Action**: If mismatch → pick one, update all references.
+
+### 4. Ambiguity Check
+Could any requirement be interpreted two ways?
+
+| Ambiguous | Clear |
+|-----------|-------|
+| "Handle errors appropriately" | "Throw ValidationError on invalid input, return null on miss" |
+| "Add logging" | "Log at debug level using existing logger" |
+
+**Action**: If ambiguous → make explicit.
+
+### 5. Scope Check
+Is this focused enough for single execution?
+- 10+ tasks → consider splitting
+- Multiple independent features → should be separate plans
+- Tasks span unrelated packages → verify connection
+
+**Action**: If too broad → recommend decomposition to lead.
+
+**Note**: QB will run `teamkit-review` after you return. This self-review is defense-in-depth — catch what you can before handoff.
 
 ---
 

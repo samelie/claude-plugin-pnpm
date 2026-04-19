@@ -1,3 +1,20 @@
+## 0.2.0
+
+- **feat**: new teamkit skills family for self-contained team planning:
+  - `teamkit-create` — orchestrator (renamed from `team-creation`)
+  - `teamkit-clarify` — requirements extraction, one question at a time
+  - `teamkit-explore` — propose 2-3 approaches with tradeoffs
+  - `teamkit-present` — section-by-section design approval
+  - `teamkit-review` — post-plan review checklist
+- **feat**: removed `superpowers:brainstorming` dependency — teamkit is now fully self-contained
+- **feat**: approach exploration phase — user selects from alternatives before planner commits
+- **feat**: section-by-section design approval — components, data flow, file ownership, tasks approved incrementally
+- **feat**: post-plan review protocol — placeholder scan, type consistency, ambiguity check
+- **feat**: user file review gate — explicit file review before spawn prompt
+- **feat**: planner now receives chosen approach as input, honors user's selection
+- **docs**: added no-placeholders rule and type consistency check to PLANNER.md
+- **docs**: added post-plan review protocol to FRAMEWORK.md
+
 ## 0.1.1
 
 - **fix**: add required `"matcher": "*"` field to `SessionStart`, `SubagentStop`, and `Stop` hook entries. Per [official hook-development docs](https://github.com/anthropics/claude-code/blob/main/plugins/plugin-dev/skills/hook-development/SKILL.md), every hook entry needs a matcher — missing matchers cause schema validation failures that surface as generic "SessionStart:startup hook error".

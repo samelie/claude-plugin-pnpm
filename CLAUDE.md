@@ -2,13 +2,23 @@
 
 ## Team Trigger
 
-When the user's message starts with **"as a team"** (e.g., "as a team, refactor the auth middleware"), invoke the `/team-creation` skill with the rest of the message as the task description. This is the natural language entry point for multi-agent team planning.
+When the user's message starts with **"as a team"** (e.g., "as a team, refactor the auth middleware"), invoke the `/teamkit-create` skill with the rest of the message as the task description. This is the natural language entry point for multi-agent team planning.
 
-Other trigger phrases: "team up on", "work as a team on", "let's team up".
+Other trigger phrases: "team up on", "work as a team on", "let's team up", "teamkit".
+
+## Teamkit Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `teamkit-create` | Orchestrator — scope problem, create team plan, deliver spawn prompt |
+| `teamkit-clarify` | Requirements extraction — one question at a time |
+| `teamkit-explore` | Approach exploration — propose 2-3 options with tradeoffs |
+| `teamkit-present` | Section-by-section design approval |
+| `teamkit-review` | Post-plan review checklist |
 
 ## Available Team Agents
 
-### Planning phase (used by team-creation skill)
+### Planning phase (used by teamkit-create skill)
 
 | Agent | subagent_type | Role |
 |-------|--------------|------|
