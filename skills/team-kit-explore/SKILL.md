@@ -1,152 +1,171 @@
 ---
 name: team-kit-explore
-description: "Propose 2-3 implementation approaches with tradeoffs. Lead invokes after requirements are clear, before planner runs."
+description: "Dispatch instructions for approach exploration. Lead invokes this after clarify, dispatches designer(phase: explore) to propose options."
 ---
 
-# team-kit-explore — Approach Exploration
+# team-kit-explore — Dispatch Designer for Approach Exploration
 
-Explore implementation approaches before committing to a design.
+This skill tells the lead HOW to run the explore phase. Designer does codebase research and proposes approaches — lead stays lean.
 
 ## When to Use
 
-Lead invokes after requirements are clear (post `team-kit-clarify` or when problem was already well-scoped).
+After `team-kit-clarify` completes (or when problem was already well-scoped). Before planner runs.
 
-**Purpose**: Prevent planner from locking into wrong approach. Surface alternatives. Get user buy-in before investing in detailed design.
+**Purpose**: Surface alternatives. Get user buy-in before investing in detailed planning.
 
-## Methodology
-
-### 1. Gather Context
-
-Use investigation-methodology to explore codebase:
+## Dispatch Flow
 
 ```
-Claude-Mem   → past work on similar problems
-CocoIndex   → existing patterns, implementations
-Arcana      → architectural decisions, gotchas
-Context-Mode → indexed session content
+dispatch designer(phase: "explore", context: {requirements})
+designer explores codebase, returns 2-3 approaches
+present approaches to user
+user selects approach
+record selection for planner
 ```
 
-**Delegation**: For complex exploration, dispatch `team-researcher` (background) while preparing approach options.
+### Step 1: Dispatch Designer
 
-### 2. Identify Approaches
+```javascript
+Agent({
+  subagent_type: "claude-plugin-pnpm:team-designer",
+  description: "Explore implementation approaches",
+  prompt: `
+Phase: explore
 
-From context, identify 2-3 viable approaches. Each approach should be:
-- **Distinct** — not minor variations of same idea
-- **Viable** — could actually work given constraints
-- **Concrete** — specific enough to compare
+Requirements:
+- Packages: ${requirements.packages.join(', ')}
+- Deliverables: ${requirements.deliverables.join(', ')}
+- Acceptance criteria: ${requirements.acceptance_criteria.join(', ')}
+- Constraints: ${requirements.constraints.join(', ')}
 
-### 3. Analyze Tradeoffs
+Problem context:
+${clarify_context.previous_answers.map(a => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n')}
 
-For each approach, identify:
-- **Pros** — what it does well
-- **Cons** — downsides, risks, costs
-- **Fit** — how well it matches requirements/constraints
+Explore codebase using investigation-methodology. Propose 2-3 approaches with tradeoffs.
+`
+})
+```
 
-### 4. Form Recommendation
+### Step 2: Present Approaches
 
-Pick one approach and articulate why:
-- Best fit for requirements
-- Lowest risk
-- Most aligned with existing patterns
-- Fastest to implement
-
-## Presentation Format
-
+Designer returns approaches in format:
 ```markdown
-Based on codebase exploration, here are 3 approaches:
+## Approaches
 
 **A: [Name]**
-[1-2 sentence description]
-- Pro: [benefit]
-- Pro: [benefit]
-- Con: [downside]
+- Pro: ...
+- Con: ...
 
 **B: [Name]**
-[1-2 sentence description]
-- Pro: [benefit]
-- Con: [downside]
-- Con: [downside]
+- Pro: ...
+- Con: ...
 
-**C: [Name]**
-[1-2 sentence description]
-- Pro: [benefit]
-- Pro: [benefit]
-- Con: [downside]
-
-**Recommendation: A**
-[Why this approach best fits requirements. Reference specific constraints or patterns from codebase.]
-
-Which approach?
+## Recommendation: [A/B/C] — [reason]
 ```
 
-## Recording Selection
+Present to user exactly as returned, then ask:
+
+> Which approach? (A/B/C, or describe alternative)
+
+### Step 3: Record Selection
 
 After user selects, record for planner:
 
-```markdown
-**Chosen approach**: [Name]
-**Key decisions**:
-- [decision 1]
-- [decision 2]
-**Constraints to honor**:
-- [constraint from requirements]
+```javascript
+explore_result = {
+  chosen_approach: "A: [Name]",
+  approach_description: "...",
+  key_decisions: [
+    "Use Redis for caching",
+    "Cache at controller level"
+  ],
+  constraints_to_honor: [
+    "backwards compatible",
+    "<50ms p99 latency"
+  ]
+}
 ```
 
-This becomes input to planner in `team-kit-create` Step 3.
+### Step 4: Confirm Key Decisions
+
+If designer flagged decisions to confirm, verify with user:
+
+> Before proceeding, confirm:
+> - Cache at controller level (not service level)?
+> - Redis (not in-memory)?
+
+Adjust `key_decisions` based on user response.
 
 ## Exit Condition
 
 Exploration complete when:
-1. 2-3 approaches presented with tradeoffs
-2. Recommendation given with reasoning
-3. User selected an approach
-4. Selection recorded
+1. 2-3 approaches presented
+2. User selected one
+3. Key decisions confirmed
 
-Then:
+Then output:
 
-> "Approach selected: [Name]. Proceeding to research and planning."
+```markdown
+Approach selected: **[Name]**
 
-## When to Skip
+Key decisions:
+- [decision 1]
+- [decision 2]
 
-Skip approach exploration when:
-- Only one viable approach exists (document why)
-- User explicitly requests specific approach
-- Problem is so constrained alternatives don't exist
+Constraints:
+- [constraint 1]
+- [constraint 2]
 
-Even then, briefly state: "Only one viable approach given [constraint]. Proceeding with [approach]."
+Proceeding to planning phase.
+```
+
+## Context for Next Phase
+
+Pass to planner (via `team-kit-create` Step 4):
+
+```javascript
+planner_input = {
+  task_description: original_problem,
+  chosen_approach: explore_result.chosen_approach,
+  key_decisions: explore_result.key_decisions,
+  constraints: explore_result.constraints_to_honor,
+  requirements: clarify_context.resolved,
+  clarify_answers: clarify_context.previous_answers
+}
+```
 
 ## Anti-Patterns
 
 | Don't | Do |
 |-------|-----|
-| Present 5+ approaches | 2-3 max — decision fatigue |
-| Minor variations as distinct approaches | Meaningfully different options |
-| Skip recommendation | Always give your pick + why |
-| Vague descriptions | Concrete, comparable approaches |
-| Ignore existing patterns | Reference codebase conventions |
-| Rush to planning | Get explicit user selection |
+| Lead explores codebase | Dispatch designer to explore |
+| Skip user selection | Always get explicit choice |
+| Proceed with ambiguous selection | Clarify before continuing |
+| Invent approaches without research | Designer uses investigation-methodology |
 
-## Example Approaches
+## Alternative Handling
 
-**For "add caching to API layer":**
+If user doesn't like any approach:
 
-**A: In-Memory LRU Cache**
-Use `lru-cache` package, cache at handler level.
-- Pro: Simple, no external dependencies
-- Pro: Sub-millisecond lookup
-- Con: Lost on restart, no cross-instance sharing
+> "None of these fit. I want [alternative description]"
 
-**B: Redis Cache Layer**
-Add Redis, cache at service layer with TTL.
-- Pro: Persistent, shared across instances
-- Pro: Rich data structures
-- Con: Operational complexity, network latency
+Options:
+1. **Minor variation**: Record as chosen approach with modifications
+2. **Major difference**: Re-dispatch designer with new constraints
 
-**C: HTTP Cache Headers**
-Use Cache-Control headers, let CDN/browser cache.
-- Pro: No server-side code
-- Pro: Scales infinitely
-- Con: Less control, cache invalidation harder
+```javascript
+// Re-dispatch with user's direction
+Agent({
+  subagent_type: "claude-plugin-pnpm:team-designer",
+  description: "Explore approaches - revised",
+  prompt: `
+Phase: explore
 
-**Recommendation: B**
-Requirements specify cross-instance sharing (multiple pods) and specific TTL control. Redis fits best. Existing `@scope/cache-utils` already has Redis client patterns.
+Previous approaches rejected. User wants: ${user_alternative}
+
+Requirements: ${requirements}
+
+Propose 2-3 NEW approaches that align with user's direction.
+`
+})
+```

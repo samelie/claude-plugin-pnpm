@@ -24,12 +24,22 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 
 ## Available Team Agents
 
+### 3-Stage Flow
+
+| Stage | Agent | Output | Focus |
+|-------|-------|--------|-------|
+| 1. Requirements | `team-designer` (phases: clarify→explore→write) | `requirements.md` | WHAT — user needs, constraints, acceptance criteria |
+| 2. Design | `planner` | `design.md` | HOW — technical architecture, patterns, interfaces |
+| 3. Planning | `planner` | `team-plan.md` | TASKS — executable work with agent assignments |
+
+**Phase-based pattern**: Lead dispatches designer multiple times with specific phases (clarify, explore, present, write). Each dispatch does ONE thing and returns. Lead stays lean, maintains state between dispatches.
+
 ### Planning phase (used by team-kit-create skill)
 
 | Agent | subagent_type | Role |
 |-------|--------------|------|
-| `team-designer` | `claude-plugin-pnpm:team-designer` | Requirements + spec — spawned FIRST when requirements unclear. Outputs spec.md, hands off to planner. |
-| `planner` | `claude-plugin-pnpm:planner` | Planning agent — reads spec.md (if exists), produces design.md + team-plan.md. |
+| `team-designer` | `claude-plugin-pnpm:team-designer` | Phase-aware requirements specialist. Dispatched with phase: clarify\|explore\|present\|write. Stateless — lead maintains context. |
+| `planner` | `claude-plugin-pnpm:planner` | Design + planning — produces design.md (HOW) + team-plan.md (TASKS). |
 | `team-researcher` | `claude-plugin-pnpm:team-researcher` | Read-only investigation via Arcana + CocoIndex + code. Dispatched in background before planner for deep context. |
 
 ### Execution phase (dispatched by team lead)
