@@ -12,13 +12,26 @@
 ### Lead (the orchestrator)
 
 - Creates team via `TeamCreate`
+- Creates team-session folder: `team-session/YYYYMMDD-{team-name}/`
 - Enables delegate mode (Shift+Tab) immediately after TeamCreate
+- Spawns designer first (if requirements unclear) — waits for approved spec
 - Creates ALL tasks via `TaskCreate` with `blockedBy` dependencies before spawning agents
 - Spawns agents via `Task` tool with `team_name`, `name`, `mode` params
+- Provides team-session path to all agents in their prompts
 - **Does NOT implement** — only orchestrates and gates phase transitions
 - Monitors `TaskList`; advances phases when dependencies resolve
 - Runs final verification after all phases
 - Sends `shutdown_request` to all agents when done, then `TeamDelete`
+
+### Designer (requirements + spec)
+
+- Uses `team-designer` agent definition
+- Spawned FIRST when requirements are unclear or need user approval
+- Follows `brainstorm-session` skill: explore → questions → approaches → design → spec
+- Outputs `context.md` and `spec.md` to team-session folder
+- Gets user approval before completing
+- Hands off to planner after spec approved
+- **Does NOT plan tasks or write code** — only gathers requirements and produces spec
 
 ### Quarterback (QA reviewer)
 
@@ -164,18 +177,80 @@ Every sub-agent MUST end its final message with exactly one of:
 ```
 STATUS: CLEAN
 ```
+Work complete, no issues.
+
+```
+STATUS: DONE_WITH_CONCERNS — <brief concern>
+```
+Work complete but agent has doubts about correctness or approach. Lead should review concerns before proceeding.
+
+```
+STATUS: NEEDS_CONTEXT — <what's missing>
+```
+Agent cannot proceed without additional information. Lead provides context and re-dispatches.
+
+```
+STATUS: BLOCKED — <reason>
+```
+Agent cannot complete task. Lead assesses:
+1. Context problem → provide more context, re-dispatch same model
+2. Task too complex → re-dispatch with more capable model
+3. Task too large → break into smaller pieces
+4. Plan is wrong → escalate to human
 
 ```
 STATUS: ERRORS_REMAINING: <count> errors in <packages>
 ```
+Work attempted but issues remain. Include what was tried.
 
 ```
 STATUS: PARTIAL — completed N/M tasks, remaining: <list>
 ```
+Some work done, more remains. Include summary of progress.
+
+**Handling statuses:**
+
+| Status | Lead Action |
+|--------|-------------|
+| CLEAN | Proceed to next step (review or next task) |
+| DONE_WITH_CONCERNS | Read concerns, address if needed, then proceed |
+| NEEDS_CONTEXT | Provide missing info, re-dispatch |
+| BLOCKED | Assess blocker, adjust approach, re-dispatch or escalate |
+| ERRORS_REMAINING | Review errors, dispatch fix or fresh agent |
+| PARTIAL | Continue with next agent or re-dispatch for remaining |
 
 If no STATUS line in output, the system treats it as ERRORS_REMAINING and respawns.
 
 Include a brief summary of completed work so the next agent doesn't redo it.
+
+---
+
+## Model Selection
+
+Use the least powerful model that can handle each role to conserve cost and increase speed.
+
+| Task Type | Model | Examples |
+|-----------|-------|----------|
+| Mechanical | sonnet | Lint fix, type fix, knip cleanup, simple edits |
+| Integration | sonnet/opus | Multi-file changes, pattern matching |
+| Architecture/Design | opus | Planning, design, complex debugging |
+| Review | sonnet | Spec review, quality review |
+| Investigation | opus | Deep-dive analysis, root cause |
+
+**Task complexity signals:**
+- Touches 1-2 files with complete spec → sonnet
+- Touches multiple files with integration concerns → sonnet or opus
+- Requires design judgment or broad codebase understanding → opus
+
+**Default assignments:**
+- `team-designer` → opus (requires judgment)
+- `planner` → opus (architecture decisions)
+- `team-coder` → sonnet (mechanical implementation)
+- `team-spec-reviewer` → sonnet (checklist comparison)
+- `team-reviewer` → sonnet (quality checklist)
+- `team-investigator` → opus (root cause analysis)
+- `team-architect` → opus (deep-dive analysis)
+- `team-verifier` → sonnet (run commands, report results)
 
 ---
 
