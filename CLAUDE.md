@@ -8,6 +8,8 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 
 **Debug trigger:** "as a team, debug..." or "as a team, investigate..." → uses debug-investigation template.
 
+**Design trigger:** "as a team, design..." or "as a team, spec..." → spawns team-designer first, then planner.
+
 ## Teamkit Skills
 
 | Skill | Purpose |
@@ -18,6 +20,7 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 | `team-kit-present` | Section-by-section design approval |
 | `team-kit-review` | Post-plan review checklist |
 | `debug-session` | Root cause investigation methodology — single-agent or team escalation |
+| `brainstorm-session` | Requirements gathering and design — single-agent or team escalation |
 
 ## Available Team Agents
 
@@ -25,7 +28,8 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 
 | Agent | subagent_type | Role |
 |-------|--------------|------|
-| `planner` | `claude-plugin-pnpm:planner` | **THE** initial planning agent — produces design.md + team-plan.md. Always use this, not team-architect, for initial planning. |
+| `team-designer` | `claude-plugin-pnpm:team-designer` | Requirements + spec — spawned FIRST when requirements unclear. Outputs spec.md, hands off to planner. |
+| `planner` | `claude-plugin-pnpm:planner` | Planning agent — reads spec.md (if exists), produces design.md + team-plan.md. |
 | `team-researcher` | `claude-plugin-pnpm:team-researcher` | Read-only investigation via Arcana + CocoIndex + code. Dispatched in background before planner for deep context. |
 
 ### Execution phase (dispatched by team lead)
@@ -36,7 +40,8 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 | `team-investigator` | `claude-plugin-pnpm:team-investigator` | Root cause investigation — systematic debugging Phases 1-3. Used by debug-investigation template. |
 | `team-architect` | `claude-plugin-pnpm:team-architect` | Deep-dive module analyst — used mid-execution when a specific subsystem needs investigation before coders start. NOT for initial planning. |
 | `team-coder` | `claude-plugin-pnpm:team-coder` | Implement assigned subtasks |
-| `team-reviewer` | `claude-plugin-pnpm:team-reviewer` | Code review |
+| `team-spec-reviewer` | `claude-plugin-pnpm:team-spec-reviewer` | Spec compliance review — runs BEFORE quality review |
+| `team-reviewer` | `claude-plugin-pnpm:team-reviewer` | Code quality review — runs AFTER spec review |
 | `team-tester` | `claude-plugin-pnpm:team-tester` | Write + run tests |
 | `team-auditor` | `claude-plugin-pnpm:team-auditor` | Post-implementation audit |
 | `team-security-auditor` | `claude-plugin-pnpm:team-security-auditor` | OWASP security audit |

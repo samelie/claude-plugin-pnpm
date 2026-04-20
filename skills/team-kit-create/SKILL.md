@@ -94,6 +94,7 @@ Parse input to determine path:
 | `list` | **List** — show templates, stop |
 | `health`, `deep-clean`, `knip-audit`, `debug` | **Template** — present existing template |
 | Contains "debug", "investigate", "root cause", "why is...broken" | **Debug** — use debug template with issue extracted |
+| Contains "design", "spec", "requirements", "what should we build" | **Design** — spawn team-designer first, then planner |
 | Clear, detailed spec | **Plan** — skip clarification, go to Step 3 |
 | Vague, broad, or exploratory | **Clarify** — invoke team-kit-clarify first |
 | No args | **Interactive** — ask what they want to build |

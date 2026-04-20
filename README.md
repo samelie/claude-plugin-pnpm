@@ -19,6 +19,7 @@ Install at your pnpm monorepo root.
 | `/full-monorepo-pnpm` | full monorepo, all packages, workspace-wide | Run lint/types/knip/test across ALL workspace packages in parallel batches |
 | `/pnpm-workspace-filter` | lint, types, test, knip | Run + fix lint/types/test/knip on changed packages |
 | `/debug-session` | debug, bug, investigate, root cause | Root cause investigation methodology — single-agent or team escalation |
+| `/brainstorm-session` | brainstorm, design, spec, requirements | Requirements gathering and design — single-agent or team escalation |
 
 ## Agents
 
@@ -28,13 +29,16 @@ Install at your pnpm monorepo root.
 | `pnpm-workspace-filter` | sonnet | Single-package fixer — runs and fixes lint/types/test/knip errors |
 | `quarterback` | opus | QA reviewer — read-only code review, pattern adherence, requirement verification |
 | `planner` | opus | Generates executable team plans following the FRAMEWORK |
+| `team-designer` | opus | Requirements + spec — spawned before planner when requirements unclear |
 | `team-investigator` | opus | Root cause investigation — systematic debugging Phases 1-3 |
+| `team-spec-reviewer` | sonnet | Spec compliance review — runs before quality review |
 
 ## Team Templates
 
 The plugin includes a complete agent team framework for orchestrating multi-agent work:
 
-- **FRAMEWORK.md** — Invariant rules for all agent teams: roles, phase gating, file ownership, STATUS protocol, recovery, model selection
+- **FRAMEWORK.md** — Invariant rules for all agent teams: roles, phase gating, file ownership, STATUS protocol, model selection
+- **prompts/** — Prompt templates for implementer, spec-reviewer, quality-reviewer
 - **PLANNER.md** — Planning methodology: how to group tasks, determine file ownership, order phases, decide on QB/hooks
 - **team-template-base.md** — Fill-in-the-blanks starter template for new team plans
 
