@@ -92,7 +92,8 @@ Parse input to determine path:
 | Input | Path |
 |-------|------|
 | `list` | **List** — show templates, stop |
-| `health`, `deep-clean`, `knip-audit` | **Template** — present existing template |
+| `health`, `deep-clean`, `knip-audit`, `debug` | **Template** — present existing template |
+| Contains "debug", "investigate", "root cause", "why is...broken" | **Debug** — use debug template with issue extracted |
 | Clear, detailed spec | **Plan** — skip clarification, go to Step 3 |
 | Vague, broad, or exploratory | **Clarify** — invoke team-kit-clarify first |
 | No args | **Interactive** — ask what they want to build |
@@ -117,12 +118,14 @@ Available team templates:
   health             — lint/types/knip/test on changed packages
   deep-clean         — full workspace sweep, all checks
   knip-audit         — dead code audit across workspace
+  debug              — systematic debugging for complex bugs
   k8s-jobs-migration — migrate k8s job definitions
   migrate-scripts    — migrate monorepo scripts
 
 Usage:
   /team-kit-create <name>           — use a template
   /team-kit-create <description>    — plan a custom team
+  /team-kit-create debug <issue>    — debug investigation team
 ```
 
 Stop after listing.
@@ -136,6 +139,7 @@ Map shortcut to file:
 | `health` | `${CLAUDE_PLUGIN_ROOT}/team-templates/monorepo-health.md` |
 | `deep-clean` | `${CLAUDE_PLUGIN_ROOT}/team-templates/monorepo-deep-clean.md` |
 | `knip-audit` | `${CLAUDE_PLUGIN_ROOT}/team-templates/knip-config-audit.md` |
+| `debug` | `${CLAUDE_PLUGIN_ROOT}/team-templates/debug-investigation.md` |
 
 1. Read the template
 2. Present summary (name, agents, phases, cost estimate)

@@ -1,24 +1,33 @@
 #!/usr/bin/env bash
 # session-start - SessionStart hook for team
-# Creates session directory in $TMPDIR and symlinks from project root.
-# Previous sessions expire naturally with temp directory cleanup.
+# Preserves existing team-session directory/symlink if valid.
+# Creates new session in $TMPDIR only if none exists or symlink target expired.
+# Team subfolders (YYYYMMDD-{slug}) persist across CC sessions.
 
 TMPBASE="${TMPDIR:-/tmp}"
 SESSION_DIR="${TMPBASE}/team-kit-session-$(date +%Y%m%d-%H%M%S)"
 
-# Clean up previous session link/directory
+# Preserve existing team-session if valid, else create new
 if [ -L team-session ]; then
-  rm -f team-session
+  # Symlink — verify target exists
+  if [ -d "$(readlink team-session)" ]; then
+    SESSION_DIR="$(readlink team-session)"
+  else
+    rm -f team-session
+    mkdir -p "$SESSION_DIR"
+    ln -s "$SESSION_DIR" team-session
+  fi
 elif [ -d team-session ]; then
-  rm -rf team-session
+  # Real directory — use as-is
+  SESSION_DIR="$(pwd)/team-session"
+else
+  # No team-session — create new
+  mkdir -p "$SESSION_DIR"
+  ln -s "$SESSION_DIR" team-session
 fi
 
-# Create new session in temp
-mkdir -p "$SESSION_DIR"
+# Update meta.json with current session start
 echo "{\"startedAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"tmpPath\": \"${SESSION_DIR}\"}" > "$SESSION_DIR/meta.json"
-
-# Symlink from project root - agents use team-session/ paths transparently
-ln -s "$SESSION_DIR" team-session
 
 # Build context
 BASE="Team session directory ready at team-session/ (backed by ${SESSION_DIR}). Use write-findings and read-findings skills to exchange data between agents."

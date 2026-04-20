@@ -18,6 +18,7 @@ Install at your pnpm monorepo root.
 | `/changeset` | changeset, add changeset, describe changes | Generate a `.changeset/<id>.md` from git diff |
 | `/full-monorepo-pnpm` | full monorepo, all packages, workspace-wide | Run lint/types/knip/test across ALL workspace packages in parallel batches |
 | `/pnpm-workspace-filter` | lint, types, test, knip | Run + fix lint/types/test/knip on changed packages |
+| `/debug-session` | debug, bug, investigate, root cause | Root cause investigation methodology — single-agent or team escalation |
 
 ## Agents
 
@@ -27,6 +28,7 @@ Install at your pnpm monorepo root.
 | `pnpm-workspace-filter` | sonnet | Single-package fixer — runs and fixes lint/types/test/knip errors |
 | `quarterback` | opus | QA reviewer — read-only code review, pattern adherence, requirement verification |
 | `planner` | opus | Generates executable team plans following the FRAMEWORK |
+| `team-investigator` | opus | Root cause investigation — systematic debugging Phases 1-3 |
 
 ## Team Templates
 
@@ -180,3 +182,7 @@ Match the interpreter to the script's shebang (`bash` for `#!/usr/bin/env bash`,
 ### Plugin changes take effect on next session start, not mid-session
 
 Hooks, skills, and agents are loaded once when a Claude Code session starts. After reinstalling the plugin, current sessions keep running the old code. Start a new session in the project to pick up changes.
+
+## Attribution
+
+The systematic debugging methodology is adapted from [obra/superpowers](https://github.com/obra/superpowers), an excellent Claude Code plugin for structured engineering workflows.

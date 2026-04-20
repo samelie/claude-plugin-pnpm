@@ -19,6 +19,32 @@ You will receive:
 
 ---
 
+## Team Naming Convention
+
+Derive `{team-name}` using this format:
+
+```
+YYYYMMDD-{slug}
+```
+
+Where:
+- `YYYYMMDD` = current date (e.g., `20260420`)
+- `{slug}` = kebab-case summary of task, max 30 chars
+
+**Examples**:
+- Task: "Refactor auth middleware" → `20260420-refactor-auth-middleware`
+- Task: "Add user profile API endpoints" → `20260420-user-profile-api`
+- Task: "Fix race condition in queue processor" → `20260420-fix-queue-race`
+
+**For templates**: Use template name without date prefix (e.g., `knip-audit`, `monorepo-health`).
+
+This naming ensures:
+1. Teams ordered chronologically in `team-session/`
+2. Multiple teams can coexist without collision
+3. Semantic meaning preserved for debugging
+
+---
+
 ## Your Outputs
 
 Generate these artifacts in `team-session/{team-name}/`:
