@@ -6,6 +6,8 @@ When the user's message starts with **"as a team"** (e.g., "as a team, refactor 
 
 Other trigger phrases: "team up on", "work as a team on", "let's team up", "team-kit".
 
+**Debug trigger:** "as a team, debug..." or "as a team, investigate..." → uses debug-investigation template.
+
 ## Teamkit Skills
 
 | Skill | Purpose |
@@ -15,6 +17,7 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 | `team-kit-explore` | Approach exploration — propose 2-3 options with tradeoffs |
 | `team-kit-present` | Section-by-section design approval |
 | `team-kit-review` | Post-plan review checklist |
+| `debug-session` | Root cause investigation methodology — single-agent or team escalation |
 
 ## Available Team Agents
 
@@ -30,6 +33,7 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 | Agent | subagent_type | Role |
 |-------|--------------|------|
 | `team-monitor` | `claude-plugin-pnpm:team-monitor` | Health observer — tracks agent activity, task state, flags anomalies. Read-only. Use for 5+ agent teams. |
+| `team-investigator` | `claude-plugin-pnpm:team-investigator` | Root cause investigation — systematic debugging Phases 1-3. Used by debug-investigation template. |
 | `team-architect` | `claude-plugin-pnpm:team-architect` | Deep-dive module analyst — used mid-execution when a specific subsystem needs investigation before coders start. NOT for initial planning. |
 | `team-coder` | `claude-plugin-pnpm:team-coder` | Implement assigned subtasks |
 | `team-reviewer` | `claude-plugin-pnpm:team-reviewer` | Code review |

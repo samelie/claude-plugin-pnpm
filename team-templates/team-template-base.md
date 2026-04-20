@@ -2,6 +2,13 @@
 
 > Copy this file, rename it, and fill in the placeholders (`{...}`) to create a new team template.
 
+## Team Naming Convention
+
+`{team-name}` format: `YYYYMMDD-{slug}` (e.g., `20260420-refactor-auth`)
+- Date prefix enables chronological ordering in `team-session/`
+- Slug: kebab-case task summary, max 30 chars
+- Templates (knip-audit, monorepo-health) may omit date prefix
+
 ---
 
 ```yaml

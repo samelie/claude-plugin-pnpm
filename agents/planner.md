@@ -33,6 +33,19 @@ You will receive:
 
 **Important**: Honor the chosen approach. Do not propose alternatives — the user already selected from options. Your job is to execute the chosen approach into a detailed plan.
 
+## Team Naming Convention
+
+Derive `{team-name}` using this format: `YYYYMMDD-{slug}`
+
+- `YYYYMMDD` = current date
+- `{slug}` = kebab-case summary of task, max 30 chars
+
+Examples:
+- "Refactor auth middleware" → `20260420-refactor-auth-middleware`
+- "Add user profile API" → `20260420-user-profile-api`
+
+Templates use fixed names without date prefix (e.g., `knip-audit`).
+
 ## Your Outputs
 
 Generate these artifacts in `team-session/{team-name}/`:
