@@ -17,7 +17,7 @@
 - Spawns designer first (if requirements unclear) — waits for approved spec
 - Creates ALL tasks via `TaskCreate` with `blockedBy` dependencies before spawning agents
 - Spawns agents via `Task` tool with `team_name`, `name`, `mode` params
-- Provides team-session path to all agents in their prompts
+- **CRITICAL**: Provides session path to ALL agents in their prompts (see Session Path below)
 - **Does NOT implement** — only orchestrates and gates phase transitions
 - Monitors `TaskList`; advances phases when dependencies resolve
 - Runs final verification after all phases
@@ -77,6 +77,51 @@
 - Previous teams had coordination issues
 
 **Skip for:** Small teams (2-3 agents) — lead can track directly.
+
+---
+
+## Session Path (CRITICAL)
+
+**Every agent prompt MUST include the session path.** Without it, agents write to wrong locations.
+
+### Lead creates session folder
+
+```bash
+mkdir -p team-session/YYYYMMDD-{team-name}
+```
+
+### Lead includes in EVERY agent prompt
+
+```markdown
+## Session Path
+
+Session path: `team-session/YYYYMMDD-{team-name}/`
+
+Write all output to: `{session_path}/{your-name}/`
+Read other agents from: `{session_path}/{agent-name}/`
+```
+
+### Why this matters
+
+Agents use `write-findings` and `read-findings` skills. These skills need to know WHERE:
+- Without session path: agents write to `team-session/researcher/` (WRONG)
+- With session path: agents write to `team-session/20260420-feature/researcher/` (CORRECT)
+
+### Example agent prompt
+
+```markdown
+You are researcher on team 20260420-cs-submittals.
+
+## Session Path
+
+Session path: `team-session/20260420-cs-submittals/`
+
+Write findings to: `team-session/20260420-cs-submittals/researcher/`
+Read architect output from: `team-session/20260420-cs-submittals/architect/`
+
+## Your Task
+...
+```
 
 ---
 

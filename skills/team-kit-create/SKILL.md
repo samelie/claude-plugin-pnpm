@@ -285,6 +285,10 @@ Proceed to Step 4.
 Dispatch `team-researcher` agent in background:
 
 ```javascript
+// First, create session folder
+const session_path = `team-session/${team_name}/`
+// mkdir -p ${session_path}
+
 Agent({
   subagent_type: "claude-plugin-pnpm:team-researcher",
   model: "opus",
@@ -293,6 +297,11 @@ Agent({
   prompt: `
 Investigate the following for an upcoming team planning session:
 
+## Session Path
+Session path: \`${session_path}\`
+Write output to: \`${session_path}researcher/\`
+
+## Task
 Task: ${task_description}
 Chosen approach: ${explore_result.chosen_approach}
 Affected packages: ${clarify_context.resolved.packages}
@@ -317,6 +326,12 @@ Agent({
   subagent_type: "claude-plugin-pnpm:planner",
   model: "opus",
   prompt: `
+## Session Path
+Session path: \`${session_path}\`
+Write output to: \`${session_path}\`
+Read researcher findings from: \`${session_path}researcher/\`
+
+## Task
 Task: ${task_description}
 
 **Chosen approach**: ${explore_result.chosen_approach}
