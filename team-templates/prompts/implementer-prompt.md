@@ -7,7 +7,7 @@ Use this template when spawning a coder/implementer agent.
 ```
 Agent(
   subagent_type = "claude-plugin-pnpm:team-coder",
-  model = "sonnet",  // or opus for complex tasks
+  model = "opus",
   name = "{agent-name}",
   prompt = """
 You are implementing Task {N}: {task name}

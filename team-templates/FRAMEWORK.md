@@ -231,8 +231,8 @@ Use the least powerful model that can handle each role to conserve cost and incr
 
 | Task Type | Model | Examples |
 |-----------|-------|----------|
-| Mechanical | sonnet | Lint fix, type fix, knip cleanup, simple edits |
-| Integration | sonnet/opus | Multi-file changes, pattern matching |
+| Mechanical | sonnet | Lint fix, type fix, knip cleanup |
+| Implementation | opus | Feature code, multi-file changes |
 | Architecture/Design | opus | Planning, design, complex debugging |
 | Review | sonnet | Spec review, quality review |
 | Investigation | opus | Deep-dive analysis, root cause |
@@ -245,7 +245,7 @@ Use the least powerful model that can handle each role to conserve cost and incr
 **Default assignments:**
 - `team-designer` → opus (requires judgment)
 - `planner` → opus (architecture decisions)
-- `team-coder` → sonnet (mechanical implementation)
+- `team-coder` → opus (implementation quality matters)
 - `team-spec-reviewer` → sonnet (checklist comparison)
 - `team-reviewer` → sonnet (quality checklist)
 - `team-investigator` → opus (root cause analysis)
