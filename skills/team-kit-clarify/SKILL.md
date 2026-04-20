@@ -1,9 +1,9 @@
 ---
-name: teamkit-clarify
+name: team-kit-clarify
 description: "Extract requirements from vague problems. Lead invokes when problem scope is unclear. One question at a time methodology."
 ---
 
-# teamkit-clarify — Requirements Extraction
+# team-kit-clarify — Requirements Extraction
 
 Turn vague problems into clear requirements through focused questioning.
 
@@ -108,7 +108,7 @@ When complete:
 
 > "Requirements clear. Proceeding to approach exploration."
 
-Then invoke `teamkit-explore`.
+Then invoke `team-kit-explore`.
 
 ## Anti-Patterns
 

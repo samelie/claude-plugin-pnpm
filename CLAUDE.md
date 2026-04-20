@@ -2,23 +2,23 @@
 
 ## Team Trigger
 
-When the user's message starts with **"as a team"** (e.g., "as a team, refactor the auth middleware"), invoke the `/teamkit-create` skill with the rest of the message as the task description. This is the natural language entry point for multi-agent team planning.
+When the user's message starts with **"as a team"** (e.g., "as a team, refactor the auth middleware"), invoke the `/team-kit-create` skill with the rest of the message as the task description. This is the natural language entry point for multi-agent team planning.
 
-Other trigger phrases: "team up on", "work as a team on", "let's team up", "teamkit".
+Other trigger phrases: "team up on", "work as a team on", "let's team up", "team-kit".
 
 ## Teamkit Skills
 
 | Skill | Purpose |
 |-------|---------|
-| `teamkit-create` | Orchestrator — scope problem, create team plan, deliver spawn prompt |
-| `teamkit-clarify` | Requirements extraction — one question at a time |
-| `teamkit-explore` | Approach exploration — propose 2-3 options with tradeoffs |
-| `teamkit-present` | Section-by-section design approval |
-| `teamkit-review` | Post-plan review checklist |
+| `team-kit-create` | Orchestrator — scope problem, create team plan, deliver spawn prompt |
+| `team-kit-clarify` | Requirements extraction — one question at a time |
+| `team-kit-explore` | Approach exploration — propose 2-3 options with tradeoffs |
+| `team-kit-present` | Section-by-section design approval |
+| `team-kit-review` | Post-plan review checklist |
 
 ## Available Team Agents
 
-### Planning phase (used by teamkit-create skill)
+### Planning phase (used by team-kit-create skill)
 
 | Agent | subagent_type | Role |
 |-------|--------------|------|
@@ -29,6 +29,7 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 
 | Agent | subagent_type | Role |
 |-------|--------------|------|
+| `team-monitor` | `claude-plugin-pnpm:team-monitor` | Health observer — tracks agent activity, task state, flags anomalies. Read-only. Use for 5+ agent teams. |
 | `team-architect` | `claude-plugin-pnpm:team-architect` | Deep-dive module analyst — used mid-execution when a specific subsystem needs investigation before coders start. NOT for initial planning. |
 | `team-coder` | `claude-plugin-pnpm:team-coder` | Implement assigned subtasks |
 | `team-reviewer` | `claude-plugin-pnpm:team-reviewer` | Code review |

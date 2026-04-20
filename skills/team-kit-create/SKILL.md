@@ -1,9 +1,9 @@
 ---
-name: teamkit-create
-description: "Scope a problem and create a multi-agent team plan with roles, task lists, and spawn prompt. Triggers: team, agent team, multi-agent, create team, team plan, orchestrate agents, team template, teamkit, parallel team, as a team, team up, work as a team"
+name: team-kit-create
+description: "Scope a problem and create a multi-agent team plan with roles, task lists, and spawn prompt. Triggers: team, agent team, multi-agent, create team, team plan, orchestrate agents, team template, team-kit, parallel team, as a team, team up, work as a team"
 ---
 
-# /teamkit-create — Scope, Plan, and Structure a Multi-Agent Team
+# /team-kit-create — Scope, Plan, and Structure a Multi-Agent Team
 
 Turn a problem into an agent team plan. This skill handles **creation only** — scoping the problem, defining roles, building the task list, and producing a spawn prompt. Execution (TeamCreate, spawning agents, phase gating) happens after.
 
@@ -14,21 +14,21 @@ Turn a problem into an agent team plan. This skill handles **creation only** —
 ```
 
 ```dot
-digraph teamkit_create {
+digraph team-kit_create {
   "Input received" [shape=doublecircle];
   "Is it a known template?" [shape=diamond];
   "Present template summary" [shape=box];
   "Is the problem well-scoped?" [shape=diamond];
-  "Invoke teamkit-clarify" [shape=box];
+  "Invoke team-kit-clarify" [shape=box];
   "Scope + requirements clear" [shape=box];
   "Is this a team-sized problem?" [shape=diamond];
   "Redirect to writing-plans" [shape=box];
-  "Invoke teamkit-explore" [shape=box];
+  "Invoke team-kit-explore" [shape=box];
   "Approach selected" [shape=box];
   "Dispatch researcher + planner" [shape=box];
-  "Invoke teamkit-present" [shape=box];
+  "Invoke team-kit-present" [shape=box];
   "Design approved?" [shape=diamond];
-  "Invoke teamkit-review" [shape=box];
+  "Invoke team-kit-review" [shape=box];
   "Review passed?" [shape=diamond];
   "User file review gate" [shape=box];
   "Deliver spawn prompt" [shape=doublecircle];
@@ -37,19 +37,19 @@ digraph teamkit_create {
   "Is it a known template?" -> "Present template summary" [label="yes"];
   "Present template summary" -> "Deliver spawn prompt";
   "Is it a known template?" -> "Is the problem well-scoped?" [label="no"];
-  "Is the problem well-scoped?" -> "Invoke teamkit-clarify" [label="no — vague/broad"];
+  "Is the problem well-scoped?" -> "Invoke team-kit-clarify" [label="no — vague/broad"];
   "Is the problem well-scoped?" -> "Is this a team-sized problem?" [label="yes — clear spec"];
-  "Invoke teamkit-clarify" -> "Scope + requirements clear";
+  "Invoke team-kit-clarify" -> "Scope + requirements clear";
   "Scope + requirements clear" -> "Is this a team-sized problem?";
   "Is this a team-sized problem?" -> "Redirect to writing-plans" [label="no — single agent"];
-  "Is this a team-sized problem?" -> "Invoke teamkit-explore" [label="yes"];
-  "Invoke teamkit-explore" -> "Approach selected";
+  "Is this a team-sized problem?" -> "Invoke team-kit-explore" [label="yes"];
+  "Invoke team-kit-explore" -> "Approach selected";
   "Approach selected" -> "Dispatch researcher + planner";
-  "Dispatch researcher + planner" -> "Invoke teamkit-present";
-  "Invoke teamkit-present" -> "Design approved?";
-  "Design approved?" -> "Invoke teamkit-present" [label="no, revise"];
-  "Design approved?" -> "Invoke teamkit-review" [label="yes"];
-  "Invoke teamkit-review" -> "Review passed?";
+  "Dispatch researcher + planner" -> "Invoke team-kit-present";
+  "Invoke team-kit-present" -> "Design approved?";
+  "Design approved?" -> "Invoke team-kit-present" [label="no, revise"];
+  "Design approved?" -> "Invoke team-kit-review" [label="yes"];
+  "Invoke team-kit-review" -> "Review passed?";
   "Review passed?" -> "Dispatch researcher + planner" [label="major issues"];
   "Review passed?" -> "User file review gate" [label="yes"];
   "User file review gate" -> "Deliver spawn prompt";
@@ -59,12 +59,12 @@ digraph teamkit_create {
 ## Usage
 
 ```
-/teamkit-create                        # interactive — asks what you need
-/teamkit-create <description>          # scope + plan a team for this task
-/teamkit-create health                 # existing template: monorepo health
-/teamkit-create deep-clean             # existing template: full sweep
-/teamkit-create knip-audit             # existing template: dead code audit
-/teamkit-create list                   # show available templates
+/team-kit-create                        # interactive — asks what you need
+/team-kit-create <description>          # scope + plan a team for this task
+/team-kit-create health                 # existing template: monorepo health
+/team-kit-create deep-clean             # existing template: full sweep
+/team-kit-create knip-audit             # existing template: dead code audit
+/team-kit-create list                   # show available templates
 ```
 
 ---
@@ -94,7 +94,7 @@ Parse input to determine path:
 | `list` | **List** — show templates, stop |
 | `health`, `deep-clean`, `knip-audit` | **Template** — present existing template |
 | Clear, detailed spec | **Plan** — skip clarification, go to Step 3 |
-| Vague, broad, or exploratory | **Clarify** — invoke teamkit-clarify first |
+| Vague, broad, or exploratory | **Clarify** — invoke team-kit-clarify first |
 | No args | **Interactive** — ask what they want to build |
 
 ### How to judge "well-scoped"
@@ -121,8 +121,8 @@ Available team templates:
   migrate-scripts    — migrate monorepo scripts
 
 Usage:
-  /teamkit-create <name>           — use a template
-  /teamkit-create <description>    — plan a custom team
+  /team-kit-create <name>           — use a template
+  /team-kit-create <description>    — plan a custom team
 ```
 
 Stop after listing.
@@ -142,12 +142,12 @@ Map shortcut to file:
 3. Generate the spawn prompt (see Step 7)
 4. **Done** — skill ends here
 
-## Step 2c: Clarify (invoke teamkit-clarify)
+## Step 2c: Clarify (invoke team-kit-clarify)
 
 When problem is vague/broad, invoke clarification:
 
 ```
-Skill tool: teamkit-clarify
+Skill tool: team-kit-clarify
 ```
 
 This skill handles one-question-at-a-time requirements extraction:
@@ -173,12 +173,12 @@ If team-sized: proceed to Step 3.
 
 ---
 
-## Step 3: Approach Exploration (invoke teamkit-explore)
+## Step 3: Approach Exploration (invoke team-kit-explore)
 
 Before committing to a design, explore alternatives:
 
 ```
-Skill tool: teamkit-explore
+Skill tool: team-kit-explore
 ```
 
 This skill handles:
@@ -257,12 +257,12 @@ Planner produces:
 
 ---
 
-## Step 5: Present Design (invoke teamkit-present)
+## Step 5: Present Design (invoke team-kit-present)
 
 After planner returns, present design section-by-section:
 
 ```
-Skill tool: teamkit-present
+Skill tool: team-kit-present
 ```
 
 This skill handles incremental approval:
@@ -277,12 +277,12 @@ After all sections approved, proceed to Step 6.
 
 ---
 
-## Step 6: Post-Plan Review (invoke teamkit-review)
+## Step 6: Post-Plan Review (invoke team-kit-review)
 
 Run review checklist on design.md + team-plan.md:
 
 ```
-Skill tool: teamkit-review
+Skill tool: team-kit-review
 ```
 
 This skill checks:
@@ -357,7 +357,7 @@ Lead orchestrates, does NOT implement. Lead delegates to subagents:
 
 Lead owns:
 - User communication (clarification, approach selection, approvals)
-- Skill invocation (teamkit-clarify, teamkit-explore, teamkit-present, teamkit-review)
+- Skill invocation (team-kit-clarify, team-kit-explore, team-kit-present, team-kit-review)
 - Synthesizing subagent findings
 - Final spawn prompt delivery
 
@@ -374,12 +374,12 @@ Lead owns:
 
 | Skill | Relationship |
 |-------|-------------|
-| `teamkit-clarify` | Invoked in Step 2c for requirements extraction |
-| `teamkit-explore` | Invoked in Step 3 for approach exploration |
-| `teamkit-present` | Invoked in Step 5 for section-by-section approval |
-| `teamkit-review` | Invoked in Step 6 for post-plan review |
-| `investigation-methodology` | Used by teamkit-explore and researcher for codebase exploration |
-| `superpowers:dispatching-parallel-agents` | Covers execution after spawn prompt is pasted |
+| `team-kit-clarify` | Invoked in Step 2c for requirements extraction |
+| `team-kit-explore` | Invoked in Step 3 for approach exploration |
+| `team-kit-present` | Invoked in Step 5 for section-by-section approval |
+| `team-kit-review` | Invoked in Step 6 for post-plan review |
+| `investigation-methodology` | Used by team-kit-explore and researcher for codebase exploration |
+| (execution phase) | After spawn prompt, lead follows FRAMEWORK.md orchestration checklist |
 
 ## Related Agents
 

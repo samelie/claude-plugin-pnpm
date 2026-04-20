@@ -25,9 +25,9 @@ Run queries covering the task topic, affected packages, and related modules. Wit
 You will receive:
 
 1. **Task description** — what needs to be done (feature, refactor, audit, etc.)
-2. **Chosen approach** — the approach user selected from teamkit-explore options
+2. **Chosen approach** — the approach user selected from team-kit-explore options
 3. **Key decisions** — specific decisions made during approach exploration
-4. **Constraints** — from requirements clarification (teamkit-clarify)
+4. **Constraints** — from requirements clarification (team-kit-clarify)
 5. **App context** — relevant codebase paths, patterns, types, package names (augmented by knowledge tool results)
 6. **Package scope** — which pnpm packages are affected
 

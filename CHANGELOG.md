@@ -1,12 +1,16 @@
 ## 0.2.0
 
-- **feat**: new teamkit skills family for self-contained team planning:
-  - `teamkit-create` — orchestrator (renamed from `team-creation`)
-  - `teamkit-clarify` — requirements extraction, one question at a time
-  - `teamkit-explore` — propose 2-3 approaches with tradeoffs
-  - `teamkit-present` — section-by-section design approval
-  - `teamkit-review` — post-plan review checklist
-- **feat**: removed `superpowers:brainstorming` dependency — teamkit is now fully self-contained
+- **feat**: new team-kit skills family for self-contained team planning:
+  - `team-kit-create` — orchestrator (renamed from `team-creation`)
+  - `team-kit-clarify` — requirements extraction, one question at a time
+  - `team-kit-explore` — propose 2-3 approaches with tradeoffs
+  - `team-kit-present` — section-by-section design approval
+  - `team-kit-review` — post-plan review checklist
+- **feat**: new `team-monitor` agent — read-only health observer for large teams (5+ agents)
+  - Tracks agent activity, task state, message patterns
+  - Flags stuck agents, blocked tasks, STATUS violations
+  - Reports periodic health summaries to lead
+- **feat**: removed `superpowers:brainstorming` dependency — team-kit is now fully self-contained
 - **feat**: approach exploration phase — user selects from alternatives before planner commits
 - **feat**: section-by-section design approval — components, data flow, file ownership, tasks approved incrementally
 - **feat**: post-plan review protocol — placeholder scan, type consistency, ambiguity check
@@ -14,6 +18,8 @@
 - **feat**: planner now receives chosen approach as input, honors user's selection
 - **docs**: added no-placeholders rule and type consistency check to PLANNER.md
 - **docs**: added post-plan review protocol to FRAMEWORK.md
+- **docs**: added team-monitor role to FRAMEWORK.md
+- **branding**: unified naming to "Team Kit" (`team-kit-*` skill prefix)
 
 ## 0.1.1
 

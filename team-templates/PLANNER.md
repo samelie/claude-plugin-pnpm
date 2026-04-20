@@ -10,11 +10,11 @@
 You will receive:
 
 1. **Task description** — what needs to be done (feature, refactor, audit, etc.)
-2. **Chosen approach** — the approach user selected from options (from teamkit-explore)
+2. **Chosen approach** — the approach user selected from options (from team-kit-explore)
 3. **Key decisions** — specific decisions made during approach exploration
 4. **App context** — relevant codebase paths, patterns, types, package names
 5. **Package scope** — which pnpm packages are affected
-6. **Constraints** — from requirements clarification (from teamkit-clarify)
+6. **Constraints** — from requirements clarification (from team-kit-clarify)
 7. **FRAMEWORK.md** — the invariant rules you must follow (read it first at `${CLAUDE_PLUGIN_ROOT}/team-templates/FRAMEWORK.md`)
 
 ---
@@ -300,7 +300,7 @@ Is this focused enough for single execution?
 
 **Action**: If too broad → recommend decomposition to lead.
 
-**Note**: QB will run `teamkit-review` after you return. This self-review is defense-in-depth — catch what you can before handoff.
+**Note**: QB will run `team-kit-review` after you return. This self-review is defense-in-depth — catch what you can before handoff.
 
 ---
 

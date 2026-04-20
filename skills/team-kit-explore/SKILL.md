@@ -1,15 +1,15 @@
 ---
-name: teamkit-explore
+name: team-kit-explore
 description: "Propose 2-3 implementation approaches with tradeoffs. Lead invokes after requirements are clear, before planner runs."
 ---
 
-# teamkit-explore — Approach Exploration
+# team-kit-explore — Approach Exploration
 
 Explore implementation approaches before committing to a design.
 
 ## When to Use
 
-Lead invokes after requirements are clear (post `teamkit-clarify` or when problem was already well-scoped).
+Lead invokes after requirements are clear (post `team-kit-clarify` or when problem was already well-scoped).
 
 **Purpose**: Prevent planner from locking into wrong approach. Surface alternatives. Get user buy-in before investing in detailed design.
 
@@ -92,7 +92,7 @@ After user selects, record for planner:
 - [constraint from requirements]
 ```
 
-This becomes input to planner in `teamkit-create` Step 3.
+This becomes input to planner in `team-kit-create` Step 3.
 
 ## Exit Condition
 

@@ -49,6 +49,22 @@
   - `pnpm-test` for test fixes
 - Use `model: "sonnet"` (sufficient for mechanical work)
 
+### Team Monitor (optional)
+
+- Uses `team-monitor` agent definition — **read-only** (no Edit/Write)
+- Observes team health, does NOT orchestrate or implement
+- Tracks: agent activity, task state, message patterns, anti-patterns
+- Reports periodic health summaries to lead
+- Flags anomalies: stuck agents, blocked tasks, missing STATUS, scope concerns
+
+**When to spawn:**
+- Team has 5+ agents
+- Execution expected to run 20+ turns
+- Complex dependency chains
+- Previous teams had coordination issues
+
+**Skip for:** Small teams (2-3 agents) — lead can track directly.
+
 ---
 
 ## Phase Gating
@@ -191,7 +207,7 @@ After planner generates design.md + team-plan.md, run review before execution:
 
 ### Who reviews
 
-- Lead can self-review using `teamkit-review` skill
+- Lead can self-review using `team-kit-review` skill
 - Lead can dispatch QB for independent review
 
 ### What to check
