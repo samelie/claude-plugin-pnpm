@@ -23,15 +23,15 @@
 - Runs final verification after all phases
 - Sends `shutdown_request` to all agents when done, then `TeamDelete`
 
-### Designer (requirements + spec)
+### Designer (phase-based requirements)
 
 - Uses `team-designer` agent definition
-- Spawned FIRST when requirements are unclear or need user approval
-- Follows `brainstorm-session` skill: explore → questions → approaches → design → spec
-- Outputs `context.md` and `spec.md` to team-session folder
-- Gets user approval before completing
-- Hands off to planner after spec approved
-- **Does NOT plan tasks or write code** — only gathers requirements and produces spec
+- **Stateless, phase-aware** — dispatched multiple times with specific phase
+- Phases: `clarify` (one question) | `explore` (2-3 approaches) | `present` (one section) | `write` (requirements.md)
+- Each dispatch does ONE thing and returns — lead maintains state between dispatches
+- Lead dispatches via `team-kit-clarify` and `team-kit-explore` skill patterns
+- Outputs `requirements.md` to team-session folder (in `write` phase)
+- **Does NOT plan tasks, make technical decisions, or write code** — only gathers requirements (WHAT, not HOW)
 
 ### Quarterback (QA reviewer)
 

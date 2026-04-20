@@ -9,6 +9,12 @@ description: "Use before any creative work - features, components, functionality
 
 Turn ideas into fully formed specs through collaborative dialogue. Understand before building.
 
+## Single-Agent vs Team Context
+
+**Single-agent**: Use this skill directly. Follow all phases in one session.
+
+**Team context**: Use `team-kit-create` instead. It dispatches `team-designer` agents with specific phases (clarify, explore, present, write). The lead stays lean while designer agents do the heavy lifting. See `team-kit-clarify` and `team-kit-explore` for dispatch patterns.
+
 <HARD-GATE>
 Do NOT write code, scaffold projects, or take implementation actions until you have presented a design and the user has approved it. This applies to EVERY project regardless of perceived simplicity.
 </HARD-GATE>
@@ -102,12 +108,12 @@ Present design in sections, scaled to complexity:
 
 Get approval after each section. Revise if needed.
 
-### Phase 5: Write Spec
+### Phase 5: Write Requirements
 
-Write to `team-session/{folder}/spec.md`:
+Write to `team-session/{folder}/requirements.md`:
 
 ```markdown
-# Spec: {Feature Name}
+# Requirements: {Feature Name}
 
 Created: {date}
 Status: Draft | Approved
@@ -151,7 +157,7 @@ Status: Draft | Approved
 {anything still unresolved}
 ```
 
-### Phase 6: Spec Self-Review
+### Phase 6: Requirements Self-Review
 
 Before presenting to user, check:
 
@@ -167,9 +173,9 @@ Fix issues inline. Don't present a spec with known problems.
 
 ### Phase 7: User Review
 
-Ask user to review `spec.md`:
+Ask user to review `requirements.md`:
 
-> Spec written to `team-session/{folder}/spec.md`.
+> Spec written to `team-session/{folder}/requirements.md`.
 > Please review and let me know if anything needs adjustment.
 > Once approved, we can proceed to planning.
 
@@ -198,7 +204,7 @@ This spawns `team-designer` who follows this methodology, then hands off to `pla
 | 2. Questions | — | Understand problem fully |
 | 3. Approaches | — | User selects approach |
 | 4. Design | — | User approves each section |
-| 5. Write Spec | spec.md | — |
+| 5. Write Requirements | requirements.md | — |
 | 6. Self-Review | — | No placeholders/contradictions |
 | 7. User Review | — | User approves spec |
 
@@ -209,7 +215,7 @@ This spawns `team-designer` who follows this methodology, then hands off to `pla
 ```
 team-session/YYYYMMDD-{feature}/
 ├── context.md    # Phase 1: existing state, patterns
-└── spec.md       # Phase 5: approved requirements + design
+└── requirements.md       # Phase 5: approved requirements + design
 ```
 
 After spec approved, planner adds:

@@ -1,157 +1,147 @@
 ---
 name: team-kit-clarify
-description: "Extract requirements from vague problems. Lead invokes when problem scope is unclear. One question at a time methodology."
+description: "Dispatch instructions for requirements clarification. Lead invokes this, then dispatches designer(phase: clarify) in a loop until requirements are clear."
 ---
 
-# team-kit-clarify — Requirements Extraction
+# team-kit-clarify — Dispatch Designer for Clarification
 
-Turn vague problems into clear requirements through focused questioning.
+This skill tells the lead HOW to orchestrate the clarify loop. The lead stays lean — designer agents do the heavy lifting.
 
 ## When to Use
 
-Lead invokes this when problem is vague/broad — cannot answer:
+Problem is vague/broad — lead cannot answer:
 - What packages/modules are affected?
 - What are the concrete deliverables?
 - What are the acceptance criteria?
 
-## Methodology
+## Dispatch Loop
 
-### One Question at a Time
+```
+while requirements unclear:
+    dispatch designer(phase: "clarify", context: {problem, previous_answers})
+    designer returns ONE question
+    present question to user
+    collect answer
+    add to previous_answers
+    evaluate: are requirements clear now?
+```
 
-Do NOT ask multiple questions in one message. Each question gets its own turn.
+### Step 1: Dispatch Designer
 
-**Why**: Multiple questions overwhelm. Users skip some, answer others poorly. Single questions get focused answers.
+```javascript
+Agent({
+  subagent_type: "claude-plugin-pnpm:team-designer",
+  description: "Clarify requirements - question {N}",
+  prompt: `
+Phase: clarify
 
-### Multiple Choice Preferred
+Problem: ${problem_description}
 
-When possible, offer options:
+Previous answers:
+${previous_answers.map(a => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n')}
 
-> "Is this a new feature, refactor, or bugfix?
-> A) New feature
-> B) Refactor existing code
-> C) Bugfix
-> D) Other (describe)"
+Generate ONE focused question to clarify requirements.
+`
+})
+```
 
-**Why**: Easier to answer, surfaces options user might not have considered, faster convergence.
+### Step 2: Present Question
 
-### Open-Ended When Necessary
+Designer returns a question. Present it to user exactly as returned.
 
-Some questions need free-form answers:
+### Step 3: Collect Answer
 
-> "What problem does this solve for users?"
+Wait for user response. Add to context:
 
-Use open-ended for: purpose, constraints, context. Use multiple choice for: scope, priority, preferences.
+```javascript
+previous_answers.push({
+  question: designer_question,
+  answer: user_response
+})
+```
 
-## Question Sequence
+### Step 4: Evaluate
 
-### 1. Purpose (start here)
+After each answer, check if lead can now answer ALL:
 
-> "What problem does this solve?"
+| Question | Status |
+|----------|--------|
+| What packages/modules? | ✓ known / ? unclear |
+| What deliverables? | ✓ known / ? unclear |
+| What acceptance criteria? | ✓ known / ? unclear |
+| Any constraints? | ✓ known / ? unclear |
 
-or
-
-> "What should be different after this is done?"
-
-### 2. Affected Packages
-
-> "Which packages are affected?
-> A) [list detected from context]
-> B) Not sure yet
-> C) Other (specify)"
-
-### 3. Deliverables
-
-> "What are the concrete outputs?
-> A) New files/modules
-> B) Modified existing code
-> C) Configuration changes
-> D) All of the above"
-
-Then follow up for specifics.
-
-### 4. Constraints
-
-> "Any hard constraints?
-> A) Must be backwards compatible
-> B) Performance critical
-> C) Security sensitive
-> D) No special constraints
-> E) Multiple (specify)"
-
-### 5. Success Criteria
-
-> "How do we know it's done?
-> A) Tests pass
-> B) Specific behavior works
-> C) Metrics improve
-> D) Other (describe)"
-
-### 6. Priority / Scope
-
-> "What's the scope?
-> A) Minimal — just the core requirement
-> B) Complete — include edge cases, error handling
-> C) Comprehensive — production-ready with docs"
+**If all ✓**: Exit loop, proceed to explore phase.
+**If any ?**: Loop back to Step 1.
 
 ## Exit Condition
 
-Clarification complete when lead can answer ALL:
+When requirements are clear, summarize for user:
 
-| Question | Answer |
-|----------|--------|
-| What packages/modules? | [list] |
-| What deliverables? | [list] |
-| What acceptance criteria? | [list] |
-| Any constraints? | [list or none] |
+```markdown
+Requirements clear:
+- **Packages**: [list]
+- **Deliverables**: [list]
+- **Acceptance criteria**: [list]
+- **Constraints**: [list or "none"]
 
-When complete:
-
-> "Requirements clear. Proceeding to approach exploration."
+Proceeding to approach exploration.
+```
 
 Then invoke `team-kit-explore`.
+
+## Context Accumulation
+
+Lead maintains state between dispatches:
+
+```javascript
+clarify_context = {
+  problem: "original problem description",
+  previous_answers: [
+    { question: "...", answer: "..." },
+    { question: "...", answer: "..." }
+  ],
+  resolved: {
+    packages: ["@scope/pkg1", "@scope/pkg2"],
+    deliverables: ["new API endpoint", "cache layer"],
+    acceptance_criteria: ["<50ms p99 latency"],
+    constraints: ["backwards compatible"]
+  }
+}
+```
+
+This context passes to designer each dispatch AND to explore phase when complete.
 
 ## Anti-Patterns
 
 | Don't | Do |
 |-------|-----|
-| Ask 3 questions at once | One question per message |
-| Jump to solution | Understand problem first |
-| Assume scope | Ask explicitly |
-| Skip constraints | Always ask |
-| Long open-ended questions | Short, focused questions |
+| Lead asks questions directly | Dispatch designer to generate question |
+| Lead does codebase research | Designer does exploration in clarify phase |
+| Batch multiple dispatches | One dispatch, one question, one answer |
+| Skip to explore early | Verify ALL requirements clear first |
 
-## Example Session
+## Example Flow
 
-**Lead**: "What problem does this solve?"
+```
+Lead: dispatch designer(clarify, {problem: "add caching to API"})
+Designer returns: "What problem does this solve for users?"
+Lead: presents question to user
+User: "API is slow, need to cache responses"
+Lead: adds to context, evaluates (packages unclear)
 
-**User**: "Need to add caching to the API layer"
+Lead: dispatch designer(clarify, {problem, answers: [...]})
+Designer returns: "Which packages? A) api-server B) api-server + cache-utils C) unsure"
+Lead: presents question
+User: "B"
+Lead: adds to context, evaluates (acceptance criteria unclear)
 
-**Lead**: "Which packages are affected?
-A) @scope/api-server
-B) @scope/api-server + @scope/cache-utils
-C) Not sure yet"
+Lead: dispatch designer(clarify, {problem, answers: [...]})
+Designer returns: "How do we know it's done? A) cache hit >80% B) latency <50ms C) both"
+Lead: presents question
+User: "C"
+Lead: adds to context, evaluates (all clear!)
 
-**User**: "B"
-
-**Lead**: "Any hard constraints?
-A) Must be backwards compatible
-B) Performance critical (specify target)
-C) No special constraints"
-
-**User**: "A and B — need <50ms p99 latency"
-
-**Lead**: "How do we know it's done?
-A) Cache hit rate >80%
-B) Latency <50ms p99
-C) Specific endpoints cached
-D) All of the above"
-
-**User**: "D"
-
-**Lead**: "Requirements clear:
-- Packages: @scope/api-server, @scope/cache-utils
-- Deliverables: Caching layer for API endpoints
-- Constraints: Backwards compatible, <50ms p99
-- Success: Cache hit >80%, latency <50ms, all specified endpoints cached
-
-Proceeding to approach exploration."
+Lead: "Requirements clear. Proceeding to approach exploration."
+Lead: invokes team-kit-explore
+```

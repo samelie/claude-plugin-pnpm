@@ -7,24 +7,40 @@ description: "Scope a problem and create a multi-agent team plan with roles, tas
 
 Turn a problem into an agent team plan. This skill handles **creation only** — scoping the problem, defining roles, building the task list, and producing a spawn prompt. Execution (TeamCreate, spawning agents, phase gating) happens after.
 
+## Core Pattern: Lead Dispatches, Designers Execute
+
+**Lead stays lean.** Heavy lifting happens in designer agents:
+
+```
+Lead dispatches designer(phase: "clarify") → ONE question → returns
+Lead dispatches designer(phase: "clarify") → ONE question → returns
+Lead dispatches designer(phase: "explore") → 2-3 approaches → returns
+User picks approach
+Lead dispatches planner → design.md + team-plan.md → returns
+```
+
+Lead owns: user communication, phase transitions, context accumulation.
+Designer owns: research, question generation, approach exploration.
+
 ## Pipeline
 
 ```
-[problem] → clarify → explore approaches → research + plan → present → review → spawn prompt
+[problem] → clarify loop → explore → research + plan → present → review → spawn prompt
 ```
 
 ```dot
-digraph team-kit_create {
+digraph team_kit_create {
   "Input received" [shape=doublecircle];
   "Is it a known template?" [shape=diamond];
   "Present template summary" [shape=box];
   "Is the problem well-scoped?" [shape=diamond];
-  "Invoke team-kit-clarify" [shape=box];
-  "Scope + requirements clear" [shape=box];
-  "Is this a team-sized problem?" [shape=diamond];
+  "Dispatch designer(clarify)" [shape=box];
+  "Present question to user" [shape=box];
+  "Requirements clear?" [shape=diamond];
+  "Is this team-sized?" [shape=diamond];
   "Redirect to writing-plans" [shape=box];
-  "Invoke team-kit-explore" [shape=box];
-  "Approach selected" [shape=box];
+  "Dispatch designer(explore)" [shape=box];
+  "User selects approach" [shape=box];
   "Dispatch researcher + planner" [shape=box];
   "Invoke team-kit-present" [shape=box];
   "Design approved?" [shape=diamond];
@@ -37,14 +53,16 @@ digraph team-kit_create {
   "Is it a known template?" -> "Present template summary" [label="yes"];
   "Present template summary" -> "Deliver spawn prompt";
   "Is it a known template?" -> "Is the problem well-scoped?" [label="no"];
-  "Is the problem well-scoped?" -> "Invoke team-kit-clarify" [label="no — vague/broad"];
-  "Is the problem well-scoped?" -> "Is this a team-sized problem?" [label="yes — clear spec"];
-  "Invoke team-kit-clarify" -> "Scope + requirements clear";
-  "Scope + requirements clear" -> "Is this a team-sized problem?";
-  "Is this a team-sized problem?" -> "Redirect to writing-plans" [label="no — single agent"];
-  "Is this a team-sized problem?" -> "Invoke team-kit-explore" [label="yes"];
-  "Invoke team-kit-explore" -> "Approach selected";
-  "Approach selected" -> "Dispatch researcher + planner";
+  "Is the problem well-scoped?" -> "Dispatch designer(clarify)" [label="no"];
+  "Dispatch designer(clarify)" -> "Present question to user";
+  "Present question to user" -> "Requirements clear?";
+  "Requirements clear?" -> "Dispatch designer(clarify)" [label="no"];
+  "Requirements clear?" -> "Is this team-sized?" [label="yes"];
+  "Is the problem well-scoped?" -> "Is this team-sized?" [label="yes"];
+  "Is this team-sized?" -> "Redirect to writing-plans" [label="no"];
+  "Is this team-sized?" -> "Dispatch designer(explore)" [label="yes"];
+  "Dispatch designer(explore)" -> "User selects approach";
+  "User selects approach" -> "Dispatch researcher + planner";
   "Dispatch researcher + planner" -> "Invoke team-kit-present";
   "Invoke team-kit-present" -> "Design approved?";
   "Design approved?" -> "Invoke team-kit-present" [label="no, revise"];
@@ -94,9 +112,9 @@ Parse input to determine path:
 | `list` | **List** — show templates, stop |
 | `health`, `deep-clean`, `knip-audit`, `debug` | **Template** — present existing template |
 | Contains "debug", "investigate", "root cause", "why is...broken" | **Debug** — use debug template with issue extracted |
-| Contains "design", "spec", "requirements", "what should we build" | **Design** — spawn team-designer first, then planner |
+| Contains "design", "spec", "requirements", "what should we build" | **Design** — dispatch designer phases, then planner |
 | Clear, detailed spec | **Plan** — skip clarification, go to Step 3 |
-| Vague, broad, or exploratory | **Clarify** — invoke team-kit-clarify first |
+| Vague, broad, or exploratory | **Clarify** — dispatch designer(clarify) loop |
 | No args | **Interactive** — ask what they want to build |
 
 ### How to judge "well-scoped"
@@ -147,28 +165,65 @@ Map shortcut to file:
 3. Generate the spawn prompt (see Step 7)
 4. **Done** — skill ends here
 
-## Step 2c: Clarify (invoke team-kit-clarify)
+## Step 2c: Clarify Loop (dispatch designer)
 
-When problem is vague/broad, invoke clarification:
+When problem is vague/broad, run the clarify loop.
 
+**Follow `team-kit-clarify` skill** — it tells you HOW to dispatch.
+
+### The Loop
+
+```javascript
+clarify_context = {
+  problem: original_problem,
+  previous_answers: [],
+  resolved: {}
+}
+
+while (!requirements_clear) {
+  // Dispatch designer for ONE question
+  Agent({
+    subagent_type: "claude-plugin-pnpm:team-designer",
+    description: `Clarify requirements - question ${N}`,
+    prompt: `
+Phase: clarify
+
+Problem: ${clarify_context.problem}
+
+Previous answers:
+${clarify_context.previous_answers.map(a => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n')}
+
+Generate ONE focused question to clarify requirements.
+`
+  })
+  
+  // Present question to user
+  // Collect answer
+  // Add to context
+  // Evaluate: are ALL requirements clear?
+}
 ```
-Skill tool: team-kit-clarify
-```
 
-This skill handles one-question-at-a-time requirements extraction:
-- Purpose, constraints, success criteria
-- Affected packages
-- Concrete deliverables
+### Exit Condition
 
-After clarification completes, evaluate: **is this actually a team-sized problem?**
+Requirements clear when lead can answer ALL:
+
+| Question | Answer |
+|----------|--------|
+| What packages/modules? | [list] |
+| What deliverables? | [list] |
+| What acceptance criteria? | [list] |
+| Any constraints? | [list or none] |
 
 ### Team-size decision
+
+After clarification, evaluate: **is this actually a team-sized problem?**
 
 | Signal | Verdict |
 |--------|---------|
 | 1-3 files, single module, sequential work | **Not a team** — redirect to single-agent planning |
 | 3+ files across multiple independent modules | **Team candidate** |
-| Parallel exploration adds value (competing hypotheses, cross-layer) | **Team candidate** |
+| Parallel exploration adds value | **Team candidate** |
 | Same-file edits, heavy dependencies between tasks | **Not a team** — single session is better |
 
 If not team-sized:
@@ -178,21 +233,48 @@ If team-sized: proceed to Step 3.
 
 ---
 
-## Step 3: Approach Exploration (invoke team-kit-explore)
+## Step 3: Approach Exploration (dispatch designer)
 
-Before committing to a design, explore alternatives:
+Before committing to a design, explore alternatives.
 
+**Follow `team-kit-explore` skill** — it tells you HOW to dispatch.
+
+### Dispatch
+
+```javascript
+Agent({
+  subagent_type: "claude-plugin-pnpm:team-designer",
+  description: "Explore implementation approaches",
+  prompt: `
+Phase: explore
+
+Requirements:
+- Packages: ${clarify_context.resolved.packages.join(', ')}
+- Deliverables: ${clarify_context.resolved.deliverables.join(', ')}
+- Acceptance criteria: ${clarify_context.resolved.acceptance_criteria.join(', ')}
+- Constraints: ${clarify_context.resolved.constraints.join(', ')}
+
+Problem context:
+${clarify_context.previous_answers.map(a => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n')}
+
+Explore codebase. Propose 2-3 approaches with tradeoffs and recommendation.
+`
+})
 ```
-Skill tool: team-kit-explore
+
+### User Selection
+
+Present approaches, ask user to pick. Record selection:
+
+```javascript
+explore_result = {
+  chosen_approach: "A: [Name]",
+  key_decisions: [...],
+  constraints_to_honor: [...]
+}
 ```
 
-This skill handles:
-- Codebase exploration via investigation-methodology
-- Proposing 2-3 approaches with tradeoffs
-- Getting user selection
-- Recording chosen approach for planner
-
-After user selects approach, proceed to Step 4.
+Proceed to Step 4.
 
 ---
 
@@ -202,57 +284,60 @@ After user selects approach, proceed to Step 4.
 
 Dispatch `team-researcher` agent in background:
 
-```
-Agent(
-  subagent_type = "claude-plugin-pnpm:team-researcher",
-  model = "opus",
-  run_in_background = true,
-  name = "scout",
-  prompt = """
-  Investigate the following for an upcoming team planning session:
+```javascript
+Agent({
+  subagent_type: "claude-plugin-pnpm:team-researcher",
+  model: "opus",
+  run_in_background: true,
+  name: "scout",
+  prompt: `
+Investigate the following for an upcoming team planning session:
 
-  Task: {task description}
-  Chosen approach: {approach from Step 3}
-  Affected packages: {package list}
+Task: ${task_description}
+Chosen approach: ${explore_result.chosen_approach}
+Affected packages: ${clarify_context.resolved.packages}
 
-  Your job:
-  1. Query Arcana for prior work, gotchas, architecture decisions
-  2. Query CocoIndex for existing implementations, key types, module boundaries
-  3. Explore code to map: entry points, data flows, coupling between modules
-  4. Document everything in findings.md — the planner will read this
+Your job:
+1. Query Arcana for prior work, gotchas, architecture decisions
+2. Query CocoIndex for existing implementations, key types, module boundaries
+3. Explore code to map: entry points, data flows, coupling between modules
+4. Document everything in findings.md — the planner will read this
 
-  Focus on what a planner needs to decompose this into agent tasks.
-  """
-)
+Focus on what a planner needs to decompose this into agent tasks.
+`
+})
 ```
 
 ### 4b: Invoke planner
 
 After researcher completes, invoke planner with chosen approach:
 
-```
-Agent(
-  subagent_type = "claude-plugin-pnpm:planner",
-  model = "opus",
-  prompt = """
-  Task: {task description}
+```javascript
+Agent({
+  subagent_type: "claude-plugin-pnpm:planner",
+  model: "opus",
+  prompt: `
+Task: ${task_description}
 
-  **Chosen approach**: {approach from Step 3}
-  **Key decisions**: {decisions from approach exploration}
+**Chosen approach**: ${explore_result.chosen_approach}
+**Key decisions**: ${explore_result.key_decisions.join(', ')}
 
-  Affected packages: {list}
-  Constraints: {from clarification}
+Affected packages: ${clarify_context.resolved.packages}
+Constraints: ${explore_result.constraints_to_honor}
 
-  ## Researcher findings
-  {paste or summarize the researcher's findings.md here}
+## Requirements (from clarification)
+${JSON.stringify(clarify_context.resolved, null, 2)}
 
-  Generate a complete team plan following FRAMEWORK.md.
-  Output to team-session/{team-name}/
+## Researcher findings
+{paste or summarize the researcher's findings.md here}
 
-  The researcher already queried Arcana and CocoIndex — use their findings
-  as your starting point.
-  """
-)
+Generate a complete team plan following FRAMEWORK.md.
+Output to team-session/{team-name}/
+
+The researcher already queried Arcana and CocoIndex — use their findings
+as your starting point.
+`
+})
 ```
 
 Planner produces:
@@ -352,19 +437,41 @@ Present to user:
 
 ## Lead's Role: Delegation Model
 
-Lead orchestrates, does NOT implement. Lead delegates to subagents:
+Lead orchestrates, does NOT implement. Lead dispatches:
 
-| Subagent | Role | When dispatched |
-|----------|------|-----------------|
+| Agent | Role | When dispatched |
+|-------|------|-----------------|
+| `team-designer` | Clarify questions, explore approaches | Steps 2c, 3 (multiple dispatches) |
 | `team-researcher` | Deep context via Arcana + CocoIndex + code | Step 4a (background) |
 | `planner` | Generate design.md + team-plan.md | Step 4b (after researcher) |
-| `team-architect` | Deep-dive specific module | Mid-execution if needed |
 
 Lead owns:
-- User communication (clarification, approach selection, approvals)
-- Skill invocation (team-kit-clarify, team-kit-explore, team-kit-present, team-kit-review)
-- Synthesizing subagent findings
+- User communication (presenting questions, getting approvals)
+- Phase transitions (deciding when clarify is complete, when to proceed)
+- Context accumulation (building clarify_context, explore_result)
+- Skill invocation (team-kit-present, team-kit-review)
 - Final spawn prompt delivery
+
+Lead does NOT:
+- Do codebase research (designer/researcher do this)
+- Generate questions (designer does this)
+- Make technical decisions (planner does this)
+
+---
+
+## Context Flow
+
+```
+clarify_context (lead accumulates)
+    ↓
+explore_result (from designer)
+    ↓
+researcher findings (from researcher)
+    ↓
+planner input (lead synthesizes)
+    ↓
+design.md + team-plan.md (from planner)
+```
 
 ---
 
@@ -374,23 +481,24 @@ Lead owns:
 - **Implement code** — lead delegates all implementation
 - **Skip clarification for vague problems** — always clarify when scope unclear
 - **Commit to approach without user input** — always explore alternatives first
+- **Do codebase research itself** — dispatches designer/researcher for that
 
 ## Relationship to Other Skills
 
 | Skill | Relationship |
 |-------|-------------|
-| `team-kit-clarify` | Invoked in Step 2c for requirements extraction |
-| `team-kit-explore` | Invoked in Step 3 for approach exploration |
+| `team-kit-clarify` | Dispatch guide for designer(phase: clarify) loop |
+| `team-kit-explore` | Dispatch guide for designer(phase: explore) |
 | `team-kit-present` | Invoked in Step 5 for section-by-section approval |
 | `team-kit-review` | Invoked in Step 6 for post-plan review |
-| `investigation-methodology` | Used by team-kit-explore and researcher for codebase exploration |
-| (execution phase) | After spawn prompt, lead follows FRAMEWORK.md orchestration checklist |
+| `investigation-methodology` | Used by designer and researcher for codebase exploration |
 
 ## Related Agents
 
 | Agent | When to use |
 |-------|-------------|
-| `planner` | Initial planning — produces design.md + team-plan.md |
+| `team-designer` | Clarify + explore phases — stateless, phase-aware |
+| `planner` | Planning phase — produces design.md + team-plan.md |
 | `team-researcher` | Deep context gathering before planner |
 | `team-architect` | Mid-execution module deep-dive (NOT initial planning) |
 
