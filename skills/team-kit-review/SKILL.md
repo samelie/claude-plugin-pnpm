@@ -1,15 +1,15 @@
 ---
-name: teamkit-review
+name: team-kit-review
 description: "Post-plan review checklist for design.md + team-plan.md. QB or lead invokes after design presentation approved."
 ---
 
-# teamkit-review — Post-Plan Review
+# team-kit-review — Post-Plan Review
 
 Verify design.md + team-plan.md are complete and consistent before execution.
 
 ## When to Use
 
-Invoke after `teamkit-present` completes (all sections approved).
+Invoke after `team-kit-present` completes (all sections approved).
 
 **Who invokes**:
 - Lead can self-review
@@ -124,7 +124,7 @@ If Approved:
 
 > "Plan review passed. Proceeding to file review gate."
 
-Then `teamkit-create` presents files for user review before spawn prompt.
+Then `team-kit-create` presents files for user review before spawn prompt.
 
 If Issues Found:
 

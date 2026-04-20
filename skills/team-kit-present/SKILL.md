@@ -1,9 +1,9 @@
 ---
-name: teamkit-present
+name: team-kit-present
 description: "Present design section-by-section with approval gates. Lead invokes after planner returns design.md + team-plan.md."
 ---
 
-# teamkit-present — Section-by-Section Design Approval
+# team-kit-present — Section-by-Section Design Approval
 
 Present design incrementally, get user approval at each stage.
 
@@ -119,7 +119,7 @@ Then:
 
 > "Design approved. Proceeding to post-plan review."
 
-Invoke `teamkit-review`.
+Invoke `team-kit-review`.
 
 ## Handling Rejection
 
