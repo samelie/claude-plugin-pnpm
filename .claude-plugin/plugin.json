@@ -12,13 +12,18 @@
     "./agents/quarterback.md",
     "./agents/full-monorepo-pnpm.md",
     "./agents/pnpm-workspace-filter.md",
+    "./agents/researcher.md",
     "./agents/team-architect.md",
     "./agents/team-auditor.md",
     "./agents/team-coder.md",
+    "./agents/team-designer.md",
     "./agents/team-finisher.md",
+    "./agents/team-investigator.md",
+    "./agents/team-monitor.md",
     "./agents/team-researcher.md",
     "./agents/team-reviewer.md",
     "./agents/team-security-auditor.md",
+    "./agents/team-spec-reviewer.md",
     "./agents/team-tester.md",
     "./agents/team-verifier.md"
   ]

@@ -52,13 +52,76 @@ Generate these artifacts in `team-session/{team-name}/`:
 
 ### 1. `design.md` — Human-readable architecture summary
 
-Write this FIRST — it forces you to think through the design before producing the plan. Include:
+Write this FIRST — it forces you to think through the design before producing the plan.
 
-- **Components involved** and how they interact
-- **Key interfaces and data flow** — types, function signatures, module boundaries
-- **Patterns to follow** — match existing codebase conventions surfaced by knowledge tools
-- **Risks, gotchas, and known issues** — from knowledge tool findings
-- **Key decisions** — why this approach over alternatives
+**Required sections**:
+
+```markdown
+# Design: {Feature Name}
+
+Created: {date}
+Requirements: team-session/{team-name}/requirements.md
+
+## Components
+
+{which modules/packages are involved and how they interact}
+
+## Interfaces
+
+TypeScript signatures REQUIRED — no prose descriptions:
+
+\`\`\`typescript
+// New or modified interfaces
+interface UserProfile {
+  id: string;
+  // ...
+}
+
+// New or modified function signatures
+function createProfile(data: CreateProfileInput): Promise<UserProfile>;
+\`\`\`
+
+## Data Flow
+
+{sequence of operations, module boundaries crossed}
+
+## Patterns
+
+{existing codebase patterns to follow — from knowledge tools}
+
+## Risks
+
+| Risk | Severity | Mitigation |
+|------|----------|------------|
+| {what could go wrong} | Critical/High/Med/Low | {how to prevent/handle} |
+
+## Decisions Made
+
+| Decision | Rationale | From |
+|----------|-----------|------|
+| {technical decision} | {why} | requirements/exploration/planner |
+
+**CRITICAL**: Include decisions from requirements.md AND any new technical decisions made during design.
+
+## Requirement Traceability
+
+| Req ID | Requirement | Design Component | Task IDs |
+|--------|-------------|------------------|----------|
+| AC-1 | {from requirements.md} | {which component addresses it} | T-1, T-2 |
+
+## Validation Strategy
+
+How do we verify this works beyond unit tests?
+
+| Question | Answer |
+|----------|--------|
+| End-to-end verification | {what proves feature works in context} |
+| Smoke test | {minimal test that catches obvious breakage} |
+| Automated or manual? | {and why} |
+| Environments needed | {local/staging/prod, special setup} |
+
+Skip rationale (if N/A): {why validation not needed for this task}
+```
 
 This is the document humans read. Keep it concise and concrete.
 
@@ -75,6 +138,44 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 - Orchestration flow diagram
 - Agent prompt templates (lead, QB, each implementer, finalization)
 - Verification commands
+
+**CRITICAL: Use only supported agents.** When assigning agents to tasks, pick from this list:
+
+| Agent | subagent_type | Use for |
+|-------|---------------|---------|
+| researcher | `claude-plugin-pnpm:researcher` | Pre-planning codebase investigation |
+| team-researcher | `claude-plugin-pnpm:team-researcher` | Team-scoped investigation |
+| team-designer | `claude-plugin-pnpm:team-designer` | Requirements gathering (clarify/explore/write) |
+| planner | `claude-plugin-pnpm:planner` | Design + task decomposition |
+| team-architect | `claude-plugin-pnpm:team-architect` | Deep-dive module analysis mid-execution |
+| team-coder | `claude-plugin-pnpm:team-coder` | Implementation |
+| team-reviewer | `claude-plugin-pnpm:team-reviewer` | Code quality review |
+| team-spec-reviewer | `claude-plugin-pnpm:team-spec-reviewer` | Spec compliance review (before quality) |
+| team-tester | `claude-plugin-pnpm:team-tester` | Test writing + execution |
+| team-auditor | `claude-plugin-pnpm:team-auditor` | Post-implementation audit |
+| team-security-auditor | `claude-plugin-pnpm:team-security-auditor` | OWASP security audit |
+| team-verifier | `claude-plugin-pnpm:team-verifier` | Lint/types/knip/tests runner |
+| team-finisher | `claude-plugin-pnpm:team-finisher` | Remove logs, enforce standards |
+| team-monitor | `claude-plugin-pnpm:team-monitor` | Health observer (5+ agent teams) |
+| team-investigator | `claude-plugin-pnpm:team-investigator` | Root cause debugging (phases 1-3) |
+| quarterback | `claude-plugin-pnpm:quarterback` | QA reviewer (read-only) |
+
+Do NOT invent agent types. If a task doesn't fit these roles, assign to `team-coder` with specific instructions.
+
+**Task format must include requirement traceability**:
+
+```markdown
+### Task T-1: {title}
+
+- **Requirement**: AC-1, AC-2 (from requirements.md)
+- **Agent**: {agent-name}
+- **Files**: {specific files to modify}
+- **Estimated**: {5-30 min — if longer, split the task}
+- **Depends on**: T-0 or none
+- **Acceptance**: {specific verification, not "it works"}
+```
+
+Every task MUST link to at least one AC-* from requirements.md. If a task doesn't map to a requirement, question whether it's needed.
 
 ### 3. `team-scope.json` — Hook config for scope enforcement
 
@@ -96,6 +197,44 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 
 The plugin's `hooks/hooks.json` already wires `PreToolUse`/`SubagentStop`/`Stop` — no per-team hook file needed. The scope hook auto-discovers `team-session/*/team-scope.json`.
 
+## Forbidden Patterns
+
+NEVER write these in design.md or team-plan.md:
+- `TBD`, `TODO`, `to be determined`, `implement later`
+- `Similar to Task N`, `Like the other...`
+- Vague steps: `add appropriate error handling`, `write tests for the above`
+- Prose interface descriptions (must be TypeScript signatures)
+- Unquantified risks: `might cause issues` without severity
+- Missing traceability: tasks without requirement IDs
+- Decisions discussed in requirements.md but not carried forward
+
+**Rationalization Prevention** — these excuses are NOT acceptable:
+- "Should work now" — requires verification
+- "Confident it works" — requires evidence
+- "Minor detail" — if it matters, document it
+- "Will figure out during implementation" — design decides, implementation executes
+
+## Self-Review Checklist
+
+Before returning design.md + team-plan.md, verify:
+
+**design.md**:
+- [ ] All interfaces are TypeScript signatures, not prose
+- [ ] Risk table has severity ratings
+- [ ] Decisions Made includes ALL decisions from requirements.md
+- [ ] Requirement Traceability maps every AC-* to components
+- [ ] Validation Strategy answered or skip rationale provided
+- [ ] No forbidden patterns
+
+**team-plan.md**:
+- [ ] Every task references requirement ID (AC-*)
+- [ ] No task is >30 min estimated work
+- [ ] File ownership has no overlaps
+- [ ] All agent prompts include STATUS protocol
+- [ ] Verification commands exist for each phase
+
+If any check fails, fix before returning.
+
 ## Rules
 
 - Follow FRAMEWORK.md constraints exactly
@@ -104,3 +243,4 @@ The plugin's `hooks/hooks.json` already wires `PreToolUse`/`SubagentStop`/`Stop`
 - Implementers use `mode: "plan"` — must submit plan for lead approval
 - Finalization agents use dedicated subagent types + sonnet model
 - Include STATUS protocol in all agent prompts
+- Carry forward ALL decisions from requirements.md

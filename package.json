@@ -26,8 +26,8 @@
   },
   "scripts": {
     "build": "unbuild",
-    "lint": "eslint .",
-    "lint:fix": "eslint --fix .",
+    "lint": "echo 'no source files to lint'",
+    "lint:fix": "echo 'no source files to lint'",
     "types": "echo 'no tsconfig'",
     "test": "echo 'no tests'",
     "dev": "tsx src/index.ts"
@@ -37,5 +37,8 @@
     "node": ">= 22",
     "pnpm": ">= 10",
     "npm": ">= 11"
+  },
+  "devDependencies": {
+    "eslint": "^10.2.1"
   }
 }

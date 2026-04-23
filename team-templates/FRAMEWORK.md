@@ -52,6 +52,8 @@
 - Reports to QB with change summary when done
 - Runs build/verify for their package(s) before reporting done
 
+**Use only supported agent types.** See planner.md for the full list with `subagent_type` values. Do not invent agent types — if a task doesn't fit existing roles, assign to `team-coder` with specific instructions.
+
 ### Finalization Agents
 
 - Spawned ONLY after all implementer tasks complete (phase-gated via `blockedBy`)
@@ -134,9 +136,56 @@ All teams follow this phase pattern:
 | 0 | TeamCreate, delegate mode, TaskCreate all tasks, spawn all agents | All agents spawned |
 | 1..N | Implementers work in parallel, QB reviews | All phase tasks complete + QB approved |
 | N+1 | Finalization agents (lint/types/knip/test) | All exit clean |
+| N+2 | Validation — verify feature/fix works beyond unit tests | Acceptance criteria verified |
 | Final | Lead runs verification, shutdown all agents, TeamDelete | Verification passes |
 
 Phases are sequential. Tasks within a phase can be parallel. Use `blockedBy` to enforce ordering.
+
+### Validation Phase (N+2)
+
+Unit tests prove code is correct. Validation proves the feature **actually works**.
+
+**During planning, planner must answer:**
+- How do we verify this works end-to-end?
+- What's the minimal smoke test?
+- Can it be automated or is it manual?
+- What environments need testing?
+
+**Validation scope varies by task type:**
+
+| Task Type | Validation Examples |
+|-----------|---------------------|
+| API change | Call endpoint, verify response shape |
+| UI feature | Load page, interact, verify behavior |
+| Infrastructure | Deploy to staging, verify resources exist |
+| Refactor | Run existing integration tests, compare behavior |
+| Bug fix | Reproduce original bug scenario, confirm fixed |
+
+**Validation output in team-session:**
+
+```markdown
+# Validation Report
+
+## Acceptance Criteria Verification
+
+| AC ID | Criterion | Verified | Evidence |
+|-------|-----------|----------|----------|
+| AC-1 | Given X, When Y, Then Z | ✅ | screenshot/log/command output |
+| AC-2 | ... | ❌ | what failed |
+
+## Smoke Test Results
+
+- [ ] {describe what was tested and outcome}
+
+## Manual Verification (if applicable)
+
+- [ ] {step performed by human, result}
+```
+
+**Skip validation when:**
+- Pure refactor with no behavior change + existing tests cover it
+- Documentation-only changes
+- Lead explicitly marks task as "no validation needed" with rationale
 
 ---
 

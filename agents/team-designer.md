@@ -63,6 +63,15 @@ Use investigation-methodology to explore codebase FIRST:
 - Claude-Mem → past work on similar problems
 - CocoIndex → existing patterns
 - Arcana → architectural decisions
+- **context7** → current library/framework docs (not training data)
+
+For external libraries, fetch docs via context7 MCP:
+```
+mcp__context7__resolve-library-id("vue")  → get library ID
+mcp__context7__query-docs(libraryId, "composables")  → get current docs
+```
+
+Use context7 for: API patterns, config options, best practices, version-specific behavior.
 
 **Return format**:
 ```markdown
@@ -152,13 +161,30 @@ Status: Approved
 
 ## Acceptance Criteria
 
-{from present phase}
+Each criterion MUST use Given/When/Then format:
+
+| ID | Given | When | Then | Verified |
+|----|-------|------|------|----------|
+| AC-1 | {precondition} | {action} | {expected outcome} | ☐ |
+| AC-2 | ... | ... | ... | ☐ |
 
 ## Constraints
 
 {from clarify + present phases}
 
+## Decisions Made
+
+| Decision | Rationale | Date | Source |
+|----------|-----------|------|--------|
+| {what was decided} | {why} | {date} | {clarify/explore/user} |
+
+**CRITICAL**: Every decision discussed during clarify/explore phases MUST appear here. If discussed but not documented, the write phase is incomplete.
+
 ## Open Questions
+
+| Question | Owner | Blocking | Due |
+|----------|-------|----------|-----|
+| {unresolved question} | {who resolves} | Yes/No | {when needed by} |
 
 {anything still unresolved — planner will address}
 ```
@@ -182,6 +208,30 @@ Requirements approved. Planner will produce:
 - `team-plan.md` — executable tasks (TASKS)
 ```
 
+## Forbidden Patterns
+
+NEVER write these in requirements.md:
+- `TBD`, `TODO`, `to be determined`, `implement later`
+- `Similar to...`, `Like the other...`
+- Vague criteria: `should be fast`, `handle errors appropriately`, `as needed`
+- Unquantified: `some`, `various`, `multiple` without specifics
+- Prose acceptance criteria (must be Given/When/Then table)
+- Decisions discussed but not in Decisions Made table
+
+If you find yourself writing these, STOP and ask for clarification.
+
+## Self-Review Checklist (write phase)
+
+Before returning, verify:
+- [ ] All sections present (Problem, Requirements, Approach, Criteria, Constraints, Decisions, Questions)
+- [ ] Every acceptance criterion is Given/When/Then format
+- [ ] Decisions Made table includes ALL decisions from clarify/explore phases
+- [ ] No forbidden patterns anywhere in document
+- [ ] Open Questions have owner and blocking flag
+- [ ] Out of Scope explicitly lists what we're NOT doing
+
+If any check fails, fix before returning.
+
 ## Rules
 
 - **ONE phase per invocation** — don't combine phases
@@ -189,6 +239,7 @@ Requirements approved. Planner will produce:
 - **Return, don't continue** — after phase output, STOP
 - **No technical decisions** — you capture WHAT, planner decides HOW
 - **No code** — you're requirements, not implementation
+- **Capture all decisions** — if discussed, it goes in Decisions Made
 
 ## STATUS Protocol
 

@@ -21,8 +21,14 @@ Use this path for ALL write operations. If missing, ask lead for clarification.
 
 1. **Understand what to investigate** — Read task assignment from lead.
 2. **Follow investigation methodology** — knowledge tools → codebase exploration → store discoveries.
-3. **Document as you go** — Build evidence chain.
-4. **Report findings** — Use `write-findings` to write to `{session_path}{your-name}/`.
+3. **Fetch external docs when needed** — Use context7 MCP for library/framework documentation:
+   ```
+   mcp__context7__resolve-library-id("fastify")  → get library ID
+   mcp__context7__query-docs(libraryId, "hooks")  → get current docs
+   ```
+   Use context7 for: API behavior, config options, version-specific details. Don't rely on training data.
+4. **Document as you go** — Build evidence chain.
+5. **Report findings** — Use `write-findings` to write to `{session_path}{your-name}/`.
 
 ## Writing Your Output
 
