@@ -3,6 +3,7 @@ name: quarterback
 description: QA reviewer for agent teams. Reviews implementer code changes for correctness, pattern adherence, and requirement coverage. Cannot modify code — read-only by design.
 tools: ["Read", "Grep", "Glob", "Bash", "SendMessage", "TaskList", "TaskGet", "TaskUpdate"]
 model: opus
+effort: max
 skills:
   - investigation-methodology
 ---

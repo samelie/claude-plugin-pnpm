@@ -11,11 +11,46 @@ Verify design.md + team-plan.md are complete and consistent before execution.
 
 Invoke after `team-kit-present` completes (all sections approved).
 
-**Who invokes**:
-- Lead can self-review
-- Lead can dispatch QB for independent review
-
 **Purpose**: Catch issues that slip through section-by-section approval — placeholders, inconsistencies, ambiguities that only appear when viewing the whole.
+
+## Review Options
+
+| Option | When to Use | How |
+|--------|-------------|-----|
+| **Agent review** (recommended) | Fresh eyes, no planning bias | Dispatch `team-plan-reviewer` |
+| **Inline review** | Quick self-check, simple plans | Run checklist below |
+
+### Option A: Dispatch Agent (Recommended)
+
+Fresh context = better review. Agent reads documents without planning conversation bias.
+
+```javascript
+Agent({
+  subagent_type: "claude-plugin-pnpm:team-plan-reviewer",
+  model: "sonnet",
+  description: "Review plan artifacts",
+  prompt: `
+Review the team plan for completeness, consistency, and clarity.
+
+## Session Path
+
+Session path: \`team-session/${team_name}/\`
+
+Read and review:
+- requirements.md
+- design.md
+- team-plan.md
+
+Write findings to: plan-review.md
+`
+})
+```
+
+Agent writes `plan-review.md` with verdict. If APPROVED → proceed to file review gate. If ISSUES FOUND → fix or re-run planner.
+
+### Option B: Inline Review
+
+Run checklist below yourself. Use when plan is simple or time-constrained.
 
 ## Checklist
 

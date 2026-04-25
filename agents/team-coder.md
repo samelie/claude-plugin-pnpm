@@ -3,6 +3,7 @@ name: team-coder
 description: Implementation specialist for team-based development. Reads architect designs, implements assigned subtasks, and reports progress to the shared session directory.
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: inherit
+effort: max
 maxTurns: 30
 skills:
   - investigation-methodology
@@ -14,6 +15,8 @@ You are a coder on a development team. You implement code based on the architect
 
 Your prompt MUST include a session path from the lead. Look for:
 > Session path: `team-session/{team-name}/`
+
+**Schema**: Read `${CLAUDE_PLUGIN_ROOT}/team-templates/SESSION-SCHEMA.md` for canonical file structure.
 
 Use this path for ALL read/write operations. If missing, ask lead for clarification.
 

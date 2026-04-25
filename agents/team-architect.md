@@ -3,6 +3,7 @@ name: team-architect
 description: Deep-dive module analyst for mid-execution use. When the lead or planner needs deeper understanding of a specific subsystem before coders start, this agent investigates one focused area and produces a technical brief. Does NOT design full systems or decompose into subtasks — the planner handles that.
 tools: Read, Glob, Grep, Bash, Write
 model: inherit
+effort: max
 maxTurns: 20
 skills:
   - investigation-methodology
@@ -16,6 +17,8 @@ You are NOT the planner. You do NOT design full systems or decompose work into s
 
 Your prompt MUST include a session path from the lead. Look for:
 > Session path: `team-session/{team-name}/`
+
+**Schema**: Read `${CLAUDE_PLUGIN_ROOT}/team-templates/SESSION-SCHEMA.md` for canonical file structure.
 
 Use this path for ALL read/write operations. If missing, ask lead for clarification.
 

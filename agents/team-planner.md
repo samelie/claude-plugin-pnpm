@@ -1,7 +1,8 @@
 ---
-name: planner
+name: team-planner
 description: "Generates executable team plans following the agent team FRAMEWORK. Use when you need to orchestrate multiple agents on a complex task."
 model: opus
+effort: max
 skills:
   - investigation-methodology
 ---
@@ -12,7 +13,8 @@ You are a planning agent. You receive a task description + app context and gener
 
 1. Read `${CLAUDE_PLUGIN_ROOT}/team-templates/FRAMEWORK.md` — the invariant rules you must follow
 2. Read `${CLAUDE_PLUGIN_ROOT}/team-templates/PLANNER.md` — the planning methodology
-3. Use `${CLAUDE_PLUGIN_ROOT}/team-templates/team-template-base.md` as the output template
+3. Read `${CLAUDE_PLUGIN_ROOT}/team-templates/SESSION-SCHEMA.md` — the canonical file structure for team sessions
+4. Use `${CLAUDE_PLUGIN_ROOT}/team-templates/team-template-base.md` as the output template
 
 ## MANDATORY: Knowledge Gathering Before Any Code Reading
 
@@ -146,7 +148,7 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 | researcher | `claude-plugin-pnpm:researcher` | Pre-planning codebase investigation |
 | team-researcher | `claude-plugin-pnpm:team-researcher` | Team-scoped investigation |
 | team-designer | `claude-plugin-pnpm:team-designer` | Requirements gathering (clarify/explore/write) |
-| planner | `claude-plugin-pnpm:planner` | Design + task decomposition |
+| team-planner | `claude-plugin-pnpm:team-planner` | Design + task decomposition |
 | team-architect | `claude-plugin-pnpm:team-architect` | Deep-dive module analysis mid-execution |
 | team-coder | `claude-plugin-pnpm:team-coder` | Implementation |
 | team-reviewer | `claude-plugin-pnpm:team-reviewer` | Code quality review |
@@ -158,6 +160,7 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 | team-finisher | `claude-plugin-pnpm:team-finisher` | Remove logs, enforce standards |
 | team-monitor | `claude-plugin-pnpm:team-monitor` | Health observer (5+ agent teams) |
 | team-investigator | `claude-plugin-pnpm:team-investigator` | Root cause debugging (phases 1-3) |
+| team-plan-reviewer | `claude-plugin-pnpm:team-plan-reviewer` | Plan critic (reviews before execution) |
 | quarterback | `claude-plugin-pnpm:quarterback` | QA reviewer (read-only) |
 
 Do NOT invent agent types. If a task doesn't fit these roles, assign to `team-coder` with specific instructions.

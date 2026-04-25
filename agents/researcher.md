@@ -36,6 +36,7 @@ description: >
   </example>
 tools: Read, Glob, Grep, Bash
 model: sonnet
+effort: max
 maxTurns: 40
 skills:
   - investigation-methodology

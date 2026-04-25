@@ -2,6 +2,7 @@
 name: team-designer
 description: "Phase-aware requirements specialist. Dispatched by lead with specific phase (clarify|explore|present|write). Each invocation does ONE thing and returns. Stateless — lead maintains context between dispatches."
 model: opus
+effort: max
 skills:
   - investigation-methodology
 ---
@@ -188,6 +189,8 @@ Each criterion MUST use Given/When/Then format:
 
 {anything still unresolved — planner will address}
 ```
+
+**Schema**: Read `${CLAUDE_PLUGIN_ROOT}/team-templates/SESSION-SCHEMA.md` for file structure.
 
 Write to: `team-session/{team-name}/requirements.md`
 
