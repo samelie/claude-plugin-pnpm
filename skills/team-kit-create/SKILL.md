@@ -1,11 +1,23 @@
 ---
 name: team-kit-create
-description: "Scope a problem and create a multi-agent team plan with roles, task lists, and spawn prompt. Triggers: team, agent team, multi-agent, create team, team plan, orchestrate agents, team template, team-kit, parallel team, as a team, team up, work as a team"
+description: "Scope a problem and create a multi-agent team plan with roles, task lists, and spawn prompt. Triggers: team, agent team, multi-agent, create team, team plan, orchestrate agents, team template, team-kit, parallel team, as a team, team up, work as a team, fork"
 ---
 
 # /team-kit-create — Scope, Plan, and Structure a Multi-Agent Team
 
 Turn a problem into an agent team plan. This skill handles **creation only** — scoping the problem, defining roles, building the task list, and producing a spawn prompt. Execution (TeamCreate, spawning agents, phase gating) happens after.
+
+## Fork Mode Detection
+
+If user's request contains **"fork"** (e.g., "as a team (fork), implement..."):
+- Set `fork_mode: true` in team-plan.md frontmatter
+- Lead will spawn children WITHOUT subagent_type (triggers fork caching)
+- Children self-discover their agent definition via `${CLAUDE_PLUGIN_ROOT}/agents/{agent}.md`
+- ~10x cost reduction for children 2-N
+
+**Requires**: `CLAUDE_CODE_FORK_SUBAGENT=1` env var.
+
+See `FRAMEWORK.md` → Fork Mode for full documentation.
 
 ## Core Pattern: Lead Dispatches, Designers Execute
 
@@ -323,7 +335,7 @@ After researcher completes, invoke planner with chosen approach:
 
 ```javascript
 Agent({
-  subagent_type: "claude-plugin-pnpm:planner",
+  subagent_type: "claude-plugin-pnpm:team-planner",
   model: "opus",
   prompt: `
 ## Session Path

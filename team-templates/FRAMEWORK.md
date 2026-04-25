@@ -52,7 +52,7 @@
 - Reports to QB with change summary when done
 - Runs build/verify for their package(s) before reporting done
 
-**Use only supported agent types.** See planner.md for the full list with `subagent_type` values. Do not invent agent types — if a task doesn't fit existing roles, assign to `team-coder` with specific instructions.
+**Use only supported agent types.** See team-planner.md for the full list with `subagent_type` values. Do not invent agent types — if a task doesn't fit existing roles, assign to `team-coder` with specific instructions.
 
 ### Finalization Agents
 
@@ -232,6 +232,85 @@ Scope enforcement comes from the plugin's own `hooks/hooks.json` — always acti
 | Finalization (lint/types/knip/test) | `sonnet` | Mechanical, pattern-following work |
 
 Override when task complexity warrants it (e.g., sonnet for simple implementers, opus for complex lint).
+
+---
+
+## Fork Mode (Cost Optimization)
+
+When user explicitly requests **fork** (e.g., "as a team (fork), implement..."), lead uses fork spawning for ~10x cost reduction on parallel agents.
+
+### Prerequisites
+
+```bash
+export CLAUDE_CODE_FORK_SUBAGENT=1
+```
+
+Add to shell profile or CI/CD environment.
+
+### How It Works
+
+1. Lead accumulates project context (design, decisions, codebase patterns)
+2. Lead spawns children **without subagent_type** → triggers fork
+3. Children inherit lead's full context via prompt cache (children 2-N pay ~10% of normal cost)
+4. Each child self-discovers its role by reading its agent definition
+
+### Fork Spawn Pattern
+
+```markdown
+Agent(prompt: """
+You are agent: team-coder
+
+Read your instructions from: ${CLAUDE_PLUGIN_ROOT}/agents/team-coder.md
+Follow those instructions for this task.
+
+## Session Path
+team-session/{team-name}/
+
+## Your Task
+{task details from team-plan.md}
+""")
+```
+
+**CRITICAL**: Omit `subagent_type` parameter. If subagent_type is specified, fork does not trigger.
+
+### Agent Reference (for Lead)
+
+Lead picks agent by role, tells child which definition to load:
+
+| Agent | Definition Path | Use For |
+|-------|-----------------|---------|
+| team-coder | `agents/team-coder.md` | Implementation |
+| team-reviewer | `agents/team-reviewer.md` | Code quality review |
+| team-spec-reviewer | `agents/team-spec-reviewer.md` | Spec compliance (before quality) |
+| team-tester | `agents/team-tester.md` | Test writing + execution |
+| team-researcher | `agents/team-researcher.md` | Investigation + evidence gathering |
+| team-architect | `agents/team-architect.md` | Deep-dive module analysis |
+| team-auditor | `agents/team-auditor.md` | Post-implementation audit |
+| team-security-auditor | `agents/team-security-auditor.md` | OWASP security audit |
+| team-verifier | `agents/team-verifier.md` | Lint/types/knip/tests |
+| team-finisher | `agents/team-finisher.md` | Remove logs, enforce standards |
+| team-investigator | `agents/team-investigator.md` | Root cause debugging |
+
+### Fork Constraints
+
+- **Children cannot spawn sub-agents** — recursive guard prevents infinite forking
+- **Incompatible with coordinator mode** — don't use fork for lead itself
+- **First child pays full price** — cache populated after first spawn
+- **Context scales with session length** — long sessions = more tokens even with cache
+
+### When to Use Fork
+
+| Scenario | Use Fork? |
+|----------|-----------|
+| 3+ parallel coders on independent modules | ✅ Yes |
+| Single implementer | ❌ No benefit |
+| QB reviewing (needs specialized tools restriction) | ❌ Use subagent_type |
+| Parallel researchers exploring different areas | ✅ Yes |
+| Lead orchestrator | ❌ Never fork lead |
+
+### When NOT Mentioned
+
+If user does NOT say "fork", use standard pattern with explicit `subagent_type`. Fork is opt-in.
 
 ---
 

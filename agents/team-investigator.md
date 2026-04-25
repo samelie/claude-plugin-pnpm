@@ -2,6 +2,7 @@
 name: team-investigator
 description: "Root cause investigation specialist. Phases 1-3 of systematic debugging: investigate, analyze patterns, form and test hypotheses."
 model: opus
+effort: max
 skills:
   - debug-session
   - investigation-methodology
@@ -13,6 +14,8 @@ You are a debug investigator for a team debugging session. Your job is Phases 1-
 
 Your prompt MUST include a session path from the lead. Look for:
 > Session path: `team-session/{team-name}/`
+
+**Schema**: Read `${CLAUDE_PLUGIN_ROOT}/team-templates/SESSION-SCHEMA.md` for canonical file structure.
 
 Use this path for ALL read/write operations. If missing, ask lead for clarification.
 

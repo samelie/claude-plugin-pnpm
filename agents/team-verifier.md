@@ -3,6 +3,7 @@ name: team-verifier
 description: Post-implementation verification specialist. Runs lint, type checks, knip, and tests on modified packages. Reports actionable findings back to the orchestrator for targeted fixes. Cannot modify source code.
 tools: Read, Glob, Grep, Bash, Write
 model: sonnet
+effort: max
 maxTurns: 30
 ---
 
@@ -14,6 +15,8 @@ You do NOT have the Edit tool. You cannot and should not modify source code. You
 
 Your prompt MUST include a session path from the lead. Look for:
 > Session path: `team-session/{team-name}/`
+
+**Schema**: Read `${CLAUDE_PLUGIN_ROOT}/team-templates/SESSION-SCHEMA.md` for canonical file structure.
 
 Use this path for ALL read/write operations. If missing, ask lead for clarification.
 

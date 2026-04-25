@@ -4,7 +4,18 @@ Claude Code plugin for pnpm monorepo workflows — team agents, workspace operat
 
 ## Dependencies
 
-This plugin relies on two open-source projects for enhanced functionality:
+This plugin relies on four open-source projects for enhanced functionality. See [`docs/third-party/`](./docs/third-party/) for detailed documentation.
+
+| Tool | Purpose | Repo |
+|------|---------|------|
+| context-mode | Context window protection via FTS5 | [mksglu/context-mode](https://github.com/mksglu/context-mode) |
+| claude-mem | Cross-session memory | [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) |
+| caveman | Token-optimized communication | [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) |
+| cocoindex-code | AST-based code search | [cocoindex-io/cocoindex-code](https://github.com/cocoindex-io/cocoindex-code) |
+
+Use `/third-party-manager` skill to check versions, update, and verify installations.
+
+---
 
 ### claude-mem
 
@@ -93,6 +104,50 @@ docker exec -it cocoindex-code ccc index
 
 ---
 
+### context-mode
+
+Context window protection via FTS5 knowledge base.
+
+- **Repo**: https://github.com/mksglu/context-mode
+
+Installed via Claude Code marketplace. Key tools:
+- `ctx_batch_execute` — run commands, auto-index
+- `ctx_search` — FTS5 search
+- `ctx_execute` / `ctx_execute_file` — sandbox execution
+
+---
+
+### caveman
+
+Token-optimized communication mode (~75% reduction).
+
+- **Repo**: https://github.com/JuliusBrussee/caveman
+
+Installed via Claude Code marketplace. Usage:
+```bash
+/caveman full    # enable
+"stop caveman"   # disable
+```
+
+---
+
+## Setup
+
+### Fork Mode (Cost Optimization)
+
+For ~10x cost reduction on parallel agents, enable fork subagents:
+
+```bash
+# Add to ~/.zshrc or ~/.bashrc
+export CLAUDE_CODE_FORK_SUBAGENT=1
+```
+
+Use by saying "fork" in team requests: `"as a team (fork), implement..."`
+
+See `FRAMEWORK.md` for full fork documentation.
+
+---
+
 ## Plugin Usage
 
 See `CLAUDE.md` for team agents and workflow documentation.
@@ -116,6 +171,7 @@ pnpm -F "@adddog/claude-plugin-pnpm" types
 | `workspace-fix` | Fix lint/types/knip in workspace packages |
 | `changeset` | Generate changesets from git diff |
 | `ship` | Changeset + git workflow |
+| `third-party-manager` | Check/update/verify plugin dependencies |
 
 ### Agents
 

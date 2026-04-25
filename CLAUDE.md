@@ -10,6 +10,8 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 
 **Design trigger:** "as a team, design..." or "as a team, spec..." → spawns team-designer first, then planner.
 
+**Fork trigger:** "as a team (fork), ..." or "fork team, ..." → enables fork mode for ~10x cost reduction on parallel agents. Children inherit lead context via cache, self-discover their agent definitions. Requires `CLAUDE_CODE_FORK_SUBAGENT=1` env var.
+
 ## Teamkit Skills
 
 | Skill | Purpose |
@@ -29,8 +31,9 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 | Stage | Agent | Output | Focus |
 |-------|-------|--------|-------|
 | 1. Requirements | `team-designer` (phases: clarify→explore→write) | `requirements.md` | WHAT — user needs, constraints, acceptance criteria |
-| 2. Design | `planner` | `design.md` | HOW — technical architecture, patterns, interfaces |
-| 3. Planning | `planner` | `team-plan.md` | TASKS — executable work with agent assignments |
+| 2. Design | `team-planner` | `design.md` | HOW — technical architecture, patterns, interfaces |
+| 3. Planning | `team-planner` | `team-plan.md` | TASKS — executable work with agent assignments |
+| 4. Review | `team-plan-reviewer` | `plan-review.md` | VERIFY — completeness, consistency, clarity |
 
 **Phase-based pattern**: Lead dispatches designer multiple times with specific phases (clarify, explore, present, write). Each dispatch does ONE thing and returns. Lead stays lean, maintains state between dispatches.
 
@@ -39,8 +42,9 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 | Agent | subagent_type | Role |
 |-------|--------------|------|
 | `team-designer` | `claude-plugin-pnpm:team-designer` | Phase-aware requirements specialist. Dispatched with phase: clarify\|explore\|present\|write. Stateless — lead maintains context. |
-| `planner` | `claude-plugin-pnpm:planner` | Design + planning — produces design.md (HOW) + team-plan.md (TASKS). |
+| `team-planner` | `claude-plugin-pnpm:team-planner` | Design + planning — produces design.md (HOW) + team-plan.md (TASKS). |
 | `team-researcher` | `claude-plugin-pnpm:team-researcher` | Read-only investigation via Arcana + CocoIndex + code. Dispatched in background before planner for deep context. |
+| `team-plan-reviewer` | `claude-plugin-pnpm:team-plan-reviewer` | Plan critic — reviews requirements.md + design.md + team-plan.md with fresh context. Catches gaps before execution. |
 
 ### Execution phase (dispatched by team lead)
 

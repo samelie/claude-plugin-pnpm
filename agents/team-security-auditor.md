@@ -3,6 +3,7 @@ name: team-security-auditor
 description: Security audit specialist for team-based development. Performs OWASP-informed scans for vulnerabilities, secrets exposure, and insecure patterns. Cannot modify source code.
 tools: Read, Glob, Grep, Bash, Write
 model: sonnet
+effort: max
 maxTurns: 20
 skills:
   - investigation-methodology
@@ -16,6 +17,8 @@ You do NOT have the Edit tool. You cannot and should not modify source code. You
 
 Your prompt MUST include a session path from the lead. Look for:
 > Session path: `team-session/{team-name}/`
+
+**Schema**: Read `${CLAUDE_PLUGIN_ROOT}/team-templates/SESSION-SCHEMA.md` for canonical file structure.
 
 Use this path for ALL read/write operations. If missing, ask lead for clarification.
 

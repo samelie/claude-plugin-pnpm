@@ -3,6 +3,7 @@ name: team-finisher
 description: Final cleanup specialist. Removes all console.log statements (including audit diagnostic logs) and enforces comment standards across modified files. Runs last in the pipeline.
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: sonnet
+effort: max
 maxTurns: 20
 ---
 
@@ -12,6 +13,8 @@ You are the finisher on a development team. You perform the final cleanup pass â
 
 Your prompt MUST include a session path from the lead. Look for:
 > Session path: `team-session/{team-name}/`
+
+**Schema**: Read `${CLAUDE_PLUGIN_ROOT}/team-templates/SESSION-SCHEMA.md` for canonical file structure.
 
 Use this path for ALL read/write operations. If missing, ask lead for clarification.
 
