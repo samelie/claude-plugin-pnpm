@@ -1,12 +1,14 @@
 ---
 name: update-deps
-description: "Check and force-update Claude Code plugin dependencies. Use when marketplace update fails or you need latest versions of context-mode, claude-mem, caveman, cocoindex-code."
+description: "Check and force-update Claude Code plugin dependencies. Use when marketplace update fails or you need latest versions of context-mode, claude-mem, caveman, cocoindex-code, rtk."
 triggers:
   - update deps
   - update plugins
   - update dependencies
   - force update
   - plugin versions
+  - update rtk
+  - rtk update
 ---
 
 # Update Dependencies
@@ -21,6 +23,7 @@ Force-update Claude Code plugin dependencies when marketplace update fails.
 | claude-mem | plugin | thedotmack/claude-mem | ~/.claude/plugins/marketplaces/thedotmack |
 | caveman | plugin | JuliusBrussee/caveman | ~/.claude/plugins/marketplaces/caveman |
 | cocoindex-code | MCP server | cocoindex-io/cocoindex-code | ~/.local/bin/ccc |
+| rtk | CLI tool | rtk-ai/rtk | homebrew or ~/.local/bin/rtk |
 
 ## Check Current Versions
 
@@ -34,6 +37,9 @@ ls -la ~/.claude/plugins/cache/caveman/
 
 # Cocoindex version
 ccc --version 2>/dev/null || echo "ccc not found"
+
+# rtk version
+rtk --version 2>/dev/null || echo "rtk not found"
 ```
 
 ## Check Latest Upstream Versions
@@ -44,6 +50,7 @@ gh release view --repo mksglu/context-mode --json tagName -q .tagName 2>/dev/nul
 gh release view --repo thedotmack/claude-mem --json tagName -q .tagName 2>/dev/null || echo "No releases, check main branch"
 gh release view --repo JuliusBrussee/caveman --json tagName -q .tagName 2>/dev/null || echo "No releases, check main branch"
 gh release view --repo cocoindex-io/cocoindex-code --json tagName -q .tagName
+gh release view --repo rtk-ai/rtk --json tagName -q .tagName
 ```
 
 ## Force Update Plugins
@@ -87,6 +94,34 @@ uv tool install cocoindex-code
 ccc --version
 ```
 
+## Force Update rtk
+
+rtk (Rust Token Killer) filters CLI output for LLM context savings.
+
+### Homebrew (recommended)
+```bash
+brew upgrade rtk
+
+# Or reinstall
+brew reinstall rtk
+
+# Verify
+rtk --version
+```
+
+### Quick Install (alternative)
+```bash
+curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+
+# Verify
+rtk --version
+```
+
+### Cargo (from source)
+```bash
+cargo install --git https://github.com/rtk-ai/rtk --force
+```
+
 ## Full Update Script
 
 Run all updates at once:
@@ -107,6 +142,9 @@ rm -rf ~/.claude/plugins/marketplaces/caveman/
 
 echo "=== Updating cocoindex-code ==="
 uv tool upgrade cocoindex-code 2>/dev/null || echo "Cocoindex update failed - try: uv tool install cocoindex-code"
+
+echo "=== Updating rtk ==="
+brew upgrade rtk 2>/dev/null || echo "rtk update failed - try: brew install rtk or curl install"
 
 echo "=== Done ==="
 echo "Restart Claude Code to fetch latest plugin versions."
@@ -136,9 +174,28 @@ If seeing "UserPromptSubmit hook error" after update:
 1. Check hook scripts exist in new plugin version
 2. Run hook manually to see error: `node ~/.claude/plugins/marketplaces/context-mode/hooks/userpromptsubmit.mjs`
 
+### rtk not found or wrong version
+```bash
+# Check which rtk is installed
+which rtk
+rtk --version
+
+# If wrong rtk (reachingforthejack/rtk instead of rtk-ai/rtk)
+brew uninstall rtk
+brew install rtk-ai/rtk/rtk
+
+# Or use curl installer
+curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+```
+
+### rtk gain command not working
+If `rtk gain` fails, you may have the wrong rtk package (Rust Type Kit vs Token Killer).
+Reinstall from rtk-ai/rtk repo.
+
 ## Resources
 
 - [context-mode docs](https://github.com/mksglu/context-mode)
 - [claude-mem docs](https://context7.com/thedotmack/claude-mem)
 - [cocoindex-code docs](https://github.com/cocoindex-io/cocoindex-code)
+- [rtk docs](https://github.com/rtk-ai/rtk)
 - [Claude Code plugin system](https://context7.com/websites/code_claude)
