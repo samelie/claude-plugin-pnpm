@@ -8,7 +8,7 @@
   "keywords": ["pnpm", "monorepo", "agent-teams", "changeset", "lint", "types"],
   "skills": "./skills/",
   "agents": [
-    "./agents/planner.md",
+    "./agents/team-planner.md",
     "./agents/quarterback.md",
     "./agents/full-monorepo-pnpm.md",
     "./agents/pnpm-workspace-filter.md",
