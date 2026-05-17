@@ -75,7 +75,27 @@ rm -rf ~/.claude/plugins/marketplaces/thedotmack/
 ```bash
 rm -rf ~/.claude/plugins/cache/caveman/
 rm -rf ~/.claude/plugins/marketplaces/caveman/
-# Then restart Claude Code
+# Then restart Claude Code — agents will be stripped automatically (see below)
+```
+
+## Strip Caveman Agents
+
+Caveman ships bundled agents (cavecrew-builder, cavecrew-investigator, cavecrew-reviewer) that conflict with our own agent definitions. Remove them after every caveman install/update.
+
+**Always run this after caveman is reinstalled by the marketplace.**
+
+```bash
+# Remove from marketplace install
+rm -rf ~/.claude/plugins/marketplaces/caveman/agents/
+
+# Remove from cache — enumerate all agents dirs then rm directly
+# (find -exec unreliable here due to nested matching)
+CACHE_DIRS=$(find ~/.claude/plugins/cache/caveman -type d -name "agents" 2>/dev/null)
+if [ -n "$CACHE_DIRS" ]; then
+  echo "$CACHE_DIRS" | while read -r d; do rm -rf "$d"; done
+fi
+
+echo "Caveman agents stripped."
 ```
 
 ## Force Update Cocoindex
@@ -145,6 +165,11 @@ uv tool upgrade cocoindex-code 2>/dev/null || echo "Cocoindex update failed - tr
 
 echo "=== Updating rtk ==="
 brew upgrade rtk 2>/dev/null || echo "rtk update failed - try: brew install rtk or curl install"
+
+echo "=== Stripping caveman agents ==="
+rm -rf ~/.claude/plugins/marketplaces/caveman/agents/
+for d in $(find ~/.claude/plugins/cache/caveman -type d -name "agents" 2>/dev/null); do rm -rf "$d"; done
+echo "Caveman agents stripped."
 
 echo "=== Done ==="
 echo "Restart Claude Code to fetch latest plugin versions."

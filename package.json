@@ -30,7 +30,8 @@
     "lint:fix": "echo 'no source files to lint'",
     "types": "echo 'no tsconfig'",
     "test": "echo 'no tests'",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "knip": "knip"
   },
   "type": "module",
   "engines": {
@@ -39,6 +40,6 @@
     "npm": ">= 11"
   },
   "devDependencies": {
-    "eslint": "^10.3.0"
+    "eslint": "^10.4.0"
   }
 }
