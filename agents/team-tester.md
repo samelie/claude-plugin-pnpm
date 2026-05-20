@@ -38,6 +38,15 @@ Write **plan.md** to your session directory:
 - Coverage gaps: what still needs testing (if anything)
 - Edge cases considered
 
+## Third-Party Libraries
+
+When writing tests that involve third-party or open-source libraries, fetch current documentation via context7 MCP. Training data may be stale — test utilities, matchers, and mock patterns change between versions.
+
+```
+1. mcp__context7__resolve-library-id  → get library ID
+2. mcp__context7__query-docs          → get current testing API/patterns for the library
+```
+
 ## Rules
 
 - Follow existing test patterns and frameworks in the codebase

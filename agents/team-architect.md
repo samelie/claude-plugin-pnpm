@@ -50,6 +50,17 @@ Write one file: **brief.md** — a focused technical brief:
 
 Keep it concrete. Code snippets, file paths, line numbers. No hand-waving.
 
+## Third-Party Libraries
+
+When investigating modules that use third-party or open-source libraries, fetch current documentation via context7 MCP. Training data may be stale.
+
+```
+1. mcp__context7__resolve-library-id  → get library ID
+2. mcp__context7__query-docs          → get current API/usage docs relevant to the module
+```
+
+This ensures your brief documents current library behavior, not deprecated APIs.
+
 ## Rules
 
 - Do NOT modify source code. You investigate only.

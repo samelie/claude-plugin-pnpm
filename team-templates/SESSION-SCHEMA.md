@@ -15,10 +15,16 @@ Where `{team-name}` = `YYYYMMDD-{slug}` (e.g., `20260424-vector-search`)
 ```
 team-session/{team-name}/
 │
+├── [DESIGNER PHASES - progressive refinement]
+├── designer/
+│   ├── clarify.md           ← team-designer (clarify phase, Q&A + resolved reqs)
+│   ├── explore.md           ← team-designer (explore phase, reads clarify.md)
+│   └── present.md           ← team-designer (present phase, reads clarify + explore)
+│
 ├── [PLANNING PHASE - root level]
-├── requirements.md          ← team-designer (write phase)
-├── design.md                ← team-planner
-├── team-plan.md             ← team-planner
+├── requirements.md          ← team-designer (write phase, reads all designer/*.md)
+├── design.md                ← team-planner (reads requirements.md)
+├── team-plan.md             ← team-planner (reads requirements.md)
 ├── team-scope.json          ← team-planner (hook config)
 ├── plan-review.md           ← team-plan-reviewer
 │
@@ -101,7 +107,10 @@ When same agent type runs multiple times:
 
 | Agent | Reads | Writes to |
 |-------|-------|-----------|
-| team-designer | (prompt only) | `requirements.md` (root) |
+| team-designer (clarify) | (prompt only) | `designer/clarify.md` |
+| team-designer (explore) | `designer/clarify.md` | `designer/explore.md` |
+| team-designer (present) | `designer/clarify.md`, `designer/explore.md` | `designer/present.md` |
+| team-designer (write) | all `designer/*.md` | `requirements.md` (root) |
 | team-researcher | codebase, knowledge tools | `researcher/findings.md` |
 | team-planner | `requirements.md`, `researcher/findings.md` | `design.md`, `team-plan.md` (root) |
 | team-plan-reviewer | `requirements.md`, `design.md`, `team-plan.md` | `plan-review.md` (root) |
