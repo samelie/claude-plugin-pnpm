@@ -24,20 +24,27 @@ See `FRAMEWORK.md` → Fork Mode for full documentation.
 **Lead stays lean.** Heavy lifting happens in designer agents:
 
 ```
-Lead dispatches designer(phase: "clarify") → ONE question → returns
-Lead dispatches designer(phase: "clarify") → ONE question → returns
-Lead dispatches designer(phase: "explore") → 2-3 approaches → returns
-User picks approach
-Lead dispatches planner → design.md + team-plan.md → returns
+Lead dispatches designer(phase: "clarify") → writes designer/clarify.md → returns
+Lead dispatches designer(phase: "clarify") → updates designer/clarify.md → returns
+  ... (loop until requirements clear)
+Lead dispatches designer(phase: "explore") → reads clarify.md → writes designer/explore.md → returns
+User picks approach → lead updates designer/explore.md with selection
+Lead dispatches designer(phase: "present") → reads clarify + explore → writes designer/present.md → returns
+  ... (loop per section until all approved)
+Lead dispatches designer(phase: "write") → reads all designer/*.md → writes requirements.md → returns
+Lead dispatches researcher → reads requirements.md → writes researcher/findings.md
+Lead dispatches planner → reads requirements.md + findings.md → writes design.md + team-plan.md
 ```
 
-Lead owns: user communication, phase transitions, context accumulation.
-Designer owns: research, question generation, approach exploration.
+**Artifact chain**: Every phase reads previous phase's file from `team-session/{team-name}/`. No in-memory-only state. See `SESSION-SCHEMA.md` for full file structure.
+
+Lead owns: user communication, phase transitions, session path.
+Designer owns: research, question generation, approach exploration, requirements writing.
 
 ## Pipeline
 
 ```
-[problem] → clarify loop → explore → research + plan → present → review → spawn prompt
+[problem] → clarify loop → explore → present loop → write → research + plan → review → spawn prompt
 ```
 
 ```dot
@@ -53,6 +60,10 @@ digraph team_kit_create {
   "Redirect to writing-plans" [shape=box];
   "Dispatch designer(explore)" [shape=box];
   "User selects approach" [shape=box];
+  "Dispatch designer(present)" [shape=box];
+  "Section approved?" [shape=diamond];
+  "All sections approved?" [shape=diamond];
+  "Dispatch designer(write)" [shape=box];
   "Dispatch researcher + planner" [shape=box];
   "Invoke team-kit-present" [shape=box];
   "Design approved?" [shape=diamond];
@@ -74,7 +85,13 @@ digraph team_kit_create {
   "Is this team-sized?" -> "Redirect to writing-plans" [label="no"];
   "Is this team-sized?" -> "Dispatch designer(explore)" [label="yes"];
   "Dispatch designer(explore)" -> "User selects approach";
-  "User selects approach" -> "Dispatch researcher + planner";
+  "User selects approach" -> "Dispatch designer(present)";
+  "Dispatch designer(present)" -> "Section approved?";
+  "Section approved?" -> "Dispatch designer(present)" [label="revise"];
+  "Section approved?" -> "All sections approved?";
+  "All sections approved?" -> "Dispatch designer(present)" [label="next section"];
+  "All sections approved?" -> "Dispatch designer(write)" [label="yes"];
+  "Dispatch designer(write)" -> "Dispatch researcher + planner";
   "Dispatch researcher + planner" -> "Invoke team-kit-present";
   "Invoke team-kit-present" -> "Design approved?";
   "Design approved?" -> "Invoke team-kit-present" [label="no, revise"];
@@ -186,11 +203,9 @@ When problem is vague/broad, run the clarify loop.
 ### The Loop
 
 ```javascript
-clarify_context = {
-  problem: original_problem,
-  previous_answers: [],
-  resolved: {}
-}
+// Create session folder first
+const session_path = `team-session/${team_name}/`
+// mkdir -p ${session_path}designer/
 
 while (!requirements_clear) {
   // Dispatch designer for ONE question
@@ -199,19 +214,20 @@ while (!requirements_clear) {
     description: `Clarify requirements - question ${N}`,
     prompt: `
 Phase: clarify
+Session path: \`${session_path}\`
 
-Problem: ${clarify_context.problem}
+Problem: ${problem_description}
 
-Previous answers:
-${clarify_context.previous_answers.map(a => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n')}
-
+Read existing \`${session_path}designer/clarify.md\` if it exists (contains previous Q&A).
 Generate ONE focused question to clarify requirements.
+Update \`${session_path}designer/clarify.md\` with any new Q&A entries and resolved requirements.
 `
   })
   
+  // Designer returns question + writes/updates designer/clarify.md
   // Present question to user
   // Collect answer
-  // Add to context
+  // On next dispatch, designer reads its own previous output from disk
   // Evaluate: are ALL requirements clear?
 }
 ```
@@ -259,34 +275,90 @@ Agent({
   description: "Explore implementation approaches",
   prompt: `
 Phase: explore
+Session path: \`${session_path}\`
 
-Requirements:
-- Packages: ${clarify_context.resolved.packages.join(', ')}
-- Deliverables: ${clarify_context.resolved.deliverables.join(', ')}
-- Acceptance criteria: ${clarify_context.resolved.acceptance_criteria.join(', ')}
-- Constraints: ${clarify_context.resolved.constraints.join(', ')}
-
-Problem context:
-${clarify_context.previous_answers.map(a => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n')}
-
+Read \`${session_path}designer/clarify.md\` for resolved requirements and Q&A context.
 Explore codebase. Propose 2-3 approaches with tradeoffs and recommendation.
+Write output to \`${session_path}designer/explore.md\`.
 `
 })
 ```
 
 ### User Selection
 
-Present approaches, ask user to pick. Record selection:
+Present approaches, ask user to pick. Designer writes chosen approach to `designer/explore.md`.
+
+Proceed to Step 3b.
+
+---
+
+## Step 3b: Present Requirements (dispatch designer)
+
+After approach selected, present requirements section-by-section for user approval.
+
+### Dispatch Loop
 
 ```javascript
-explore_result = {
-  chosen_approach: "A: [Name]",
-  key_decisions: [...],
-  constraints_to_honor: [...]
+// Present sections one at a time: Problem, Requirements, Approach, Criteria, Constraints
+const sections = ['Problem', 'Requirements', 'Approach', 'Acceptance criteria', 'Constraints'];
+
+for (const section of sections) {
+  Agent({
+    subagent_type: "claude-plugin-pnpm:team-designer",
+    description: `Present ${section} for approval`,
+    prompt: `
+Phase: present
+Session path: \`${session_path}\`
+Section: ${section}
+
+Read \`${session_path}designer/clarify.md\` and \`${session_path}designer/explore.md\`.
+Read existing \`${session_path}designer/present.md\` if it exists (contains previous approvals).
+Present the "${section}" section for user approval.
+Update \`${session_path}designer/present.md\` with approval status.
+`
+  })
+
+  // Designer returns section content for user
+  // Present to user, collect approval or revision feedback
+  // If revised: re-dispatch with feedback, designer updates present.md
+  // If approved: proceed to next section
 }
 ```
 
-Proceed to Step 4.
+### Exit Condition
+
+All 5 sections approved in `designer/present.md`. Proceed to Step 3c.
+
+---
+
+## Step 3c: Write Requirements (dispatch designer)
+
+Final designer phase. Synthesizes all previous phases into the canonical `requirements.md`.
+
+### Dispatch
+
+```javascript
+Agent({
+  subagent_type: "claude-plugin-pnpm:team-designer",
+  description: "Write requirements.md from approved design",
+  prompt: `
+Phase: write
+Session path: \`${session_path}\`
+
+Read ALL previous phase outputs:
+- \`${session_path}designer/clarify.md\` — Q&A and resolved requirements
+- \`${session_path}designer/explore.md\` — chosen approach and key decisions
+- \`${session_path}designer/present.md\` — approved sections and any revisions
+
+Synthesize into \`${session_path}requirements.md\`.
+This is the handoff artifact to the planner. It must be complete and self-contained.
+`
+})
+```
+
+### Exit Condition
+
+`requirements.md` written to session root. All decisions from clarify + explore + present captured. Proceed to Step 4.
 
 ---
 
@@ -331,7 +403,7 @@ Focus on what a planner needs to decompose this into agent tasks.
 
 ### 4b: Invoke planner
 
-After researcher completes, invoke planner with chosen approach:
+After researcher completes, invoke planner. Planner reads from disk — no inline context needed.
 
 ```javascript
 Agent({
@@ -341,28 +413,19 @@ Agent({
 ## Session Path
 Session path: \`${session_path}\`
 Write output to: \`${session_path}\`
-Read researcher findings from: \`${session_path}researcher/\`
+
+## Read These Files (all on disk)
+- \`${session_path}requirements.md\` — approved requirements (from designer)
+- \`${session_path}designer/clarify.md\` — Q&A context
+- \`${session_path}designer/explore.md\` — chosen approach + key decisions
+- \`${session_path}researcher/findings.md\` — codebase research
 
 ## Task
 Task: ${task_description}
 
-**Chosen approach**: ${explore_result.chosen_approach}
-**Key decisions**: ${explore_result.key_decisions.join(', ')}
-
-Affected packages: ${clarify_context.resolved.packages}
-Constraints: ${explore_result.constraints_to_honor}
-
-## Requirements (from clarification)
-${JSON.stringify(clarify_context.resolved, null, 2)}
-
-## Researcher findings
-{paste or summarize the researcher's findings.md here}
-
 Generate a complete team plan following FRAMEWORK.md.
-Output to team-session/{team-name}/
-
-The researcher already queried Arcana and CocoIndex — use their findings
-as your starting point.
+Honor the chosen approach in explore.md — do not propose alternatives.
+The researcher already queried Arcana and CocoIndex — use their findings.
 `
 })
 ```
@@ -466,11 +529,14 @@ Present to user:
 
 Lead orchestrates, does NOT implement. Lead dispatches:
 
-| Agent | Role | When dispatched |
-|-------|------|-----------------|
-| `team-designer` | Clarify questions, explore approaches | Steps 2c, 3 (multiple dispatches) |
-| `team-researcher` | Deep context via Arcana + CocoIndex + code | Step 4a (background) |
-| `planner` | Generate design.md + team-plan.md | Step 4b (after researcher) |
+| Agent | Role | When dispatched | Writes |
+|-------|------|-----------------|--------|
+| `team-designer` (clarify) | Q&A loop, resolve requirements | Step 2c (multiple dispatches) | `designer/clarify.md` |
+| `team-designer` (explore) | Propose approaches, user selects | Step 3 | `designer/explore.md` |
+| `team-designer` (present) | Section-by-section approval | Step 3b (per section) | `designer/present.md` |
+| `team-designer` (write) | Synthesize requirements | Step 3c | `requirements.md` |
+| `team-researcher` | Deep context via Arcana + CocoIndex + code | Step 4a (background) | `researcher/findings.md` |
+| `team-planner` | Generate design.md + team-plan.md | Step 4b (after researcher) | `design.md`, `team-plan.md` |
 
 Lead owns:
 - User communication (presenting questions, getting approvals)
@@ -486,19 +552,23 @@ Lead does NOT:
 
 ---
 
-## Context Flow
+## Artifact Chain (all on disk)
 
 ```
-clarify_context (lead accumulates)
-    ↓
-explore_result (from designer)
-    ↓
-researcher findings (from researcher)
-    ↓
-planner input (lead synthesizes)
-    ↓
-design.md + team-plan.md (from planner)
+designer/clarify.md    ← designer(clarify) writes, each invocation appends
+    ↓ reads
+designer/explore.md    ← designer(explore) writes
+    ↓ reads both
+designer/present.md    ← designer(present) writes, each section appends
+    ↓ reads all three
+requirements.md        ← designer(write) writes (root, canonical handoff)
+    ↓ reads
+researcher/findings.md ← team-researcher writes
+    ↓ reads requirements.md + findings.md
+design.md + team-plan.md ← team-planner writes
 ```
+
+**No in-memory-only state.** Every phase's output is a file in `team-session/{team-name}/`. Lead passes `session_path` to each dispatch — agents read previous phases from disk.
 
 ---
 
@@ -516,18 +586,20 @@ design.md + team-plan.md (from planner)
 |-------|-------------|
 | `team-kit-clarify` | Dispatch guide for designer(phase: clarify) loop |
 | `team-kit-explore` | Dispatch guide for designer(phase: explore) |
-| `team-kit-present` | Invoked in Step 5 for section-by-section approval |
+| `team-kit-present` | Invoked in Step 5 for planner output approval (design.md sections) |
 | `team-kit-review` | Invoked in Step 6 for post-plan review |
 | `investigation-methodology` | Used by designer and researcher for codebase exploration |
+| `team-session-writing` | Compressed doc style for all team-session artifacts |
+| `context-mode:grill-with-docs` | Used by designer during clarify for domain challenges |
 
 ## Related Agents
 
-| Agent | When to use |
-|-------|-------------|
-| `team-designer` | Clarify + explore phases — stateless, phase-aware |
-| `planner` | Planning phase — produces design.md + team-plan.md |
-| `team-researcher` | Deep context gathering before planner |
-| `team-architect` | Mid-execution module deep-dive (NOT initial planning) |
+| Agent | Phases | Writes | When |
+|-------|--------|--------|------|
+| `team-designer` | clarify, explore, present, write | `designer/*.md`, `requirements.md` | Steps 2c, 3, 3b, 3c |
+| `team-planner` | — | `design.md`, `team-plan.md` | Step 4b (reads requirements.md) |
+| `team-researcher` | — | `researcher/findings.md` | Step 4a (background, reads requirements.md) |
+| `team-architect` | — | `architect/brief.md` | Mid-execution only (NOT initial planning) |
 
 ## Edge Cases
 

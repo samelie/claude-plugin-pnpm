@@ -27,17 +27,10 @@ Do not use Read, Grep, or Glob until you complete these — in this order:
 - Run 4-5 queries covering different aspects of the investigation
 - Useful params: `paths` (glob filter, e.g. `["src/utils/*"]`), `languages` (e.g. `["typescript"]`), `limit` (default 5), `offset` (paginate)
 
-### Arcana (project knowledge — what was learned)
-- `mcp__plugin_arcana_arcana__arcana_search` with query `"<topic>"` — hybrid semantic+keyword
-- `mcp__plugin_arcana_arcana__arcana_find` with query `"<topic>"` — pure semantic search
-- `mcp__plugin_arcana_arcana__arcana_grep` with pattern `"<pattern>"` — exact matches in knowledge
-- `mcp__plugin_arcana_arcana__arcana_read` on top results for full content
-
 ### Cross-reference
 - Claude-Mem = *what happened in past sessions* (tool usage, decisions, bugfixes, features)
 - Context-Mode = *what happened this session* (command output, indexed docs, fetched URLs)
 - CocoIndex = *what exists in code* (implementations, types, call sites)
-- Arcana = *what was learned* (gotchas, decisions, curated knowledge)
 
 ## 2. THEN explore the codebase
 
@@ -48,11 +41,7 @@ Use context-mode tools to keep raw output out of context:
 
 Fallback to Read, Glob, Grep only when you need exact content in context (e.g., for editing). Use Bash only for mutations (git commit, file writes).
 
-## 3. Store notable discoveries in Arcana
-
-If you uncover gotchas, root causes, or architecture insights not already in Arcana, use `mcp__plugin_arcana_arcana__arcana_add_memory` to save them for future sessions.
-
-## 4. Rules
+## 3. Rules
 
 - Do NOT modify source code. You investigate only. You lack Edit on purpose.
 - Show evidence — file paths, line numbers, code snippets. Don't just state conclusions.

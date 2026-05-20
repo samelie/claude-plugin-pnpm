@@ -26,25 +26,32 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 
 ## Available Team Agents
 
-### 3-Stage Flow
+### Artifact Chain (all disk-backed)
 
-| Stage | Agent | Output | Focus |
-|-------|-------|--------|-------|
-| 1. Requirements | `team-designer` (phases: clarify→explore→write) | `requirements.md` | WHAT — user needs, constraints, acceptance criteria |
-| 2. Design | `team-planner` | `design.md` | HOW — technical architecture, patterns, interfaces |
-| 3. Planning | `team-planner` | `team-plan.md` | TASKS — executable work with agent assignments |
-| 4. Review | `team-plan-reviewer` | `plan-review.md` | VERIFY — completeness, consistency, clarity |
+```
+designer/clarify.md → designer/explore.md → designer/present.md → requirements.md → design.md + team-plan.md
+```
 
-**Phase-based pattern**: Lead dispatches designer multiple times with specific phases (clarify, explore, present, write). Each dispatch does ONE thing and returns. Lead stays lean, maintains state between dispatches.
+Each phase reads previous phase's file from `team-session/{team-name}/`. No in-memory-only state.
+
+| Stage | Agent | Reads | Writes | Focus |
+|-------|-------|-------|--------|-------|
+| 1a. Clarify | `team-designer` (clarify) | — | `designer/clarify.md` | Q&A loop, resolve requirements |
+| 1b. Explore | `team-designer` (explore) | `designer/clarify.md` | `designer/explore.md` | Approaches + user selection |
+| 1c. Present | `team-designer` (present) | `designer/clarify.md`, `explore.md` | `designer/present.md` | Section-by-section approval |
+| 1d. Write | `team-designer` (write) | all `designer/*.md` | `requirements.md` | Canonical handoff artifact |
+| 2. Research | `team-researcher` | `requirements.md` | `researcher/findings.md` | Deep codebase context |
+| 3. Design + Plan | `team-planner` | `requirements.md`, `findings.md` | `design.md`, `team-plan.md` | HOW + TASKS |
+| 4. Review | `team-plan-reviewer` | `requirements.md`, `design.md`, `team-plan.md` | `plan-review.md` | Completeness, consistency |
 
 ### Planning phase (used by team-kit-create skill)
 
 | Agent | subagent_type | Role |
 |-------|--------------|------|
-| `team-designer` | `claude-plugin-pnpm:team-designer` | Phase-aware requirements specialist. Dispatched with phase: clarify\|explore\|present\|write. Stateless — lead maintains context. |
-| `team-planner` | `claude-plugin-pnpm:team-planner` | Design + planning — produces design.md (HOW) + team-plan.md (TASKS). |
-| `team-researcher` | `claude-plugin-pnpm:team-researcher` | Read-only investigation via Arcana + CocoIndex + code. Dispatched in background before planner for deep context. |
-| `team-plan-reviewer` | `claude-plugin-pnpm:team-plan-reviewer` | Plan critic — reviews requirements.md + design.md + team-plan.md with fresh context. Catches gaps before execution. |
+| `team-designer` | `claude-plugin-pnpm:team-designer` | Phase-aware requirements specialist. 4 phases: clarify→explore→present→write. Stateless — reads/writes disk artifacts. |
+| `team-planner` | `claude-plugin-pnpm:team-planner` | Design + planning — reads `requirements.md`, produces `design.md` (HOW) + `team-plan.md` (TASKS). |
+| `team-researcher` | `claude-plugin-pnpm:team-researcher` | Read-only investigation via Arcana + CocoIndex + code. Reads `requirements.md` for context. |
+| `team-plan-reviewer` | `claude-plugin-pnpm:team-plan-reviewer` | Plan critic — reviews `requirements.md` + `design.md` + `team-plan.md` with fresh context. |
 
 ### Execution phase (dispatched by team lead)
 

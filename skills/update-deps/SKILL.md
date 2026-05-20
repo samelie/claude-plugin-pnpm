@@ -22,30 +22,27 @@ Force-update Claude Code plugin dependencies when marketplace update fails.
 | context-mode | plugin | mksglu/context-mode | ~/.claude/plugins/marketplaces/context-mode |
 | claude-mem | plugin | thedotmack/claude-mem | ~/.claude/plugins/marketplaces/thedotmack |
 | caveman | plugin | JuliusBrussee/caveman | ~/.claude/plugins/marketplaces/caveman |
-| cocoindex-code | MCP server | cocoindex-io/cocoindex-code | ~/.local/bin/ccc |
-| rtk | CLI tool | rtk-ai/rtk | homebrew or ~/.local/bin/rtk |
+| cocoindex-code | MCP server (Python) | cocoindex-io/cocoindex-code | ~/.local/bin/ccc |
+| rtk | CLI tool (Rust) | rtk-ai/rtk | homebrew or ~/.local/bin/rtk |
 
 ## Check Current Versions
 
-Run these to see installed versions:
-
 ```bash
-# Plugin versions (check git commit/tag in cache)
-ls -la ~/.claude/plugins/cache/context-mode/
-ls -la ~/.claude/plugins/cache/thedotmack/claude-mem/
-ls -la ~/.claude/plugins/cache/caveman/
+# Plugin versions — read from marketplace package.json (cache dirs unreliable)
+node -e "console.log('context-mode:', require('$HOME/.claude/plugins/marketplaces/context-mode/package.json').version)" 2>/dev/null || echo "context-mode: not installed"
+node -e "console.log('claude-mem:', require('$HOME/.claude/plugins/marketplaces/thedotmack/package.json').version)" 2>/dev/null || echo "claude-mem: not installed"
+node -e "console.log('caveman:', require('$HOME/.claude/plugins/marketplaces/caveman/package.json').version)" 2>/dev/null || echo "caveman: not installed"
 
-# Cocoindex version
-ccc --version 2>/dev/null || echo "ccc not found"
+# Cocoindex — no --version flag; use uv tool list
+uv tool list 2>/dev/null | grep cocoindex-code || echo "cocoindex-code: not installed"
 
-# rtk version
-rtk --version 2>/dev/null || echo "rtk not found"
+# rtk
+rtk --version 2>/dev/null || echo "rtk: not installed"
 ```
 
 ## Check Latest Upstream Versions
 
 ```bash
-# Latest releases
 gh release view --repo mksglu/context-mode --json tagName -q .tagName 2>/dev/null || echo "No releases, check main branch"
 gh release view --repo thedotmack/claude-mem --json tagName -q .tagName 2>/dev/null || echo "No releases, check main branch"
 gh release view --repo JuliusBrussee/caveman --json tagName -q .tagName 2>/dev/null || echo "No releases, check main branch"
@@ -55,63 +52,109 @@ gh release view --repo rtk-ai/rtk --json tagName -q .tagName
 
 ## Force Update Plugins
 
-When marketplace update fails, force update by clearing cache:
+When marketplace update fails, force update by clearing cache + marketplace, then restart.
 
 ### context-mode
+
+Easiest: run `/context-mode:ctx-upgrade` skill (handles everything).
+
+Manual fallback:
 ```bash
 rm -rf ~/.claude/plugins/cache/context-mode/
 rm -rf ~/.claude/plugins/marketplaces/context-mode/
-# Then restart Claude Code - it will re-fetch from GitHub
+# Alternative: npm update -g context-mode
+# Then restart Claude Code — re-fetches from GitHub
+```
+
+Reinstall from scratch:
+```bash
+/plugin marketplace add mksglu/context-mode
+/plugin install context-mode@context-mode
 ```
 
 ### claude-mem
+
+Easiest: upgrade via installer script:
+```bash
+curl -fsSL https://install.cmem.ai/openclaw.sh | bash -s -- --upgrade
+```
+
+Manual fallback:
 ```bash
 rm -rf ~/.claude/plugins/cache/thedotmack/
 rm -rf ~/.claude/plugins/marketplaces/thedotmack/
 # Then restart Claude Code
 ```
 
+Reinstall from scratch:
+```bash
+/plugin marketplace add thedotmack/claude-mem
+/plugin install claude-mem
+```
+
 ### caveman
+
 ```bash
 rm -rf ~/.claude/plugins/cache/caveman/
 rm -rf ~/.claude/plugins/marketplaces/caveman/
-# Then restart Claude Code — agents will be stripped automatically (see below)
+# Then restart Claude Code — AFTER restart, run "Caveman Post-Install Cleanup" below
 ```
 
-## Strip Caveman Agents
+Reinstall from scratch:
+```bash
+claude plugin marketplace add JuliusBrussee/caveman
+claude plugin install caveman@caveman
+```
 
-Caveman ships bundled agents (cavecrew-builder, cavecrew-investigator, cavecrew-reviewer) that conflict with our own agent definitions. Remove them after every caveman install/update.
+## Caveman Post-Install Cleanup
 
-**Always run this after caveman is reinstalled by the marketplace.**
+Caveman ships bundled artifacts that conflict with our own definitions:
+- **agents/** — cavecrew-builder, cavecrew-investigator, cavecrew-reviewer (conflict with our agent defs)
+- **skills/cavecrew/** — cavecrew delegation skill (we define our own)
+- **.agents/skills/cavecrew/** — duplicate cavecrew skill in .agents dir
+
+Remove all after every caveman install/update.
+
+**Run this AFTER restart** (marketplace must reinstall first, then strip).
 
 ```bash
-# Remove from marketplace install
-rm -rf ~/.claude/plugins/marketplaces/caveman/agents/
+CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman
+CAVEMAN_CACHE=~/.claude/plugins/cache/caveman
 
-# Remove from cache — enumerate all agents dirs then rm directly
-# (find -exec unreliable here due to nested matching)
-CACHE_DIRS=$(find ~/.claude/plugins/cache/caveman -type d -name "agents" 2>/dev/null)
-if [ -n "$CACHE_DIRS" ]; then
-  echo "$CACHE_DIRS" | while read -r d; do rm -rf "$d"; done
-fi
+# Strip bundled agents
+rm -rf "$CAVEMAN_MKT/agents/"
 
-echo "Caveman agents stripped."
+# Strip cavecrew skill (both locations)
+rm -rf "$CAVEMAN_MKT/skills/cavecrew/"
+rm -rf "$CAVEMAN_MKT/.agents/skills/cavecrew/"
+
+# Strip from cache too
+for pattern in agents cavecrew; do
+  for d in $(find "$CAVEMAN_CACHE" -type d -name "$pattern" 2>/dev/null); do rm -rf "$d"; done
+done
+
+echo "Caveman agents + cavecrew skill stripped."
 ```
 
 ## Force Update Cocoindex
 
-Cocoindex is installed via `uv` (Python):
+Cocoindex is installed via `uv` (Python). **Note**: `ccc` has no `--version` flag — use `uv tool list` or `ccc doctor` to verify.
 
 ```bash
-# Update to latest
-uv tool upgrade cocoindex-code
+# Update to latest (with required flags for prerelease cocoindex core)
+uv tool install --upgrade cocoindex-code --prerelease explicit --with "cocoindex>=1.0.0a24"
 
 # Or force reinstall
 uv tool uninstall cocoindex-code
-uv tool install cocoindex-code
+uv tool install cocoindex-code --prerelease explicit --with "cocoindex>=1.0.0a24"
+
+# Alternative: pipx
+pipx install cocoindex-code    # first install
+pipx upgrade cocoindex-code    # upgrade
 
 # Verify
-ccc --version
+uv tool list | grep cocoindex-code
+ccc doctor
 ```
 
 ## Force Update rtk
@@ -131,7 +174,7 @@ rtk --version
 
 ### Quick Install (alternative)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh
 
 # Verify
 rtk --version
@@ -139,12 +182,14 @@ rtk --version
 
 ### Cargo (from source)
 ```bash
-cargo install --git https://github.com/rtk-ai/rtk --force
+cargo install --git https://github.com/rtk-ai/rtk rtk
 ```
 
 ## Full Update Script
 
-Run all updates at once:
+Run all updates at once. **Two-phase**: clear caches + update CLIs, then restart, then strip agents.
+
+### Phase 1: Clear + Update (run before restart)
 
 ```bash
 #!/bin/bash
@@ -155,40 +200,55 @@ rm -rf ~/.claude/plugins/cache/context-mode/
 rm -rf ~/.claude/plugins/cache/thedotmack/
 rm -rf ~/.claude/plugins/cache/caveman/
 
-echo "=== Clearing marketplace caches ==="
+echo "=== Clearing marketplace installs ==="
 rm -rf ~/.claude/plugins/marketplaces/context-mode/
 rm -rf ~/.claude/plugins/marketplaces/thedotmack/
 rm -rf ~/.claude/plugins/marketplaces/caveman/
 
 echo "=== Updating cocoindex-code ==="
-uv tool upgrade cocoindex-code 2>/dev/null || echo "Cocoindex update failed - try: uv tool install cocoindex-code"
+uv tool install --upgrade cocoindex-code --prerelease explicit --with "cocoindex>=1.0.0a24" 2>/dev/null \
+  || echo "Cocoindex update failed - try: uv tool install cocoindex-code --prerelease explicit --with 'cocoindex>=1.0.0a24'"
 
 echo "=== Updating rtk ==="
 brew upgrade rtk 2>/dev/null || echo "rtk update failed - try: brew install rtk or curl install"
 
-echo "=== Stripping caveman agents ==="
-rm -rf ~/.claude/plugins/marketplaces/caveman/agents/
-for d in $(find ~/.claude/plugins/cache/caveman -type d -name "agents" 2>/dev/null); do rm -rf "$d"; done
-echo "Caveman agents stripped."
+echo "=== Done Phase 1 ==="
+echo "Now restart Claude Code, then run Phase 2 to strip caveman agents."
+```
 
-echo "=== Done ==="
-echo "Restart Claude Code to fetch latest plugin versions."
+### Phase 2: Caveman cleanup (run after restart)
+
+```bash
+CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman
+CAVEMAN_CACHE=~/.claude/plugins/cache/caveman
+
+rm -rf "$CAVEMAN_MKT/agents/" "$CAVEMAN_MKT/skills/cavecrew/" "$CAVEMAN_MKT/.agents/skills/cavecrew/"
+for pattern in agents cavecrew; do
+  for d in $(find "$CAVEMAN_CACHE" -type d -name "$pattern" 2>/dev/null); do rm -rf "$d"; done
+done
+echo "Caveman agents + cavecrew skill stripped."
 ```
 
 ## Troubleshooting
 
 ### Plugin not updating after cache clear
 1. Check `~/.claude/settings.json` has correct `extraKnownMarketplaces` config
-2. Verify GitHub repo is accessible: `gh repo view mksglu/context-mode`
-3. Check for rate limiting: `gh api rate_limit`
+2. Verify GitHub repo accessible: `gh repo view mksglu/context-mode`
+3. Check rate limiting: `gh api rate_limit`
 
 ### Cocoindex binary not found
 ```bash
-# Check if uv tools bin is in PATH
+# Check PATH includes uv tools bin
 echo $PATH | tr ':' '\n' | grep -E "local/bin|uv"
 
-# Reinstall with uv
-uv tool install cocoindex-code
+# Check install status
+uv tool list | grep cocoindex-code
+
+# Run diagnostics
+ccc doctor
+
+# Reinstall
+uv tool install cocoindex-code --prerelease explicit --with "cocoindex>=1.0.0a24"
 
 # Check symlink
 ls -la ~/.local/bin/ccc
@@ -197,11 +257,11 @@ ls -la ~/.local/bin/ccc
 ### Hook errors after update
 If seeing "UserPromptSubmit hook error" after update:
 1. Check hook scripts exist in new plugin version
-2. Run hook manually to see error: `node ~/.claude/plugins/marketplaces/context-mode/hooks/userpromptsubmit.mjs`
+2. Run hook manually: `node ~/.claude/plugins/marketplaces/context-mode/hooks/userpromptsubmit.mjs`
+3. Try `/context-mode:ctx-doctor` for full diagnostics
 
 ### rtk not found or wrong version
 ```bash
-# Check which rtk is installed
 which rtk
 rtk --version
 
@@ -210,17 +270,25 @@ brew uninstall rtk
 brew install rtk-ai/rtk/rtk
 
 # Or use curl installer
-curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh
 ```
 
 ### rtk gain command not working
-If `rtk gain` fails, you may have the wrong rtk package (Rust Type Kit vs Token Killer).
-Reinstall from rtk-ai/rtk repo.
+Wrong rtk package (Rust Type Kit vs Token Killer). Reinstall from rtk-ai/rtk repo.
 
-## Resources
+## Resources & Context7 Library IDs
 
-- [context-mode docs](https://github.com/mksglu/context-mode)
-- [claude-mem docs](https://context7.com/thedotmack/claude-mem)
-- [cocoindex-code docs](https://github.com/cocoindex-io/cocoindex-code)
-- [rtk docs](https://github.com/rtk-ai/rtk)
-- [Claude Code plugin system](https://context7.com/websites/code_claude)
+When updating this skill, fetch latest docs via context7 MCP to verify install/update commands are current.
+
+| Dependency | Context7 Library ID | Quick Update Tip |
+|------------|-------------------|------------------|
+| [context-mode](https://context7.com/mksglu/context-mode) | `/mksglu/context-mode` | `/ctx-upgrade` skill |
+| [claude-mem](https://context7.com/thedotmack/claude-mem) | `/thedotmack/claude-mem` | `install.cmem.ai --upgrade` |
+| [cocoindex-code](https://context7.com/cocoindex-io/cocoindex-code) | `/cocoindex-io/cocoindex-code` | `ccc doctor` for diagnostics |
+| [rtk](https://context7.com/rtk-ai/rtk) | `/rtk-ai/rtk` | `rtk gain` for savings analytics |
+| [caveman](https://context7.com/juliusbrussee/caveman) | `/juliusbrussee/caveman` | strip agents after every update |
+
+```bash
+# Fetch latest install docs for all deps (use before updating this skill)
+# context7 MCP: mcp__context7__query-docs with libraryId and query "installation update upgrade"
+```

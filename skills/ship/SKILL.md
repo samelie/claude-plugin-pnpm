@@ -35,26 +35,10 @@ The changeset skill will:
 - Draft descriptions and present for user review
 - Write `.changeset/<id>.md`
 
-## Step 3: Knowledge refresh (optional)
-
-If the `/arcana:arcana-absorb` skill is available, invoke it for each changed package that has source files (not just config/docs):
-
-```
-Skill tool: absorb <package-path>
-```
-
-- Generates/updates `<package>/knowledge/*.md`
-- Indexes into knowledge store
-
-If `/arcana:arcana-absorb` is not available, skip this step.
-
-If a package has no meaningful source changes (only config, lockfiles, etc.), skip absorb for it.
-
-## Step 4: Git workflow
+## Step 3: Git workflow
 
 1. Stage the new/updated files:
    - `.changeset/<id>.md`
-   - Any updated `knowledge/**/*.md` files (if Step 3 ran)
 2. Branch logic:
    - **Feature branch**: Commit, then offer to create/update PR via `gh pr create`
    - **Main branch**: Commit directly
@@ -64,9 +48,6 @@ If a package has no meaningful source changes (only config, lockfiles, etc.), sk
 
 | Situation | Action |
 |-----------|--------|
-| No package changes detected | Skip changeset + absorb, inform user |
-| Knowledge already current (hashes match) | Absorb skips automatically |
-| Multiple packages changed | One changeset covers all; absorb each independently |
-| Python packages (no package.json) | Use directory name for changeset; absorb works the same |
-| User cancels changeset | Still offer to run absorb alone (if available) |
-| Absorb fails for one package | Continue with others, report failure |
+| No package changes detected | Skip changeset, inform user |
+| Multiple packages changed | One changeset covers all |
+| Python packages (no package.json) | Use directory name for changeset |

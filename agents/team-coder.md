@@ -36,6 +36,17 @@ Write **progress.md** to your session directory:
 - Any deviations from the architect's design (with reasoning)
 - Open concerns or things the reviewer should pay attention to
 
+## Third-Party Libraries
+
+When implementing with any third-party or open-source library, fetch current documentation via context7 MCP before writing code. Training data may be stale.
+
+```
+1. mcp__context7__resolve-library-id  → get library ID
+2. mcp__context7__query-docs          → get current API/usage docs for your specific task
+```
+
+Do this for: npm packages, Python libraries, framework APIs, CLI tools, SDK methods — anything not internal to this monorepo. Skip for standard language builtins.
+
 ## Rules
 
 - Only modify files assigned to you in the subtask breakdown. A scope enforcement hook will block writes to unassigned files.
