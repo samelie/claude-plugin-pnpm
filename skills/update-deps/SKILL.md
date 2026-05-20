@@ -97,7 +97,6 @@ Reinstall from scratch:
 ```bash
 rm -rf ~/.claude/plugins/cache/caveman/
 rm -rf ~/.claude/plugins/marketplaces/caveman/
-# Then restart Claude Code — AFTER restart, run "Caveman Post-Install Cleanup" below
 ```
 
 Reinstall from scratch:
@@ -106,34 +105,39 @@ claude plugin marketplace add JuliusBrussee/caveman
 claude plugin install caveman@caveman
 ```
 
+**IMPORTANT: After any caveman install/update/restart, ALWAYS run the cleanup below.**
+
 ## Caveman Post-Install Cleanup
 
-Caveman ships bundled artifacts that conflict with our own definitions:
-- **agents/** — cavecrew-builder, cavecrew-investigator, cavecrew-reviewer (conflict with our agent defs)
-- **skills/cavecrew/** — cavecrew delegation skill (we define our own)
-- **.agents/skills/cavecrew/** — duplicate cavecrew skill in .agents dir
+Caveman ships bundled artifacts that conflict with our own definitions. **You MUST execute the cleanup script below** — do not just display it.
 
-Remove all after every caveman install/update.
+Conflicts:
+- **agents/** — cavecrew-builder, cavecrew-investigator, cavecrew-reviewer
+- **skills/cavecrew/** — cavecrew delegation skill
+- **.agents/skills/cavecrew/** — duplicate cavecrew skill
 
-**Run this AFTER restart** (marketplace must reinstall first, then strip).
+**EXECUTE this cleanup every time caveman is installed or updated:**
 
 ```bash
 CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman
 CAVEMAN_CACHE=~/.claude/plugins/cache/caveman
 
-# Strip bundled agents
-rm -rf "$CAVEMAN_MKT/agents/"
-
-# Strip cavecrew skill (both locations)
-rm -rf "$CAVEMAN_MKT/skills/cavecrew/"
-rm -rf "$CAVEMAN_MKT/.agents/skills/cavecrew/"
-
-# Strip from cache too
+rm -rf "$CAVEMAN_MKT/agents/" "$CAVEMAN_MKT/skills/cavecrew/" "$CAVEMAN_MKT/.agents/skills/cavecrew/"
 for pattern in agents cavecrew; do
   for d in $(find "$CAVEMAN_CACHE" -type d -name "$pattern" 2>/dev/null); do rm -rf "$d"; done
 done
 
 echo "Caveman agents + cavecrew skill stripped."
+```
+
+**Also run on session start if agents dir exists** (catches missed cleanups):
+```bash
+[ -d ~/.claude/plugins/marketplaces/caveman/agents ] && {
+  rm -rf ~/.claude/plugins/marketplaces/caveman/agents/
+  rm -rf ~/.claude/plugins/marketplaces/caveman/skills/cavecrew/
+  rm -rf ~/.claude/plugins/marketplaces/caveman/.agents/skills/cavecrew/
+  echo "Caveman: late cleanup applied."
+}
 ```
 
 ## Force Update Cocoindex
@@ -216,7 +220,9 @@ echo "=== Done Phase 1 ==="
 echo "Now restart Claude Code, then run Phase 2 to strip caveman agents."
 ```
 
-### Phase 2: Caveman cleanup (run after restart)
+### Phase 2: Caveman cleanup (MUST execute after restart)
+
+**EXECUTE this automatically** — do not wait for user to ask:
 
 ```bash
 CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman
