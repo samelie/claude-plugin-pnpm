@@ -93,6 +93,14 @@ echo "Done. Restart Claude Code to apply."
 ```bash
 echo "Updating caveman..."
 cd ~/.claude/plugins/marketplaces/caveman && git pull origin main
+
+# Strip bundled cavecrew agents — they conflict with our setup
+CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman
+CAVEMAN_CACHE=~/.claude/plugins/cache/caveman
+rm -rf "$CAVEMAN_MKT/plugins/caveman/agents/" "$CAVEMAN_MKT/plugins/caveman/skills/cavecrew/" "$CAVEMAN_MKT/.agents/skills/cavecrew/" "$CAVEMAN_MKT/.junie/skills/cavecrew/" "$CAVEMAN_MKT/.roo/skills/cavecrew/" "$CAVEMAN_MKT/.kiro/skills/cavecrew/"
+for d in $(find "$CAVEMAN_CACHE" -type d \( -name "agents" -o -name "cavecrew" \) 2>/dev/null); do rm -rf "$d"; done
+echo "Cavecrew agents stripped."
+
 echo "Done. Restart Claude Code to apply."
 ```
 
@@ -130,6 +138,12 @@ fi
 echo -e "\n--- caveman ---"
 if [ -d ~/.claude/plugins/marketplaces/caveman ]; then
   cd ~/.claude/plugins/marketplaces/caveman && git pull origin main
+  # Strip bundled cavecrew agents
+  CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman
+  CAVEMAN_CACHE=~/.claude/plugins/cache/caveman
+  rm -rf "$CAVEMAN_MKT/plugins/caveman/agents/" "$CAVEMAN_MKT/plugins/caveman/skills/cavecrew/" "$CAVEMAN_MKT/.agents/skills/cavecrew/" "$CAVEMAN_MKT/.junie/skills/cavecrew/" "$CAVEMAN_MKT/.roo/skills/cavecrew/" "$CAVEMAN_MKT/.kiro/skills/cavecrew/"
+  for d in $(find "$CAVEMAN_CACHE" -type d \( -name "agents" -o -name "cavecrew" \) 2>/dev/null); do rm -rf "$d"; done
+  echo "Cavecrew agents stripped."
 else
   echo "Not installed, skipping"
 fi
