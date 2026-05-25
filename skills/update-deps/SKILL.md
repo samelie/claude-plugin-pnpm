@@ -112,9 +112,9 @@ claude plugin install caveman@caveman
 Caveman ships bundled artifacts that conflict with our own definitions. **You MUST execute the cleanup script below** — do not just display it.
 
 Conflicts:
-- **agents/** — cavecrew-builder, cavecrew-investigator, cavecrew-reviewer
-- **skills/cavecrew/** — cavecrew delegation skill
-- **.agents/skills/cavecrew/** — duplicate cavecrew skill
+- **plugins/caveman/agents/** — cavecrew-builder, cavecrew-investigator, cavecrew-reviewer
+- **plugins/caveman/skills/cavecrew/** — cavecrew delegation skill
+- **.junie/skills/cavecrew/**, **.roo/skills/cavecrew/**, **.kiro/skills/cavecrew/** — IDE-specific copies
 
 **EXECUTE this cleanup every time caveman is installed or updated:**
 
@@ -122,20 +122,17 @@ Conflicts:
 CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman
 CAVEMAN_CACHE=~/.claude/plugins/cache/caveman
 
-rm -rf "$CAVEMAN_MKT/agents/" "$CAVEMAN_MKT/skills/cavecrew/" "$CAVEMAN_MKT/.agents/skills/cavecrew/"
-for pattern in agents cavecrew; do
-  for d in $(find "$CAVEMAN_CACHE" -type d -name "$pattern" 2>/dev/null); do rm -rf "$d"; done
-done
+rm -rf "$CAVEMAN_MKT/plugins/caveman/agents/" "$CAVEMAN_MKT/plugins/caveman/skills/cavecrew/" "$CAVEMAN_MKT/.agents/skills/cavecrew/" "$CAVEMAN_MKT/.junie/skills/cavecrew/" "$CAVEMAN_MKT/.roo/skills/cavecrew/" "$CAVEMAN_MKT/.kiro/skills/cavecrew/"
+for d in $(find "$CAVEMAN_CACHE" -type d \( -name "agents" -o -name "cavecrew" \) 2>/dev/null); do rm -rf "$d"; done
 
 echo "Caveman agents + cavecrew skill stripped."
 ```
 
 **Also run on session start if agents dir exists** (catches missed cleanups):
 ```bash
-[ -d ~/.claude/plugins/marketplaces/caveman/agents ] && {
-  rm -rf ~/.claude/plugins/marketplaces/caveman/agents/
-  rm -rf ~/.claude/plugins/marketplaces/caveman/skills/cavecrew/
-  rm -rf ~/.claude/plugins/marketplaces/caveman/.agents/skills/cavecrew/
+[ -d ~/.claude/plugins/marketplaces/caveman/plugins/caveman/agents ] && {
+  CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman
+  rm -rf "$CAVEMAN_MKT/plugins/caveman/agents/" "$CAVEMAN_MKT/plugins/caveman/skills/cavecrew/" "$CAVEMAN_MKT/.agents/skills/cavecrew/" "$CAVEMAN_MKT/.junie/skills/cavecrew/" "$CAVEMAN_MKT/.roo/skills/cavecrew/" "$CAVEMAN_MKT/.kiro/skills/cavecrew/"
   echo "Caveman: late cleanup applied."
 }
 ```
@@ -228,10 +225,8 @@ echo "Now restart Claude Code, then run Phase 2 to strip caveman agents."
 CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman
 CAVEMAN_CACHE=~/.claude/plugins/cache/caveman
 
-rm -rf "$CAVEMAN_MKT/agents/" "$CAVEMAN_MKT/skills/cavecrew/" "$CAVEMAN_MKT/.agents/skills/cavecrew/"
-for pattern in agents cavecrew; do
-  for d in $(find "$CAVEMAN_CACHE" -type d -name "$pattern" 2>/dev/null); do rm -rf "$d"; done
-done
+rm -rf "$CAVEMAN_MKT/plugins/caveman/agents/" "$CAVEMAN_MKT/plugins/caveman/skills/cavecrew/" "$CAVEMAN_MKT/.agents/skills/cavecrew/" "$CAVEMAN_MKT/.junie/skills/cavecrew/" "$CAVEMAN_MKT/.roo/skills/cavecrew/" "$CAVEMAN_MKT/.kiro/skills/cavecrew/"
+for d in $(find "$CAVEMAN_CACHE" -type d \( -name "agents" -o -name "cavecrew" \) 2>/dev/null); do rm -rf "$d"; done
 echo "Caveman agents + cavecrew skill stripped."
 ```
 
