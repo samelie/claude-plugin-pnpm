@@ -27,11 +27,12 @@
 
 - Uses `team-designer` agent definition
 - **Stateless, phase-aware** — dispatched multiple times with specific phase
-- Phases: `clarify` (one question) | `explore` (2-3 approaches) | `present` (one section) | `write` (requirements.md)
+- Phases: `clarify` (one question) | `explore` (2-3 approaches) | `present` (one section) | `write` (requirements.md) | `refine` (post-research grilling)
 - Each dispatch does ONE thing and returns — lead maintains state between dispatches
 - Lead dispatches via `team-kit-clarify` and `team-kit-explore` skill patterns
 - Outputs `requirements.md` to team-session folder (in `write` phase)
-- **Does NOT plan tasks, make technical decisions, or write code** — only gathers requirements (WHAT, not HOW)
+- In `refine` phase: **semi-autonomous** — self-dispatches for code exploration questions (no lead round-trip), returns to lead only for human-judgment questions or when complete. Reads researcher findings, cross-references against requirements, updates `requirements.md` inline. Max 10 rounds (configurable by lead). Has full research capability.
+- **Does NOT plan tasks, make technical decisions, or write code** — only gathers and refines requirements (WHAT, not HOW)
 
 ### Quarterback (QA reviewer)
 
@@ -340,6 +341,53 @@ Agent summarizes progress, reports to lead, requests fresh spawn with handoff co
 | Agent went wrong direction | Fresh spawn, clean context |
 | Agent hit max_turns | Fresh spawn with progress summary |
 | Agent idle, unknown state | Message first, then fresh if no response |
+
+---
+
+## Interrupt Protocol
+
+Structured interrupt handling for long-running or scope-changing situations. This is a messaging convention — no hook required.
+
+### Lead-initiated interrupt
+
+Lead sends structured message to agent:
+
+```
+INTERRUPT: {reason}
+Action: {pause | abort | report_status}
+```
+
+### Agent response to interrupt
+
+Agent MUST:
+1. Complete current atomic operation (don't leave file half-written)
+2. Write current progress to disk (`team-session/{name}/progress.md`)
+3. Respond with STATUS line
+4. If action=pause → wait for lead's next message
+5. If action=abort → clean up, write final status, stop
+6. If action=report_status → respond with progress, continue working
+
+### When to interrupt
+
+| Trigger | Recommended Action |
+|---------|-------------------|
+| Agent running >5 min with no output | `report_status` |
+| Scope change from user mid-execution | `pause` → reassess → resume or abort |
+| Another agent's findings invalidate task | `abort` with handoff context |
+| User requests status check | `report_status` |
+| Self-dispatch loop approaching max rounds | `report_status` (designer handles automatically) |
+
+### Interrupt message format
+
+```markdown
+@{agent-name} INTERRUPT: {reason}
+Action: report_status
+
+Expected response:
+- Current progress summary
+- STATUS line
+- Continue working after response
+```
 
 ---
 
