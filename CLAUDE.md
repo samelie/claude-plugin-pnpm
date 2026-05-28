@@ -29,28 +29,30 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 ### Artifact Chain (all disk-backed)
 
 ```
-designer/clarify.md → designer/explore.md → designer/present.md → requirements.md → design.md + team-plan.md
+prompt.md → designer/clarify.md → designer/explore.md → designer/present.md → requirements.md → researcher/findings.md → designer/refine.md (updates requirements.md) → design.md + team-plan.md
 ```
 
-Each phase reads previous phase's file from `team-session/{team-name}/`. No in-memory-only state.
+Each phase reads previous phase's file from `team-session/{team-name}/`. No in-memory-only state. `prompt.md` persists the raw user request at session start — never modified, referenced for intent drift.
 
 | Stage | Agent | Reads | Writes | Focus |
 |-------|-------|-------|--------|-------|
+| 0. Prompt | lead | — | `prompt.md` | Persist raw user request |
 | 1a. Clarify | `team-designer` (clarify) | — | `designer/clarify.md` | Q&A loop, resolve requirements |
 | 1b. Explore | `team-designer` (explore) | `designer/clarify.md` | `designer/explore.md` | Approaches + user selection |
 | 1c. Present | `team-designer` (present) | `designer/clarify.md`, `explore.md` | `designer/present.md` | Section-by-section approval |
 | 1d. Write | `team-designer` (write) | all `designer/*.md` | `requirements.md` | Canonical handoff artifact |
 | 2. Research | `team-researcher` | `requirements.md` | `researcher/findings.md` | Deep codebase context |
-| 3. Design + Plan | `team-planner` | `requirements.md`, `findings.md` | `design.md`, `team-plan.md` | HOW + TASKS |
-| 4. Review | `team-plan-reviewer` | `requirements.md`, `design.md`, `team-plan.md` | `plan-review.md` | Completeness, consistency |
+| 3. Refine | `team-designer` (refine) | `requirements.md`, `findings.md`, `prompt.md` | `designer/refine.md` + updates `requirements.md` | Research-informed grilling, sharpen requirements |
+| 4. Design + Plan | `team-planner` | `requirements.md`, `findings.md`, `refine.md` | `design.md`, `team-plan.md` | HOW + TASKS |
+| 5. Review | `team-plan-reviewer` | `requirements.md`, `design.md`, `team-plan.md` | `plan-review.md` | Completeness, consistency |
 
 ### Planning phase (used by team-kit-create skill)
 
 | Agent | subagent_type | Role |
 |-------|--------------|------|
-| `team-designer` | `claude-plugin-pnpm:team-designer` | Phase-aware requirements specialist. 4 phases: clarify→explore→present→write. Stateless — reads/writes disk artifacts. |
+| `team-designer` | `claude-plugin-pnpm:team-designer` | Phase-aware requirements specialist. 5 phases: clarify→explore→present→write→refine. Stateless — reads/writes disk artifacts. Refine phase is semi-autonomous: self-dispatches for code exploration, returns to lead for human judgment. Max 10 rounds. |
 | `team-planner` | `claude-plugin-pnpm:team-planner` | Design + planning — reads `requirements.md`, produces `design.md` (HOW) + `team-plan.md` (TASKS). |
-| `team-researcher` | `claude-plugin-pnpm:team-researcher` | Read-only investigation via Arcana + CocoIndex + code. Reads `requirements.md` for context. |
+| `team-researcher` | `claude-plugin-pnpm:team-researcher` | Read-only investigation via CocoIndex + claude-mem + code. Reads `requirements.md` for context. |
 | `team-plan-reviewer` | `claude-plugin-pnpm:team-plan-reviewer` | Plan critic — reviews `requirements.md` + `design.md` + `team-plan.md` with fresh context. |
 
 ### Execution phase (dispatched by team lead)

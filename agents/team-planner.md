@@ -3,6 +3,7 @@ name: team-planner
 description: "Generates executable team plans following the agent team FRAMEWORK. Use when you need to orchestrate multiple agents on a complex task."
 model: opus
 effort: max
+tools: Read, Glob, Grep, Write, Bash
 skills:
   - investigation-methodology
 ---

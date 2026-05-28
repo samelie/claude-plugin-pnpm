@@ -15,16 +15,20 @@ Where `{team-name}` = `YYYYMMDD-{slug}` (e.g., `20260424-vector-search`)
 ```
 team-session/{team-name}/
 │
+├── [ORIGINAL REQUEST - persisted immediately, never modified]
+├── prompt.md                ← lead (raw user request + initial context)
+│
 ├── [DESIGNER PHASES - progressive refinement]
 ├── designer/
 │   ├── clarify.md           ← team-designer (clarify phase, Q&A + resolved reqs)
 │   ├── explore.md           ← team-designer (explore phase, reads clarify.md)
-│   └── present.md           ← team-designer (present phase, reads clarify + explore)
+│   ├── present.md           ← team-designer (present phase, reads clarify + explore)
+│   └── refine.md            ← team-designer (refine phase, post-research grilling + decisions)
 │
 ├── [PLANNING PHASE - root level]
-├── requirements.md          ← team-designer (write phase, reads all designer/*.md)
-├── design.md                ← team-planner (reads requirements.md)
-├── team-plan.md             ← team-planner (reads requirements.md)
+├── requirements.md          ← team-designer (write phase, updated by refine phase)
+├── design.md                ← team-planner (reads requirements.md + refine.md)
+├── team-plan.md             ← team-planner (reads requirements.md + refine.md)
 ├── team-scope.json          ← team-planner (hook config)
 ├── plan-review.md           ← team-plan-reviewer
 │
@@ -107,12 +111,14 @@ When same agent type runs multiple times:
 
 | Agent | Reads | Writes to |
 |-------|-------|-----------|
+| lead | user request | `prompt.md` (root, once, never modified) |
 | team-designer (clarify) | (prompt only) | `designer/clarify.md` |
 | team-designer (explore) | `designer/clarify.md` | `designer/explore.md` |
 | team-designer (present) | `designer/clarify.md`, `designer/explore.md` | `designer/present.md` |
 | team-designer (write) | all `designer/*.md` | `requirements.md` (root) |
-| team-researcher | codebase, knowledge tools | `researcher/findings.md` |
-| team-planner | `requirements.md`, `researcher/findings.md` | `design.md`, `team-plan.md` (root) |
+| team-researcher | `requirements.md`, codebase, knowledge tools | `researcher/findings.md` |
+| team-designer (refine) | `requirements.md`, `researcher/findings.md`, `prompt.md` | `designer/refine.md` + updates `requirements.md` |
+| team-planner | `requirements.md`, `researcher/findings.md`, `designer/refine.md` | `design.md`, `team-plan.md` (root) |
 | team-plan-reviewer | `requirements.md`, `design.md`, `team-plan.md` | `plan-review.md` (root) |
 | team-architect | `design.md`, `team-plan.md` | `architect/brief.md` |
 | team-coder | `design.md`, `team-plan.md`, `architect/brief.md` | `coder-{name}/progress.md` |
@@ -127,8 +133,10 @@ When same agent type runs multiple times:
 
 | After Phase | Required Files |
 |-------------|----------------|
+| Prompt | `prompt.md` |
 | Planning | `requirements.md`, `design.md`, `team-plan.md`, `plan-review.md` |
 | Research | `researcher/findings.md` |
+| Refine | `designer/refine.md`, updated `requirements.md` |
 | Implementation | `coder-*/progress.md` for each assigned coder |
 | Review | `spec-reviewer/spec-review-*.md`, `reviewer/review-*.md` |
 | Finalization | `verifier/verification.md`, `finisher/cleanup-report.md` |
@@ -207,6 +215,62 @@ delegate_mode: true
 
 ## Files Modified
 - `path/to/file.ts` — {what changed}
+
+STATUS: CLEAN | PARTIAL | ERRORS_REMAINING: N
+```
+
+### prompt.md (lead)
+
+```markdown
+# Original Request
+
+Date: {date}
+Session: {team-name}
+
+## Raw Prompt
+
+{exact user input, unmodified}
+
+## Initial Context
+
+{branch, recent work, what user was doing when request was made}
+```
+
+### refine.md (designer)
+
+```markdown
+# Refine: {Feature Name}
+
+Created: {date}
+Phase: refine
+Reads: requirements.md, researcher/findings.md, prompt.md
+Status: in-progress | complete
+Round: {N}/10
+Mode: semi-autonomous
+Self-resolved: {count}
+Human-resolved: {count}
+
+## Research Insights Applied
+
+| Finding | From | Impact on Requirements | Action |
+|---------|------|----------------------|--------|
+
+## Q&A Log
+
+| # | Question | Recommended Answer | Answer | Source | Requirement Updated |
+|---|----------|--------------------|--------|--------|---------------------|
+
+Source values: `user (round N)` or `self-resolved (round N)`
+
+## Decisions Made (Refine Phase)
+
+| Decision | Rationale | Source |
+|----------|-----------|--------|
+
+## Requirements.md Changes
+
+| Section | Change | Reason |
+|---------|--------|--------|
 
 STATUS: CLEAN | PARTIAL | ERRORS_REMAINING: N
 ```

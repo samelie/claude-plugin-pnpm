@@ -44,12 +44,13 @@ Designer owns: research, question generation, approach exploration, requirements
 ## Pipeline
 
 ```
-[problem] → clarify loop → explore → present loop → write → research + plan → review → spawn prompt
+[problem] → persist prompt → clarify loop → explore → present loop → write → research → REFINE loop → plan → review → spawn prompt
 ```
 
 ```dot
 digraph team_kit_create {
   "Input received" [shape=doublecircle];
+  "Persist prompt.md" [shape=box];
   "Is it a known template?" [shape=diamond];
   "Present template summary" [shape=box];
   "Is the problem well-scoped?" [shape=diamond];
@@ -64,7 +65,10 @@ digraph team_kit_create {
   "Section approved?" [shape=diamond];
   "All sections approved?" [shape=diamond];
   "Dispatch designer(write)" [shape=box];
-  "Dispatch researcher + planner" [shape=box];
+  "Dispatch researcher" [shape=box];
+  "Dispatch designer(refine)" [shape=box];
+  "More insights?" [shape=diamond];
+  "Dispatch planner" [shape=box];
   "Invoke team-kit-present" [shape=box];
   "Design approved?" [shape=diamond];
   "Invoke team-kit-review" [shape=box];
@@ -72,7 +76,8 @@ digraph team_kit_create {
   "User file review gate" [shape=box];
   "Deliver spawn prompt" [shape=doublecircle];
 
-  "Input received" -> "Is it a known template?";
+  "Input received" -> "Persist prompt.md";
+  "Persist prompt.md" -> "Is it a known template?";
   "Is it a known template?" -> "Present template summary" [label="yes"];
   "Present template summary" -> "Deliver spawn prompt";
   "Is it a known template?" -> "Is the problem well-scoped?" [label="no"];
@@ -91,13 +96,17 @@ digraph team_kit_create {
   "Section approved?" -> "All sections approved?";
   "All sections approved?" -> "Dispatch designer(present)" [label="next section"];
   "All sections approved?" -> "Dispatch designer(write)" [label="yes"];
-  "Dispatch designer(write)" -> "Dispatch researcher + planner";
-  "Dispatch researcher + planner" -> "Invoke team-kit-present";
+  "Dispatch designer(write)" -> "Dispatch researcher";
+  "Dispatch researcher" -> "Dispatch designer(refine)";
+  "Dispatch designer(refine)" -> "More insights?";
+  "More insights?" -> "Dispatch designer(refine)" [label="yes"];
+  "More insights?" -> "Dispatch planner" [label="no"];
+  "Dispatch planner" -> "Invoke team-kit-present";
   "Invoke team-kit-present" -> "Design approved?";
   "Design approved?" -> "Invoke team-kit-present" [label="no, revise"];
   "Design approved?" -> "Invoke team-kit-review" [label="yes"];
   "Invoke team-kit-review" -> "Review passed?";
-  "Review passed?" -> "Dispatch researcher + planner" [label="major issues"];
+  "Review passed?" -> "Dispatch planner" [label="major issues"];
   "Review passed?" -> "User file review gate" [label="yes"];
   "User file review gate" -> "Deliver spawn prompt";
 }
@@ -129,6 +138,36 @@ If not enabled:
 > `claude config set --global experiments.agentTeams true`
 
 Stop until enabled.
+
+---
+
+## Step 0b: Persist Original Prompt
+
+**Before any triage or dispatch**, save the raw user request to disk. This is the source of truth for original intent — the refine phase references it to prevent scope drift.
+
+```javascript
+const session_path = `team-session/${team_name}/`
+// mkdir -p ${session_path}
+// Write prompt.md with the raw user request
+```
+
+**File format** (`prompt.md`):
+```markdown
+# Original Request
+
+Date: {date}
+Session: {team_name}
+
+## Raw Prompt
+
+{exact user input, unmodified}
+
+## Initial Context
+
+{any relevant context from the conversation at the time of request — e.g., what branch we're on, what was just discussed, what the user was working on}
+```
+
+This file is written ONCE and never modified. All downstream phases can reference it for original intent.
 
 ---
 
@@ -401,9 +440,81 @@ Focus on what a planner needs to decompose this into agent tasks.
 })
 ```
 
-### 4b: Invoke planner
+### 4b: Refine Loop (dispatch designer — post-research)
 
-After researcher completes, invoke planner. Planner reads from disk — no inline context needed.
+After researcher completes, enter the refine loop. The designer reads research findings, cross-references against requirements, and grills the user to sharpen the feature definition.
+
+**This is the key differentiator from single-session approaches.** The designer has full research capability — it can explore the codebase further, not just read static findings. Each question includes a recommended answer based on what the research found.
+
+The refine loop is **semi-autonomous**. Designer self-dispatches for code exploration questions (no lead round-trip), returns to lead only for human-judgment questions or when complete.
+
+```javascript
+// Semi-autonomous refine: designer self-resolves code questions,
+// returns to lead only for human-judgment questions or when done
+
+let refine_complete = false;
+while (!refine_complete) {
+  const result = Agent({
+    subagent_type: "claude-plugin-pnpm:team-designer",
+    model: "opus",
+    description: `Refine requirements - round ${N}`,
+    prompt: `
+Phase: refine
+Session path: \`${session_path}\`
+Mode: semi-autonomous
+Max rounds: 10
+
+Read these files:
+- \`${session_path}requirements.md\` — approved requirements
+- \`${session_path}researcher/findings.md\` — codebase research
+- \`${session_path}prompt.md\` — original user request (check for intent drift)
+- \`${session_path}designer/refine.md\` — previous refine Q&A (if exists)
+
+Cross-reference research findings against requirements.
+Self-resolve questions answerable by code exploration (update docs, continue).
+Return to lead only for questions needing human judgment.
+Update \`${session_path}designer/refine.md\` with ALL Q&A entries (self-resolved + pending).
+Update \`${session_path}requirements.md\` inline when a decision resolves.
+`
+  })
+
+  // Designer returns either:
+  // STATUS: PARTIAL — has question needing human input (present to user)
+  // STATUS: CLEAN — all insights explored, no more questions
+  
+  if (result includes 'STATUS: CLEAN') {
+    refine_complete = true;
+  } else {
+    // Present human-judgment question to user
+    // Collect answer
+    // Next dispatch: designer reads updated refine.md + requirements.md
+    // Designer may self-resolve several more code questions before
+    // returning with next human question or CLEAN
+  }
+}
+```
+
+**Exit condition**: Designer returns STATUS: CLEAN — no more contradictions, no more scope-changing insights, all research findings cross-referenced against requirements.
+
+**Lead evaluates after each round:**
+
+| Signal | Action |
+|--------|--------|
+| Designer found contradiction between findings and requirements | Continue refine loop |
+| Designer surfaced scope-changing pattern | Continue refine loop |
+| Designer found no new insights | Exit loop, proceed to planner |
+| User says "good enough" / "move on" / "plan it" | Exit loop, proceed to planner |
+| 5+ rounds completed | Suggest wrapping up, but user decides |
+
+**What the user says to progress:**
+- "Looks good" / "confirmed" / "yes" → answer recorded, next question
+- "Move on" / "plan it" / "let's plan" → exit refine loop, proceed to planning
+- "Dig deeper into X" → designer explores X specifically in next round
+- "Actually, change Y" → designer updates requirements.md, continues
+
+### 4c: Invoke planner
+
+After refine completes, invoke planner. Planner reads from disk — no inline context needed. Now has enriched requirements + refine decisions.
 
 ```javascript
 Agent({
@@ -415,9 +526,10 @@ Session path: \`${session_path}\`
 Write output to: \`${session_path}\`
 
 ## Read These Files (all on disk)
-- \`${session_path}requirements.md\` — approved requirements (from designer)
+- \`${session_path}requirements.md\` — approved + refined requirements
 - \`${session_path}designer/clarify.md\` — Q&A context
 - \`${session_path}designer/explore.md\` — chosen approach + key decisions
+- \`${session_path}designer/refine.md\` — research-informed refinements + decisions
 - \`${session_path}researcher/findings.md\` — codebase research
 
 ## Task
@@ -426,6 +538,7 @@ Task: ${task_description}
 Generate a complete team plan following FRAMEWORK.md.
 Honor the chosen approach in explore.md — do not propose alternatives.
 The researcher already queried Arcana and CocoIndex — use their findings.
+The designer refined requirements against research — honor refine decisions.
 `
 })
 ```
@@ -535,8 +648,9 @@ Lead orchestrates, does NOT implement. Lead dispatches:
 | `team-designer` (explore) | Propose approaches, user selects | Step 3 | `designer/explore.md` |
 | `team-designer` (present) | Section-by-section approval | Step 3b (per section) | `designer/present.md` |
 | `team-designer` (write) | Synthesize requirements | Step 3c | `requirements.md` |
-| `team-researcher` | Deep context via Arcana + CocoIndex + code | Step 4a (background) | `researcher/findings.md` |
-| `team-planner` | Generate design.md + team-plan.md | Step 4b (after researcher) | `design.md`, `team-plan.md` |
+| `team-researcher` | Deep context via CocoIndex + claude-mem + code | Step 4a (background) | `researcher/findings.md` |
+| `team-designer` (refine) | Grill user with research insights, sharpen requirements | Step 4b (loop, after researcher) | `designer/refine.md` + updates `requirements.md` |
+| `team-planner` | Generate design.md + team-plan.md | Step 4c (after refine) | `design.md`, `team-plan.md` |
 
 Lead owns:
 - User communication (presenting questions, getting approvals)
@@ -555,6 +669,8 @@ Lead does NOT:
 ## Artifact Chain (all on disk)
 
 ```
+prompt.md              ← lead persists immediately (raw user request, never modified)
+    ↓ referenced by all phases
 designer/clarify.md    ← designer(clarify) writes, each invocation appends
     ↓ reads
 designer/explore.md    ← designer(explore) writes
@@ -564,11 +680,17 @@ designer/present.md    ← designer(present) writes, each section appends
 requirements.md        ← designer(write) writes (root, canonical handoff)
     ↓ reads
 researcher/findings.md ← team-researcher writes
-    ↓ reads requirements.md + findings.md
+    ↓ reads requirements.md + findings.md + prompt.md
+designer/refine.md     ← designer(refine) writes, each invocation appends
+    ↓ also updates requirements.md inline as decisions resolve
+requirements.md        ← enriched by refine phase (traceable changes)
+    ↓ reads requirements.md + findings.md + refine.md
 design.md + team-plan.md ← team-planner writes
 ```
 
 **No in-memory-only state.** Every phase's output is a file in `team-session/{team-name}/`. Lead passes `session_path` to each dispatch — agents read previous phases from disk.
+
+**Traceability**: Every decision in `team-plan.md` traces back through this chain to either the original prompt, a user answer in clarify/refine, a research finding, or a present revision. Implementer agents follow the trail for context.
 
 ---
 
@@ -596,10 +718,34 @@ design.md + team-plan.md ← team-planner writes
 
 | Agent | Phases | Writes | When |
 |-------|--------|--------|------|
-| `team-designer` | clarify, explore, present, write | `designer/*.md`, `requirements.md` | Steps 2c, 3, 3b, 3c |
-| `team-planner` | — | `design.md`, `team-plan.md` | Step 4b (reads requirements.md) |
+| `team-designer` | clarify, explore, present, write, refine | `designer/*.md`, `requirements.md` | Steps 2c, 3, 3b, 3c, 4b |
+| `team-planner` | — | `design.md`, `team-plan.md` | Step 4c (reads requirements.md + refine.md) |
 | `team-researcher` | — | `researcher/findings.md` | Step 4a (background, reads requirements.md) |
 | `team-architect` | — | `architect/brief.md` | Mid-execution only (NOT initial planning) |
+
+## Human Language → Phase Transitions
+
+The lead (orchestrator) listens for natural language cues to progress through phases. No special syntax required.
+
+| What you say | What happens |
+|-------------|-------------|
+| "as a team, build X" / "team up on X" | Skill activates → persist prompt → triage |
+| (during clarify) answers to questions | Lead evaluates if requirements clear → next question or move on |
+| "that's clear" / "requirements done" / "move on to approaches" | Exit clarify → dispatch explore |
+| "option A" / "go with the second one" / "I like approach B" | Lead records selection → dispatch present |
+| (during present) "approved" / "looks good" / "yes" | Approve section → next section |
+| (during present) "change X to Y" / "add Z" | Revision recorded → re-present section |
+| "requirements are done" / "write it up" | Dispatch write phase |
+| (during refine) "confirmed" / "yes, extend it" / answers to questions | Answer recorded, designer updates docs, next question |
+| "dig deeper into X" / "explore Y more" | Designer investigates X/Y specifically in next round |
+| "good enough" / "plan it" / "let's plan" / "move to planning" | Exit refine loop → dispatch planner |
+| "skip refine" / "straight to planning" | Skip refine entirely → dispatch planner |
+| (during present design) "approved" | Approve design section → next |
+| "ship it" / "spawn" / "execute" / "start the team" | Deliver spawn prompt |
+
+**The lead never requires special commands.** Natural language works. The lead's job is to interpret intent and dispatch the right agent with the right phase.
+
+---
 
 ## Edge Cases
 
