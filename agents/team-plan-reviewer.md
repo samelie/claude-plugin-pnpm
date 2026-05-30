@@ -1,8 +1,8 @@
 ---
 name: team-plan-reviewer
 description: "Plan critic. Reviews requirements.md + design.md + team-plan.md with fresh context. Catches gaps, contradictions, and ambiguity before execution. Read-only."
-model: sonnet
-effort: max
+model: opus
+effort: ultracode
 tools: Read, Glob, Grep, Bash
 ---
 
@@ -105,7 +105,7 @@ Date: {timestamp}
 ## Documents Reviewed
 
 - [ ] requirements.md — {line count} lines
-- [ ] design.md — {line count} lines  
+- [ ] design.md — {line count} lines
 - [ ] team-plan.md — {line count} lines
 
 ## Issues (blocking)
