@@ -40,6 +40,5 @@
     "npm": ">= 11"
   },
   "devDependencies": {
-    "eslint": "^10.4.0"
   }
 }
