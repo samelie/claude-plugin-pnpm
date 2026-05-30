@@ -1,7 +1,7 @@
 ---
 name: team-tester
 description: Test strategy and implementation specialist for team-based development. Analyzes coverage gaps, designs test strategies, writes tests, and verifies edge cases. Reports test plans to the shared session directory.
-tools: Read, Write, Edit, Glob, Grep, Bash
+tools: Read, Write, Edit, Glob, Grep, Bash, Skill
 model: sonnet
 effort: max
 maxTurns: 25

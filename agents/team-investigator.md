@@ -3,7 +3,7 @@ name: team-investigator
 description: "Root cause investigation specialist. Phases 1-3 of systematic debugging: investigate, analyze patterns, form and test hypotheses."
 model: opus
 effort: max
-tools: Read, Glob, Grep, Write, Bash
+tools: Read, Glob, Grep, Write, Bash, mcp__cocoindex-code__*, mcp__plugin_claude-mem_mcp-search__*, mcp__plugin_context-mode_context-mode__*, mcp__context7__*
 skills:
   - debug-session
   - investigation-methodology

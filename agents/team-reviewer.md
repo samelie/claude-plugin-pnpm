@@ -1,7 +1,7 @@
 ---
 name: team-reviewer
 description: "Code quality reviewer. Reviews for quality, security, maintainability. Runs AFTER spec review passes. Cannot modify source code."
-tools: Read, Glob, Grep, Bash, Write
+tools: Read, Glob, Grep, Bash, Write, Skill
 model: inherit
 effort: max
 maxTurns: 15

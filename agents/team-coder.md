@@ -1,9 +1,9 @@
 ---
 name: team-coder
 description: Implementation specialist for team-based development. Reads architect designs, implements assigned subtasks, and reports progress to the shared session directory.
-tools: Read, Write, Edit, Glob, Grep, Bash
+tools: Read, Write, Edit, Glob, Grep, Bash, Skill
 model: inherit
-effort: max
+effort: ultracode
 maxTurns: 30
 skills:
   - investigation-methodology

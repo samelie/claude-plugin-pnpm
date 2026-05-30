@@ -107,8 +107,10 @@ echo "Done. Restart Claude Code to apply."
 #### Update cocoindex-code
 ```bash
 echo "Updating cocoindex-code..."
-uv tool upgrade cocoindex-code 2>/dev/null || pipx upgrade cocoindex-code
-ccc --version
+# [full] extra = local-embedding deps (torch + sentence-transformers); slim breaks our local config
+uv tool install --upgrade 'cocoindex-code[full]' 2>/dev/null || pipx install 'cocoindex-code[full]'
+ccc daemon restart   # daemon caches old deps; must restart
+ccc doctor           # Model Check must be [OK], not ModuleNotFoundError
 echo "Done."
 ```
 
@@ -149,7 +151,8 @@ else
 fi
 
 echo -e "\n--- cocoindex-code ---"
-uv tool upgrade cocoindex-code 2>/dev/null || pipx upgrade cocoindex-code 2>/dev/null || echo "Not installed via uv/pipx"
+uv tool install --upgrade 'cocoindex-code[full]' 2>/dev/null || pipx install 'cocoindex-code[full]' 2>/dev/null || echo "Not installed via uv/pipx"
+ccc daemon restart 2>/dev/null || true
 
 echo -e "\n=== Done ==="
 echo "Restart Claude Code to apply plugin updates."
@@ -180,8 +183,9 @@ case $TOOL in
     ;;
   cocoindex-code)
     uv tool uninstall cocoindex-code 2>/dev/null || pipx uninstall cocoindex-code
-    uv tool install cocoindex-code 2>/dev/null || pipx install cocoindex-code
-    ccc --version
+    uv tool install 'cocoindex-code[full]' 2>/dev/null || pipx install 'cocoindex-code[full]'
+    ccc daemon restart
+    ccc doctor
     ;;
   *)
     echo "Unknown tool: $TOOL"
@@ -244,7 +248,13 @@ fi
 
 echo -e "\n--- cocoindex-code ---"
 if command -v ccc &> /dev/null; then
-  echo "✓ Installed: $(ccc --version 2>/dev/null)"
+  echo "✓ Installed: $(uv tool list 2>/dev/null | grep cocoindex-code)"
+  if ccc doctor 2>&1 | grep -q "ModuleNotFoundError"; then
+    echo "✗ Daemon embedding deps missing — run: uv tool install --upgrade 'cocoindex-code[full]' && ccc daemon restart"
+    errors=$((errors + 1))
+  else
+    echo "✓ Embedding model OK"
+  fi
 else
   echo "✗ Not installed"
   errors=$((errors + 1))

@@ -1,7 +1,7 @@
 ---
 name: team-finisher
 description: Final cleanup specialist. Removes all console.log statements (including audit diagnostic logs) and enforces comment standards across modified files. Runs last in the pipeline.
-tools: Read, Write, Edit, Glob, Grep, Bash
+tools: Read, Write, Edit, Glob, Grep, Bash, Skill
 model: sonnet
 effort: max
 maxTurns: 20

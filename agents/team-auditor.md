@@ -1,7 +1,7 @@
 ---
 name: team-auditor
 description: Post-implementation audit specialist. Reviews coder output against architect design, adds strategic diagnostic logging for validation, and writes interpretation guides for the orchestrator.
-tools: Read, Write, Edit, Glob, Grep, Bash
+tools: Read, Write, Edit, Glob, Grep, Bash, Skill
 model: sonnet
 effort: max
 maxTurns: 25
