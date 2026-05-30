@@ -167,6 +167,36 @@ uv tool list | grep cocoindex-code
 ccc doctor
 ```
 
+### Verify Cocoindex — leading-edge + health
+
+One block: confirms we run the **latest** release AND that the embedding model
+actually loads (the silent-failure mode). Copy-paste:
+
+```bash
+INSTALLED=$(uv tool list 2>/dev/null | grep -oE 'cocoindex-code v[0-9.]+' | grep -oE '[0-9.]+$')
+LATEST=$(gh release view --repo cocoindex-io/cocoindex-code --json tagName -q .tagName 2>/dev/null | tr -d 'v')
+echo "cocoindex-code  installed=${INSTALLED:-MISSING}  latest=${LATEST:-?}"
+
+# Leading edge?
+if [ -n "$INSTALLED" ] && [ "$INSTALLED" = "$LATEST" ]; then
+  echo "✓ leading edge"
+else
+  echo "✗ behind / missing — uv tool install --upgrade 'cocoindex-code[full]' && ccc daemon restart"
+fi
+
+# Healthy? (embedding deps loaded — slim install fails here)
+DOC=$(ccc doctor 2>&1)
+if echo "$DOC" | grep -q "ModuleNotFoundError"; then
+  echo "✗ embedding deps MISSING (slim install) — uv tool install --upgrade 'cocoindex-code[full]' && ccc daemon restart"
+elif echo "$DOC" | grep -q "\[OK\] Model Check"; then
+  echo "✓ embedding model loads (Model Check OK)"
+else
+  echo "⚠ ccc doctor inconclusive — inspect manually"
+fi
+```
+
+Pass criteria: `✓ leading edge` **and** `✓ embedding model loads`. Anything else → run the upgrade line.
+
 ## Force Update rtk
 
 rtk (Rust Token Killer) filters CLI output for LLM context savings.
