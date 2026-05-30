@@ -1,7 +1,7 @@
 ---
 name: team-verifier
 description: Post-implementation verification specialist. Runs lint, type checks, knip, and tests on modified packages. Reports actionable findings back to the orchestrator for targeted fixes. Cannot modify source code.
-tools: Read, Glob, Grep, Bash, Write
+tools: Read, Glob, Grep, Bash, Write, Skill
 model: sonnet
 effort: max
 maxTurns: 30

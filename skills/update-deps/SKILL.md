@@ -141,19 +141,28 @@ echo "Caveman agents + cavecrew skill stripped."
 
 Cocoindex is installed via `uv` (Python). **Note**: `ccc` has no `--version` flag — use `uv tool list` or `ccc doctor` to verify.
 
+**MUST install the `[full]` extra.** Our `~/.cocoindex_code/global_settings.yml` uses local
+embeddings (`provider=sentence-transformers`). The slim package lacks `torch`+`sentence-transformers`
+→ daemon throws `ModuleNotFoundError: No module named 'sentence_transformers'` and search silently
+returns zero results. (Do **not** use the old `--prerelease explicit --with "cocoindex>=1.0.0a24"`
+flags — stale, and they install slim.)
+
 ```bash
-# Update to latest (with required flags for prerelease cocoindex core)
-uv tool install --upgrade cocoindex-code --prerelease explicit --with "cocoindex>=1.0.0a24"
+# Update to latest (full = local-embedding deps)
+uv tool install --upgrade 'cocoindex-code[full]'
 
 # Or force reinstall
 uv tool uninstall cocoindex-code
-uv tool install cocoindex-code --prerelease explicit --with "cocoindex>=1.0.0a24"
+uv tool install 'cocoindex-code[full]'
 
 # Alternative: pipx
-pipx install cocoindex-code    # first install
-pipx upgrade cocoindex-code    # upgrade
+pipx install 'cocoindex-code[full]'    # first install
+pipx upgrade cocoindex-code            # upgrade
 
-# Verify
+# REQUIRED after install/upgrade — daemon caches old deps (uptime can be days)
+ccc daemon restart
+
+# Verify — Model Check (indexing/query) must be [OK], not ModuleNotFoundError
 uv tool list | grep cocoindex-code
 ccc doctor
 ```
@@ -207,8 +216,9 @@ rm -rf ~/.claude/plugins/marketplaces/thedotmack/
 rm -rf ~/.claude/plugins/marketplaces/caveman/
 
 echo "=== Updating cocoindex-code ==="
-uv tool install --upgrade cocoindex-code --prerelease explicit --with "cocoindex>=1.0.0a24" 2>/dev/null \
-  || echo "Cocoindex update failed - try: uv tool install cocoindex-code --prerelease explicit --with 'cocoindex>=1.0.0a24'"
+uv tool install --upgrade 'cocoindex-code[full]' 2>/dev/null \
+  || echo "Cocoindex update failed - try: uv tool install 'cocoindex-code[full]'"
+ccc daemon restart 2>/dev/null || true   # daemon caches old deps; must restart
 
 echo "=== Updating rtk ==="
 brew upgrade rtk 2>/dev/null || echo "rtk update failed - try: brew install rtk or curl install"
@@ -248,11 +258,22 @@ uv tool list | grep cocoindex-code
 # Run diagnostics
 ccc doctor
 
-# Reinstall
-uv tool install cocoindex-code --prerelease explicit --with "cocoindex>=1.0.0a24"
+# Reinstall (full = local-embedding deps)
+uv tool install 'cocoindex-code[full]'
+ccc daemon restart
 
 # Check symlink
 ls -la ~/.local/bin/ccc
+```
+
+### Cocoindex search returns nothing / ModuleNotFoundError: sentence_transformers
+
+Global config uses local `sentence-transformers` embeddings but the slim package is installed
+(no `torch`/`sentence-transformers`). Fix:
+```bash
+uv tool install --upgrade 'cocoindex-code[full]'
+ccc daemon restart          # stale daemon keeps old deps loaded
+ccc doctor                  # Model Check (indexing/query) must be [OK]
 ```
 
 ### Hook errors after update

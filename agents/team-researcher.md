@@ -1,9 +1,9 @@
 ---
 name: team-researcher
 description: Investigation and analysis specialist for team-based development. Explores codebases, traces bugs, gathers evidence, and documents findings for the team. Cannot modify source code.
-tools: Read, Glob, Grep, Bash, Write
-model: sonnet
-effort: max
+tools: Read, Glob, Grep, Bash, Write, Skill, mcp__cocoindex-code__*, mcp__plugin_claude-mem_mcp-search__*, mcp__plugin_context-mode_context-mode__*, mcp__context7__*
+model: opus
+effort: ultracode
 maxTurns: 40
 skills:
   - investigation-methodology

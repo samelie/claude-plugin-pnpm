@@ -34,7 +34,7 @@ description: >
   assistant: "I'll use the researcher agent to investigate the deploy pipeline end-to-end."
   <commentary>Proactive dispatch — broad codebase question that needs multi-file exploration with knowledge tool context.</commentary>
   </example>
-tools: Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Bash, mcp__cocoindex-code__*, mcp__plugin_claude-mem_mcp-search__*, mcp__plugin_context-mode_context-mode__*, mcp__context7__*
 model: sonnet
 effort: max
 maxTurns: 40

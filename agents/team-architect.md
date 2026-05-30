@@ -1,9 +1,9 @@
 ---
 name: team-architect
 description: Deep-dive module analyst for mid-execution use. When the lead or planner needs deeper understanding of a specific subsystem before coders start, this agent investigates one focused area and produces a technical brief. Does NOT design full systems or decompose into subtasks — the planner handles that.
-tools: Read, Glob, Grep, Bash, Write
+tools: Read, Glob, Grep, Bash, Write, Skill, mcp__cocoindex-code__*, mcp__plugin_claude-mem_mcp-search__*, mcp__plugin_context-mode_context-mode__*, mcp__context7__*
 model: inherit
-effort: max
+effort: ultracode
 maxTurns: 20
 skills:
   - investigation-methodology
