@@ -39,6 +39,5 @@
     "pnpm": ">= 10",
     "npm": ">= 11"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }
