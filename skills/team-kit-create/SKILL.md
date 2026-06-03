@@ -5,7 +5,7 @@ description: "Scope a problem and create a multi-agent team plan with roles, tas
 
 # /team-kit-create — Scope, Plan, and Structure a Multi-Agent Team
 
-Turn a problem into an agent team plan. This skill handles **creation only** — scoping the problem, defining roles, building the task list, and producing a spawn prompt. Execution (TeamCreate, spawning agents, phase gating) happens after.
+Turn a problem into an agent team plan. This skill handles **planning only** — scoping the problem, defining roles, building the task list, and emitting the plan. Execution is `/team-kit-run` (native-workflow multi-agent run), handed off at Step 7. create=PLAN, run=EXECUTE.
 
 ## Fork Mode Detection
 
@@ -430,7 +430,7 @@ Chosen approach: ${explore_result.chosen_approach}
 Affected packages: ${clarify_context.resolved.packages}
 
 Your job:
-1. Query Arcana for prior work, gotchas, architecture decisions
+1. Query claude-mem for prior work, gotchas, decisions from past sessions
 2. Query CocoIndex for existing implementations, key types, module boundaries
 3. Explore code to map: entry points, data flows, coupling between modules
 4. Document everything in findings.md — the planner will read this
@@ -537,7 +537,7 @@ Task: ${task_description}
 
 Generate a complete team plan following FRAMEWORK.md.
 Honor the chosen approach in explore.md — do not propose alternatives.
-The researcher already queried Arcana and CocoIndex — use their findings.
+The researcher already queried CocoIndex + claude-mem — use their findings.
 The designer refined requirements against research — honor refine decisions.
 `
 })
@@ -546,7 +546,8 @@ The designer refined requirements against research — honor refine decisions.
 Planner produces:
 - `design.md` — human-readable architecture summary
 - `team-plan.md` — full plan with roles, tasks, ownership, phases
-- `team-scope.json` — scope config for hook enforcement
+- `team-scope.json` — scope config for hook enforcement (legacy native-team path)
+- `plan.workflow.ts` (optional, tier-2) — executable workflow spine derived from team-plan.md, consumed by `/team-kit-run`. See PLANNER.md → Workflow Output.
 
 ---
 
@@ -590,51 +591,44 @@ If issues found → fix or re-run planner → re-review.
 
 ---
 
-## Step 7: File Review Gate + Spawn Prompt
+## Step 7: File Review Gate + Handoff to /team-kit-run
 
 ### 7a: User file review
 
-Before delivering spawn prompt, ask user to review actual files:
+Before handoff, ask user to review actual files:
 
-> "Plan complete. Please review these files before proceeding:
+> "Plan complete. Please review these files before execution:
 > - `team-session/{team-name}/design.md` — architecture summary
 > - `team-session/{team-name}/team-plan.md` — full execution plan
+> - `team-session/{team-name}/plan.workflow.ts` — executable workflow spine (if emitted; see below)
 >
 > Let me know if you want any changes."
 
 Wait for user approval. If changes requested → edit → re-present relevant sections.
 
-### 7b: Deliver spawn prompt
+### 7b: Hand off to /team-kit-run (EXECUTE)
 
-After user approves files, generate ready-to-paste prompt:
+`team-kit-create` PLANS only; `/team-kit-run` EXECUTES (native-workflow multi-agent run over the role agents — no TeamCreate, no delegate mode). After files are approved, hand off:
 
-```
-Read `team-session/{team-name}/team-plan.md`.
-Create a team named "{team-name}" using TeamCreate.
-Press Shift+Tab to enable delegate mode.
-Spawn agents per template. You are lead — orchestrate and gate phases only. Do NOT implement.
-```
-
-For template mode, point to template file instead:
-
-```
-Read `${CLAUDE_PLUGIN_ROOT}/team-templates/{template}.md`.
-Create a team named "{team-name}" using TeamCreate.
-Press Shift+Tab to enable delegate mode.
-Spawn agents per template. You are lead — orchestrate and gate phases only. Do NOT implement.
-```
-
-Present to user:
-
-> **Team plan ready.** Paste this to start execution:
->
+> **Plan approved.** To execute:
 > ```
-> {spawn prompt}
+> /team-kit-run  — run team-session/{team-name}/plan.workflow.ts (entry mode 1)
 > ```
->
-> This will create the team and begin orchestration.
+> Or just say "run it" / "execute the plan". `/team-kit-run` keeps the human-gate seam:
+> deterministic stages (research/implement/review/verify) run as a background workflow;
+> prod/irreversible/paid actions come back as a human-gated checklist.
 
-**Skill ends here.** Do not execute the team — that's a separate action.
+For **template mode**, the handoff names the saved workflow if one exists:
+> `/team-kit-run` → saved `/{template}` workflow (entry mode 3), or the template file via entry mode 2.
+
+**Legacy fallback (native team, only if workflows unavailable):** a manual spawn prompt —
+```
+Read `team-session/{team-name}/team-plan.md`. Create a team via TeamCreate, Shift+Tab for delegate mode,
+spawn agents per template. Lead orchestrates + gates only. Do NOT implement.
+```
+Prefer `/team-kit-run` — the legacy path lacks deterministic control flow, resume, and schema handoff.
+
+**Skill ends here.** Execution is `/team-kit-run` (a separate, gated action).
 
 ---
 
@@ -657,7 +651,7 @@ Lead owns:
 - Phase transitions (deciding when clarify is complete, when to proceed)
 - Context accumulation (building clarify_context, explore_result)
 - Skill invocation (team-kit-present, team-kit-review)
-- Final spawn prompt delivery
+- Final handoff to `/team-kit-run` (execution) after file approval
 
 Lead does NOT:
 - Do codebase research (designer/researcher do this)
@@ -686,7 +680,11 @@ designer/refine.md     ← designer(refine) writes, each invocation appends
 requirements.md        ← enriched by refine phase (traceable changes)
     ↓ reads requirements.md + findings.md + refine.md
 design.md + team-plan.md ← team-planner writes
+    ↓ (optional, tier-2 reproducibility) executable spine emitted from team-plan.md
+plan.workflow.ts       ← team-planner writes (consumed by /team-kit-run, entry mode 1)
 ```
+
+Handoff data shapes between workflow stages: `team-templates/SCHEMA-CATALOG.md` (the 5 canonical schemas). This artifact chain is the FILE-handoff model; `/team-kit-run` adds SCHEMA handoff for execution.
 
 **No in-memory-only state.** Every phase's output is a file in `team-session/{team-name}/`. Lead passes `session_path` to each dispatch — agents read previous phases from disk.
 
@@ -696,7 +694,7 @@ design.md + team-plan.md ← team-planner writes
 
 ## What This Skill Does NOT Do
 
-- **Execute teams** — no TeamCreate, no spawning agents, no phase gating
+- **Execute** — planning only. Execution is `/team-kit-run` (native-workflow run; no TeamCreate/delegate here)
 - **Implement code** — lead delegates all implementation
 - **Skip clarification for vague problems** — always clarify when scope unclear
 - **Commit to approach without user input** — always explore alternatives first
@@ -706,6 +704,7 @@ design.md + team-plan.md ← team-planner writes
 
 | Skill | Relationship |
 |-------|-------------|
+| `team-kit-run` | **EXECUTOR** — runs the approved plan (`plan.workflow.ts` / `team-plan.md`) as a native-workflow multi-agent run. create=PLAN, run=EXECUTE. The Step 7 handoff target. |
 | `team-kit-clarify` | Dispatch guide for designer(phase: clarify) loop |
 | `team-kit-explore` | Dispatch guide for designer(phase: explore) |
 | `team-kit-present` | Invoked in Step 5 for planner output approval (design.md sections) |
@@ -741,7 +740,7 @@ The lead (orchestrator) listens for natural language cues to progress through ph
 | "good enough" / "plan it" / "let's plan" / "move to planning" | Exit refine loop → dispatch planner |
 | "skip refine" / "straight to planning" | Skip refine entirely → dispatch planner |
 | (during present design) "approved" | Approve design section → next |
-| "ship it" / "spawn" / "execute" / "start the team" | Deliver spawn prompt |
+| "ship it" / "spawn" / "execute" / "start the team" / "run it" | File-review gate → hand off to `/team-kit-run` |
 
 **The lead never requires special commands.** Natural language works. The lead's job is to interpret intent and dispatch the right agent with the right phase.
 
@@ -758,5 +757,5 @@ The lead (orchestrator) listens for natural language cues to progress through ph
 | User wants to modify plan | Edit and re-present relevant sections |
 | Not team-sized after clarification | Redirect to single-agent approach |
 | User already has a spec/design doc | Skip clarification, go to approach exploration |
-| User says "just run it" after plan | Present spawn prompt, remind execution is separate |
+| User says "just run it" after plan | File-review gate, then hand off to `/team-kit-run` (execution is gated, separate) |
 | Review finds major issues | Re-run planner with feedback, not just inline fixes |

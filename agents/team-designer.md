@@ -103,9 +103,8 @@ Status: in-progress | complete
 Read `clarify.md` first. Use its Resolved table as input requirements.
 
 Use investigation-methodology to explore codebase:
-- Claude-Mem → past work on similar problems
+- Claude-Mem → past work + architectural decisions from prior sessions
 - CocoIndex → existing patterns
-- Arcana → architectural decisions
 - **context7** → current library/framework docs (not training data)
 
 For external libraries, fetch docs via context7 MCP:

@@ -6,6 +6,8 @@ When the user's message starts with **"as a team"** (e.g., "as a team, refactor 
 
 Other trigger phrases: "team up on", "work as a team on", "let's team up", "team-kit".
 
+**Run trigger (EXECUTE, not plan):** "team-kit-run", "run the team", "execute the plan", "run the workflow team", "orchestrate as a workflow" → invoke `/team-kit-run` (native-workflow multi-agent execution). `team-kit-create` plans; `team-kit-run` executes.
+
 **Debug trigger:** "as a team, debug..." or "as a team, investigate..." → uses debug-investigation template.
 
 **Design trigger:** "as a team, design..." or "as a team, spec..." → spawns team-designer first, then planner.
@@ -16,7 +18,8 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 
 | Skill | Purpose |
 |-------|---------|
-| `team-kit-create` | Orchestrator — scope problem, create team plan, deliver spawn prompt |
+| `team-kit-create` | Orchestrator — scope problem, create team plan (PLAN only) |
+| `team-kit-run` | Executor — run a task as a native-workflow multi-agent run over the role agents (EXECUTE). Single-branch, prod-safe. See `WORKFLOW-MERGE-PLAN.md` |
 | `team-kit-clarify` | Requirements extraction — one question at a time |
 | `team-kit-explore` | Approach exploration — propose 2-3 options with tradeoffs |
 | `team-kit-present` | Section-by-section design approval |
