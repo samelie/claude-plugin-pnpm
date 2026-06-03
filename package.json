@@ -1,6 +1,6 @@
 {
   "name": "@adddog/claude-plugin-pnpm",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Claude Code plugin for pnpm monorepos — agent teams, workspace-aware fixing, changeset shipping",
   "license": "MIT",
   "author": {
@@ -14,6 +14,7 @@
     ".claude-plugin",
     "skills",
     "agents",
+    "scripts",
     "team-templates",
     "hooks",
     "rules",
@@ -26,8 +27,8 @@
   },
   "scripts": {
     "build": "unbuild",
-    "lint": "echo 'no source files to lint'",
-    "lint:fix": "echo 'no source files to lint'",
+    "lint": "node scripts/check-manifest.mjs",
+    "lint:fix": "node scripts/check-manifest.mjs",
     "types": "echo 'no tsconfig'",
     "test": "echo 'no tests'",
     "dev": "tsx src/index.ts",
