@@ -11,6 +11,8 @@ Source of truth for the 5 schemas the workflow EXECUTE path (`/team-kit-run`) pa
 
 Rule (`WORKFLOW-MERGE-PLAN.md` handoff rule): **schema for DATA; `team-session/` file (path passed IN the schema as `sessionFile`) only for BULK.** Every schema below carries `sessionFile` + a `status` enum (from the STATUS protocol) so both models coexist.
 
+**Transport caveat (0.3.3, audit-derived):** schema-forcing is UNRELIABLE for HEAVY agents — they finish the work but skip the final `StructuredOutput` call (5 live failures, 1 fatal abort). Heavy execution stages (research/coder/review/verify/finish) use the FILE model + a `STATUS:` line the orchestrator parses; reserve forced `schema:` for LIGHT stages (discovery/echo/tiny verdict). The shapes below still define the on-disk artifact CONTENT.
+
 ## Universal invariants (every schema)
 
 - `status`: `"clean" | "partial" | "errors_remaining"` — mirrors the agent STATUS protocol.

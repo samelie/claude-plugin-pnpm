@@ -1,3 +1,9 @@
+## 0.3.3
+
+- **fix**: team-kit-run transport correction — heavy execution agents (research/coder/review/verify/finish) now return FREE TEXT + a disk artifact + a `STATUS:` line the orchestrator parses, instead of schema-forcing. A live multi-package audit hit the `StructuredOutput` defect 5× (incl. a FATAL bare-`await` abort that killed a full run *after* all code had landed): agents doing heavy tool work reliably finish but skip the forced final tool call. Schema is now reserved for LIGHT stages (discovery/echo/tiny verdict). New rule 9 + "never bare-`await` a schema agent on the critical path." Supersedes the 0.3.2 schema-based D/E transport — the control-flow logic (reject-loop, collision-flag) is unchanged; only the handoff transport.
+- **fix**: propose-then-apply writes unified-diff patches to `proposals/{name}.diff` (FILE handoff) — robust vs the schema diff-fidelity gap; apply stage reads patches + flags same-path collisions in pure JS.
+- **docs**: SCHEMA-CATALOG documents the heavy-agent FILE+STATUS transport caveat.
+
 ## 0.3.2
 
 - **fix**: codify the two previously-uncoded `team-kit-run` recovery patterns (they were prose `//` comments): the **bounded reject→re-dispatch loop** (D) and **propose-then-apply collision-flag** (E). Both proven by a deterministic sandbox harness — D rejects→threads feedback→approves→caps at 3 then hands back to the human gate; E flags same-path proposals (never clobbers) and applies disjoint diffs serially.

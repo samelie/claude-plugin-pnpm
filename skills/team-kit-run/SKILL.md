@@ -24,7 +24,7 @@ These come from spikes 1–4 and shape EVERY workflow you author here.
 
 | # | Rule | Consequence |
 |---|------|-------------|
-| 1 | **Bridge works.** `agent(p, {agentType:'claude-plugin-pnpm:team-coder', schema})` loads the role agent verbatim; composes with schema. | Reuse role agents as workers — zero rewrite. |
+| 1 | **Bridge works.** `agent(p, {agentType:'claude-plugin-pnpm:team-coder'})` loads the role agent verbatim. (It *composes* with schema, but see rule 9 — don't schema-force heavy agents.) | Reuse role agents as workers — zero rewrite. |
 | 2 | **Custom agentType = FIXED toolset:** `Read, Bash, Write, Edit (only if role grants), Skill, StructuredOutput`. Frontmatter CANNOT add tools. No `mcp__*`, no `ToolSearch`, no `Glob`/`Grep`. | Role agents can't reach raw MCP. |
 | 3 | **Only the DEFAULT agent (no agentType) has `ToolSearch`** → can load any MCP on demand (cocoindex/claude-mem/context-mode), no permission prompt for reads. | Knowledge stages use the default agent — see path A. |
 | 4 | **No scope guard fires for workflow writers** (`check-team-scope` inactive) AND workflow agents auto-`acceptEdits`. | A workflow agent can write anywhere, unattended. Writes need a discipline, not a hook. |
@@ -32,6 +32,7 @@ These come from spikes 1–4 and shape EVERY workflow you author here.
 | 6 | **Resume is within-session only**; each gated stage = a separate workflow run with its own journal. No mid-run user input. | Multi-gate work = several sequential runs; human gates live BETWEEN runs. |
 | 7 | **Determinism:** `Date.now()`/`Math.random()`/argless `new Date()` THROW; scripts have NO `import`/fs/Node. | Pass timestamps via `args`; inline stage code (no imports). |
 | 8 | **Kill switch:** `/workflows` TUI → `x` stops a run, `p` pause. Guard loops with `budget.total`. | Human can always stop a runaway run. |
+| 9 | **Schema-forcing is unreliable for HEAVY agents.** Agents doing real tool work (multi-file edits, 100s of calls) reliably finish but skip the final `StructuredOutput` call — observed 5× in a live audit. In `parallel()` it degrades to `null` (survivable); a bare `await agent({schema})` **throws and aborts the whole run**. | Heavy stages (research/coder/review/verify/finish) take NO schema → write their artifact to `team-session/` + end with a `STATUS:` line the orchestrator parses. Reserve `schema:` for LIGHT stages (discovery/echo/tiny verdict). NEVER bare-`await` a schema agent on the critical path. |
 
 ## Knowledge routing (path A — verified)
 
@@ -46,7 +47,7 @@ Clobber risk is **same-FILE** writes, not parallel writes. Three write types:
 - **Source edits** (`packages/...`) — the only constrained case:
   - disjoint file-ownership → parallel OK (but a stray out-of-lane agent clobbering a peer is UNDETECTED — no hook).
   - **single-writer** (serial pipeline, one source-writer at a time) — default, safe.
-  - **propose-then-apply** — parallel coders RETURN diffs as schema data, ONE sequential apply stage writes + flags same-file collisions. Parallel reasoning, serial mutation.
+  - **propose-then-apply** — parallel coders WRITE a unified-diff patch to `<session>proposals/{name}.diff` (FILE handoff — robust vs schema diff-fidelity); ONE sequential apply stage reads the patches, applies disjoint ones + flags same-file collisions. Parallel reasoning, serial mutation.
 
 ## Prod-gating (mandatory)
 
@@ -71,7 +72,7 @@ BRANCH:          single branch, no worktrees.
 
 1. **Triage the task** against the rules: which parts are read-only (parallel-safe), which are source-writes (serialize/propose-apply), which are prod (gate out).
 2. **Seed team-session** (optional but preferred for traceability): `mkdir team-session/{YYYYMMDD-slug}/`; write `prompt.md` (raw task). Pass the absolute session path into agents.
-3. **Author the workflow** by composing the stage templates below. Use `phase()` per stage; set `opts.phase` inside `parallel`/`pipeline`. Schema every handoff.
+3. **Author the workflow** by composing the stage templates below. Use `phase()` per stage; set `opts.phase` inside `parallel`/`pipeline`. Heavy stages return FREE TEXT + a disk artifact + a `STATUS:` line (rule 9); reserve `schema:` for LIGHT stages.
 4. **Launch** via the `Workflow` tool (background). For multi-gate work, run ONLY up to the next human gate, present, then launch the next run.
 5. **Report**: relay the structured result + team-session artifact paths. Return the prod-gated checklist for the user to run manually.
 
@@ -95,73 +96,73 @@ Pick by capability. Knowledge stages = DEFAULT agent (rule 3); execution stages 
 
 ## Execution-stage templates (INLINE these — no imports)
 
-Schemas = the 5 canonical shapes in `${CLAUDE_PLUGIN_ROOT}/team-templates/SCHEMA-CATALOG.md` (ResearchFindings / ImplResult / ReviewVerdict / VerifyReport / ACEvidence). Inline the JS-object snippet per stage; do NOT import.
+The 5 canonical shapes in `${CLAUDE_PLUGIN_ROOT}/team-templates/SCHEMA-CATALOG.md` (ResearchFindings / ImplResult / ReviewVerdict / VerifyReport / ACEvidence) describe the on-disk artifact CONTENT each stage writes. Per **rule 9**, heavy stages do NOT force them as a return — they write the artifact to `team-session/` and end with a `STATUS:` line the orchestrator parses (`statusOf` below). `schema:` is for LIGHT stages only.
 
 ```js
-// RESEARCH (read-only, parallel) — DEFAULT agent + injected role (path A) → ResearchFindings
-const RESEARCHER = `You are a team RESEARCHER inside a workflow. Read-only. ` +
-  `Use ToolSearch to load mcp__cocoindex-code__search / claude-mem / context-mode; follow investigation-methodology. ` +
-  `Do NOT modify files; do NOT run prod mutations. Write findings to <session>/research/<name>.md, then return the schema.`
-const findings = await parallel(areas.map(a => () =>
-  agent(`${RESEARCHER}\nInvestigate: ${a.desc}\nWrite: <session>/research/${a.name}.md`,
-    { label: `research:${a.name}`, phase: 'Research', schema: ResearchFindings }))) // NO agentType
+// Heavy agents do real tool work → they reliably FINISH but skip a forced StructuredOutput (rule 9).
+// Heavy stages take NO schema: they WRITE their artifact to team-session/ + end with a STATUS line the
+// orchestrator parses. statusOf() reads it. Schema is reserved for LIGHT stages (discovery/echo).
+const statusOf = (t) => /STATUS:\s*CLEAN/i.test(t || '') ? 'clean'
+  : /STATUS:\s*ERRORS_REMAINING/i.test(t || '') ? 'errors' : 'partial'
+const ok = (s) => s === 'clean'
 
-// IMPLEMENT — single-writer (default, safe on one branch) → ImplResult
-let prev = null
-for (const m of modules) {                                  // serial: one source-writer at a time
-  prev = await agent(`Implement ${m.task} in ${m.files}. ${m.context}`,
-    { label: `impl:${m.name}`, phase: 'Implement', schema: ImplResult,
-      agentType: 'claude-plugin-pnpm:team-coder' })
-}
-// IMPLEMENT — propose-then-apply (parallel reasoning, serial mutation) → ImplResult with .diffs[]
-// PROVEN (de-harness): same-path proposals are FLAGGED for manual merge, not clobbered; disjoint applied serially.
-// diffs is REQUIRED (minItems 1) — an optional diffs schema let coders silently drop their work (harness run 1).
-const PROPOSE = ImplResult // + required:['taskId','status','diffs']; diffs:{minItems:1, items:{required:['path','newContent']}}
-const proposals = await parallel(modules.map(m => () =>
-  agent(`Propose changes for ${m.task}. RETURN diffs[] (path + newContent) as data; do NOT write files.`,
-    { label: `propose:${m.name}`, phase: 'Propose', schema: PROPOSE, agentType: 'claude-plugin-pnpm:team-coder' })))
-// APPLY (one writer): group diffs by target path; a path with >1 proposer = COLLISION → flag, never clobber.
-const byPath = {}, noDiff = []
-for (const p of proposals.filter(Boolean)) {
-  if (!p.diffs || !p.diffs.length) { noDiff.push(p.taskId); continue }   // never silently skip a no-diff proposer
-  for (const d of p.diffs) (byPath[d.path] = byPath[d.path] || []).push({ from: p.taskId, d })
-}
-const collisions = Object.entries(byPath).filter(([, v]) => v.length > 1)  // → human-gated manual merge
-const safe = Object.entries(byPath).filter(([, v]) => v.length === 1)      // → apply sequentially, single writer
-// apply `safe` in series via one team-coder/finisher; return `collisions` + `noDiff` to the human gate.
+// RESEARCH (read-only, parallel) — DEFAULT agent + injected role (path A). FREE TEXT + writes findings.md.
+const RESEARCHER = `You are a team RESEARCHER. Read-only. Use ToolSearch to load ` +
+  `mcp__cocoindex-code__search / claude-mem / context-mode; follow investigation-methodology. ` +
+  `Do NOT modify files. Write findings to <session>research/<name>.md, then END with a STATUS line.`
+const research = await parallel(areas.map(a => () =>
+  agent(`${RESEARCHER}\nInvestigate: ${a.desc}\nWrite: <session>research/${a.name}.md`,
+    { label: `research:${a.name}`, phase: 'Research' })))        // NO agentType, NO schema → free text
+// orchestrator reads <session>research/*.md for detail; gate on statusOf(research[i]).
+
+// IMPLEMENT — single-writer (default, safe on one branch). FREE TEXT + writes coder-{name}/progress.md.
+const runImplement = (fb) => agent(
+  `Implement ${task} in ${files}. ${context}${fb || ''}\n` +
+  `Edit ONLY your owned files. Write progress to <session>coder-${name}/progress.md; END with a STATUS line.`,
+  { label: `impl:${name}`, phase: 'Implement', agentType: 'claude-plugin-pnpm:team-coder' })   // NO schema
+await runImplement()
+// IMPLEMENT — propose-then-apply (parallel reasoning, serial mutation). PROVEN logic (de-harness): same-path = FLAG.
+// Coders WRITE a unified diff to <session>proposals/{name}.diff (FILE handoff — robust vs schema diff-fidelity) +
+// state target path(s) + STATUS. NO schema. The apply stage reads the patches; grouping/collision is pure JS.
+await parallel(modules.map(m => () =>
+  agent(`Propose ${m.task}. Do NOT edit source. Write a unified diff to <session>proposals/${m.name}.diff, ` +
+    `state the target path(s), END with STATUS.`,
+    { label: `propose:${m.name}`, phase: 'Propose', agentType: 'claude-plugin-pnpm:team-coder' })))
+// APPLY (one writer): read <session>proposals/*.diff (Bash), group by target path; a path with >1 proposer =
+// COLLISION → flag for manual merge (never clobber); apply the rest serially. Pure file + JS, no schema.
 
 // REVIEW + bounded reject → re-dispatch (PROVEN de-harness: reject@1 → feedback → approve@2; max-3 cap).
-// spec gates quality; on reject, issues[] + incompleteImplementations[] feed back into the implement thunk.
+// spec gates quality; STATUS drives the loop (NO schema — reviewers do real diff-reading work, rule 9).
 const MAX_REDISPATCH = 3
-let attempt = 0, verdict = null
+let attempt = 0, status = null
 const feedback = []
 while (attempt < MAX_REDISPATCH) {
-  const fb = feedback.length ? `\nAddress these prior review issues:\n${JSON.stringify(feedback)}` : ''
+  const fb = feedback.length ? `\nAddress prior review feedback (detail in <session>reviewer/*.md): ${feedback.join(' | ')}` : ''
   await runImplement(fb)                                    // ← the IMPLEMENT thunk above (single-writer OR propose-apply)
-  const specV = await agent(`Spec-review vs requirements. Return ReviewVerdict (reviewType:"spec").`,
-    { label: `spec#${attempt + 1}`, phase: 'Review', schema: ReviewVerdict, agentType: 'claude-plugin-pnpm:team-spec-reviewer' })
-  const specOk = specV.decision === 'approved' || specV.decision === 'approved_with_conditions'
-  verdict = specOk                                          // spec fail → skip quality, go straight to re-dispatch
-    ? await agent(`Quality-review. Return ReviewVerdict (reviewType:"quality").`,
-        { label: `qual#${attempt + 1}`, phase: 'Review', schema: ReviewVerdict, agentType: 'claude-plugin-pnpm:team-reviewer' })
-    : specV
-  if (verdict.decision === 'approved' || verdict.decision === 'approved_with_conditions') break
-  feedback.push(...(verdict.issues || []), ...(verdict.incompleteImplementations || []))
-  attempt++
+  const spec = await agent(`Spec-review vs requirements; read the git diff. Write <session>spec-reviewer/spec-review.md; END with STATUS.`,
+    { label: `spec#${attempt + 1}`, phase: 'Review', agentType: 'claude-plugin-pnpm:team-spec-reviewer' })
+  if (!ok(statusOf(spec))) { feedback.push('spec failed — see spec-reviewer/spec-review.md'); attempt++; continue }  // spec gates quality
+  const qual = await agent(`Quality-review (structure/quality/security). Write <session>reviewer/review.md; END with STATUS.`,
+    { label: `qual#${attempt + 1}`, phase: 'Review', agentType: 'claude-plugin-pnpm:team-reviewer' })
+  status = statusOf(qual)
+  if (ok(status)) break
+  feedback.push('quality failed — see reviewer/review.md'); attempt++
 }
-// still rejected at the cap → STOP, hand back to the human gate with accumulated feedback (no infinite churn).
-if (!verdict || (verdict.decision !== 'approved' && verdict.decision !== 'approved_with_conditions'))
-  return { status: 'errors_remaining', stage: 'review', attempts: attempt, blockedBy: feedback }
+// still not clean at the cap → STOP, hand back to the human gate (no infinite churn).
+if (!ok(status)) return { stage: 'review', attempts: attempt, blocked: true, feedback }
 
-// FINALIZE — parallel mechanical gates → VerifyReport (re-run ONLY failedGates to converge)
-const gates = await parallel(['lint','types','knip','test'].map(g => () =>
-  agent(`Run pnpm -F ${pkg} ${g} on affected packages; knip → {realIssues, suspectedFalsePositives}.`,
-    { label: `finalize:${g}`, phase: 'Finalize', schema: VerifyReport,
-      agentType: 'claude-plugin-pnpm:team-verifier' })))
+// FINALIZE — mechanical gates (heavy Bash). FREE TEXT report → <session>verifier/results.md + STATUS + failedGates line.
+const verify = await agent(
+  `Run lint/types/knip/test on the changed packages (git diff → pnpm -F filters). knip-skeptical. ` +
+  `Write <session>verifier/results.md; END with a STATUS line and a one-line "failedGates:" list.`,
+  { label: 'finalize', phase: 'Finalize', agentType: 'claude-plugin-pnpm:team-verifier' })   // NO schema
 
-// VALIDATE (N+2) — automatable AC only → ACEvidence; automatable:false routes to in-session manual
-const evidence = await agent(`Verify the automatable acceptance criteria with commands; return ACEvidence.`,
-  { phase: 'Validate', schema: ACEvidence, agentType: 'claude-plugin-pnpm:team-verifier' })
+// VALIDATE (N+2) — automatable AC. FREE TEXT → <session>validation-report.md + STATUS. (Verifier runs the commands.)
+const validate = await agent(`Verify automatable acceptance criteria with commands; write <session>validation-report.md; END with STATUS.`,
+  { label: 'validate', phase: 'Validate', agentType: 'claude-plugin-pnpm:team-verifier' })   // NO schema
+
+// SCHEMA IS FINE for LIGHT stages only — discovery/echo/tiny-verdict with little/no tool work
+// (e.g. monorepo-health's DISCOVER). Heavy stages above must NOT use schema (rule 9).
 ```
 
 ## Output
