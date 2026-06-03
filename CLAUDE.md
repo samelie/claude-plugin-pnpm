@@ -27,6 +27,18 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 | `debug-session` | Root cause investigation methodology — single-agent or team escalation |
 | `brainstorm-session` | Requirements gathering and design — single-agent or team escalation |
 
+## Ultracode Policy
+
+When **ultracode is on** (standing workflow opt-in), author + run a workflow for every substantive span — don't hand-orchestrate. Map each span to the cheapest reproducibility tier:
+
+- **Saved `/command` workflow** (`.claude/workflows/*.js`) — recurring shapes (health, deep-clean, knip, migrate). Most canned.
+- **`team-kit-run`** — bespoke multi-agent work over the role agents. Single-branch, prod-safe.
+- **Inline ad-hoc workflow** — one-off fan-out the saved set doesn't cover.
+
+Deterministic spans that SHOULD auto-author a workflow under ultracode: migrations, audits, broad sweeps, multi-dimension review — anything that fans out then verifies.
+
+**Team-size gate (floor, not ceiling):** scale agents to the work, not the budget. A 2-file edit is solo or one coder — NOT a 6-agent team. Reserve teams for genuinely parallel, disjoint task groups. When ultracode is off, default to solo / subagent unless the user opts into a team.
+
 ## Available Team Agents
 
 ### Artifact Chain (all disk-backed)

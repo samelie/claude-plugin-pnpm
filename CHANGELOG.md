@@ -1,3 +1,9 @@
+## 0.3.1
+
+- **fix**: manifest guard — `lint` now runs `scripts/check-manifest.mjs`, which fails if `plugin.json` `agents[]` and `agents/*.md` drift. A mismatch silently breaks plugin load (it bit us before 0.3.0); the no-op echo is replaced with a real check (also run by `/monorepo-health`).
+- **chore**: delete `team-templates/team-template-base.md` — unreferenced dead weight, strictly superseded by `FRAMEWORK.md` (which adds Designer, Team Monitor, Validation N+2, Workflow Execution, Model Selection, Fork Mode, Interrupt, Post-Plan Review, STATUS). base.md still taught stale `general-purpose` agents + lint/types-only finalization.
+- **docs**: ultracode policy in `CLAUDE.md` — under ultracode, deterministic spans (migrations, audits, sweeps, multi-dimension review) auto-author workflows; tier mapping (saved `/command` > `team-kit-run` > ad-hoc); team-size gate as a floor, not a ceiling (don't over-orchestrate).
+
 ## 0.3.0
 
 - **feat**: `team-kit-run` skill — execute a task as a native-workflow multi-agent run over the team-kit role agents. Reproducible, single-branch, prod-safe. Complements `team-kit-create` (plan) with an execute path; the two are fully wired (create → run handoff).
