@@ -32,7 +32,7 @@ Use this path for ALL read/write operations. If missing, ask lead for clarificat
 
 ## Writing Your Output
 
-Write **report.md** to your session directory:
+Write **security-audit.md** to your session directory:
 - Scope: what was audited
 - Findings table: severity (critical/high/medium/low), category, file, line, description, recommendation
 - Summary: overall security posture, top risks

@@ -81,7 +81,31 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 }
 ```
 
-Hook wiring note: the plugin's `hooks/hooks.json` already registers `PreToolUse`, `SubagentStop`, `SessionStart`, and `Stop` hooks. They run automatically whenever the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json` — nothing to wire per team.
+Hook wiring note: the plugin's `hooks/hooks.json` already registers `PreToolUse`, `SubagentStop`, `SessionStart`, and `Stop` hooks. They run automatically whenever the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json` — nothing to wire per team. NOTE: these hooks do NOT fire for `/team-kit-run` workflow agents (verified) — they apply only to the legacy native-team path.
+
+### 3. `plan.workflow.ts` (optional) — executable workflow spine
+
+When the plan will execute via `/team-kit-run` (the default executor), ALSO emit a deterministic JS workflow script derived from `team-plan.md`. This is tier-2 reproducibility: a committed, re-runnable, resumable spine. `team-plan.md` stays the human-readable twin.
+
+Mapping `team-plan.md` → `plan.workflow.ts`:
+
+| team-plan.md element | workflow script |
+|----------------------|-----------------|
+| Phase (P1/P2/...) | `phase('Name')` group |
+| Task dependency (`blockedBy`) | `await` ordering / stage sequence |
+| File-ownership matrix | per-agent thunks over disjoint files |
+| Agent role (subagent_type) | `agent(p, { agentType: 'claude-plugin-pnpm:team-coder' })` — see team-kit-run agentType table |
+| Verify commands | a final `team-verifier` stage → `VerifyReport` |
+| AC traceability | a `team-verifier` Validate stage → `ACEvidence` |
+
+Constraints (verified — see `../WORKFLOW-MERGE-PLAN.md` + `../skills/team-kit-run/SKILL.md`):
+- **Single branch, no worktrees.** Source writes = single-writer (serial) OR propose-then-apply; NEVER parallel same-file writes. Read-only stages + `team-session/` artifact writes (disjoint paths) = parallel-safe.
+- **Knowledge stages = DEFAULT agent** (ToolSearch→MCP); execution stages = custom `agentType` (no raw MCP).
+- **Prod/irreversible/paid actions are NOT in the script** — list them in a human-gated checklist instead.
+- Schemas = the 5 canonical shapes in `SCHEMA-CATALOG.md` (inline them; scripts have NO `import`).
+- No `Date.now()`/`Math.random()`/argless `new Date()` (they throw) — pass timestamps via `args`.
+
+If unsure whether to emit it, emit `team-plan.md` only; `/team-kit-run` entry mode 2 can author the workflow ad-hoc from the plan.
 
 ---
 

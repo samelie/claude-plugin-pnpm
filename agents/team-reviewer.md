@@ -35,7 +35,7 @@ Use this path for ALL read/write operations. If missing, ask lead for clarificat
 
 ## Writing Your Output
 
-Write **findings.md** to your session directory:
+Write **review-{task-id}.md** to your `reviewer/` session directory:
 - Summary: overall assessment (approve / request changes)
 - Critical issues (must fix before merge)
 - Warnings (should fix)

@@ -60,7 +60,7 @@ team-session/{team-name}/
 │   └── security-audit.md    ← team-security-auditor
 │
 ├── verifier/
-│   └── verification.md      ← team-verifier
+│   └── results.md           ← team-verifier
 │
 ├── finisher/
 │   └── cleanup-report.md    ← team-finisher
@@ -122,11 +122,11 @@ When same agent type runs multiple times:
 | team-plan-reviewer | `requirements.md`, `design.md`, `team-plan.md` | `plan-review.md` (root) |
 | team-architect | `design.md`, `team-plan.md` | `architect/brief.md` |
 | team-coder | `design.md`, `team-plan.md`, `architect/brief.md` | `coder-{name}/progress.md` |
-| team-spec-reviewer | `requirements.md`, coder output | `spec-reviewer/spec-review-{task}.md` |
-| team-reviewer | coder output, spec-reviewer output | `reviewer/review-{task}.md` |
+| team-spec-reviewer | `requirements.md`, coder output | `spec-reviewer/spec-review-{task-id}.md` |
+| team-reviewer | coder output, spec-reviewer output | `reviewer/review-{task-id}.md` |
 | team-tester | `design.md`, coder output | `tester/test-plan.md`, `tester/test-results.md` |
 | team-auditor | `design.md`, coder output | `auditor/audit-notes.md` |
-| team-verifier | all source files | `verifier/verification.md` |
+| team-verifier | all source files | `verifier/results.md` |
 | team-finisher | auditor output, coder output | `finisher/cleanup-report.md` |
 
 ### 5. Phase gates check file existence
@@ -139,7 +139,7 @@ When same agent type runs multiple times:
 | Refine | `designer/refine.md`, updated `requirements.md` |
 | Implementation | `coder-*/progress.md` for each assigned coder |
 | Review | `spec-reviewer/spec-review-*.md`, `reviewer/review-*.md` |
-| Finalization | `verifier/verification.md`, `finisher/cleanup-report.md` |
+| Finalization | `verifier/results.md`, `finisher/cleanup-report.md` |
 
 ## File Content Templates
 

@@ -190,6 +190,29 @@ Unit tests prove code is correct. Validation proves the feature **actually works
 
 ---
 
+## Workflow Execution
+
+The phase ladder above has two execution counterparts, split on the **human-gate seam**. `team-kit-create` drives the gated half (interactive); `/team-kit-run` drives the deterministic half (native-workflow). Source of truth: `../skills/team-kit-run/SKILL.md` + `../WORKFLOW-MERGE-PLAN.md` (empirically verified, spikes 1–4).
+
+| Half | Phases | Execution |
+|------|--------|-----------|
+| **Gated** (human decision mid-stream) | clarify, explore-select, present, plan approval, file review, AND all prod/irreversible/paid actions | interactive / in-session (team-kit-create + human). Workflows take NO mid-run input. |
+| **Deterministic** (fan-out → reduce) | research, implement, review (spec→quality), finalize (lint/types/knip/test), validate (N+2) | `/team-kit-run` workflow stages over the role agents. |
+
+**Verified platform rules that shape execution:**
+
+1. **Bridge:** `agent(p, { agentType: 'claude-plugin-pnpm:team-coder', schema })` loads the role agent verbatim. Reuse roles as workers — no rewrite.
+2. **Custom agentType = fixed toolset** (Read/Bash/Write/Edit-if-granted/Skill/StructuredOutput). No raw MCP/ToolSearch/Glob/Grep. → Knowledge stages use the DEFAULT agent (has ToolSearch→MCP) with the role injected via prompt.
+3. **No scope hook fires for workflow agents** (they auto-acceptEdits). The file-ownership matrix + `check-team-scope` only guard the legacy native-team path. In workflows the guard is discipline, not a hook.
+4. **Single branch, no worktrees.** Clobber risk = same-FILE writes only. Schema returns + `team-session/` artifact writes (disjoint paths) are parallel-safe; SOURCE edits are single-writer (serial) or propose-then-apply (parallel reason → one serial apply). Never parallel same-file writers.
+5. **No mid-run input; resume within-session only.** A multi-gate job = several sequential workflow runs, human gates BETWEEN runs.
+
+**Handoff:** stages pass the 5 canonical schemas in `SCHEMA-CATALOG.md` (data) + `sessionFile` pointers (bulk). The N+2 Validation phase is the workflow's Validate stage → `ACEvidence` (automatable AC only; `automatable:false` → in-session manual).
+
+**Prod-gating (mandatory):** deploys, migrations, deletes, kubectl, scaling, ingest kicks, paid live calls NEVER run inside the autonomous workflow — they return as a human-gated checklist.
+
+---
+
 ## File Ownership
 
 **Rule: No two agents modify the same file.**
@@ -214,6 +237,8 @@ Hooks provide structural guardrails beyond prompt instructions.
 
 Scope enforcement comes from the plugin's own `hooks/hooks.json` — always active when the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json`. No per-team wiring needed.
 
+**Workflow caveat (verified):** these hooks fire for the legacy native-team / Task-tool path ONLY. They do NOT fire for `/team-kit-run` workflow-spawned agents — so in workflows, scope/STATUS are NOT hook-enforced. Use the single-writer / propose-then-apply discipline (see Workflow Execution) instead.
+
 ### Hook input/output contract
 
 - **Command hooks** receive tool input JSON on stdin
@@ -225,14 +250,24 @@ Scope enforcement comes from the plugin's own `hooks/hooks.json` — always acti
 
 ## Model Selection
 
-| Role | Model | Why |
-|------|-------|-----|
-| Lead | `opus` | Needs judgment for orchestration |
-| Quarterback | `opus` | Needs judgment for code review |
-| Implementers | `opus` | Complex implementation work |
-| Finalization (lint/types/knip/test) | `sonnet` | Mechanical, pattern-following work |
+Use the least powerful model that can handle each role — conserve cost + speed. In a `/team-kit-run` workflow, set per-stage model via `opts.model` (omit to inherit the session model).
 
-Override when task complexity warrants it (e.g., sonnet for simple implementers, opus for complex lint).
+**By role / task type:**
+
+| Role / task | Model | Why |
+|-------------|-------|-----|
+| Lead / orchestration | `opus` | judgment for orchestration |
+| Quarterback / review judgment | `opus` | judgment for code review |
+| Implementation (feature, multi-file) | `opus` | implementation quality matters |
+| Architecture / design / planning | `opus` | design judgment, broad understanding |
+| Investigation / root cause | `opus` | deep-dive analysis |
+| Spec review / quality review | `sonnet` | checklist comparison |
+| Finalization (lint/types/knip/test) | `sonnet` | mechanical, pattern-following |
+| Mechanical (lint fix, type fix, knip cleanup) | `sonnet` | mechanical |
+
+**Complexity signals:** 1-2 files w/ complete spec → sonnet; multi-file w/ integration concerns → sonnet or opus; design judgment / broad codebase → opus.
+
+**Per-agent defaults:** team-designer/planner/team-coder/team-investigator/team-architect → opus; team-spec-reviewer/team-reviewer/team-verifier → sonnet. Override when task complexity warrants.
 
 ---
 
@@ -443,35 +478,6 @@ Some work done, more remains. Include summary of progress.
 If no STATUS line in output, the system treats it as ERRORS_REMAINING and respawns.
 
 Include a brief summary of completed work so the next agent doesn't redo it.
-
----
-
-## Model Selection
-
-Use the least powerful model that can handle each role to conserve cost and increase speed.
-
-| Task Type | Model | Examples |
-|-----------|-------|----------|
-| Mechanical | sonnet | Lint fix, type fix, knip cleanup |
-| Implementation | opus | Feature code, multi-file changes |
-| Architecture/Design | opus | Planning, design, complex debugging |
-| Review | sonnet | Spec review, quality review |
-| Investigation | opus | Deep-dive analysis, root cause |
-
-**Task complexity signals:**
-- Touches 1-2 files with complete spec → sonnet
-- Touches multiple files with integration concerns → sonnet or opus
-- Requires design judgment or broad codebase understanding → opus
-
-**Default assignments:**
-- `team-designer` → opus (requires judgment)
-- `planner` → opus (architecture decisions)
-- `team-coder` → opus (implementation quality matters)
-- `team-spec-reviewer` → sonnet (checklist comparison)
-- `team-reviewer` → sonnet (quality checklist)
-- `team-investigator` → opus (root cause analysis)
-- `team-architect` → opus (deep-dive analysis)
-- `team-verifier` → sonnet (run commands, report results)
 
 ---
 

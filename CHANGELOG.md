@@ -1,3 +1,13 @@
+## 0.3.0
+
+- **feat**: `team-kit-run` skill — execute a task as a native-workflow multi-agent run over the team-kit role agents. Reproducible, single-branch, prod-safe. Complements `team-kit-create` (plan) with an execute path; the two are fully wired (create → run handoff).
+- **feat**: `SCHEMA-CATALOG.md` — canonical PascalCase handoff schemas (`ResearchFindings`, `ImplResult`, `ReviewVerdict`, `VerifyReport`, `ACEvidence`) for the workflow EXECUTE path. Each carries `sessionFile` + `status` so the FILE (team-style) and SCHEMA (workflow) handoff models coexist.
+- **feat**: saved-workflow support — `SAVED-WORKFLOW-RECIPE.md` documents converting team templates to native `.claude/workflows/*.js`; ships the `/monorepo-health` exemplar (report-only by default; `args.fix` enables single-writer fixes).
+- **docs**: `FRAMEWORK.md` — added Workflow Execution section + agentType mapping table; deduped model-selection guidance.
+- **fix**: plugin load error — removed a dead agent reference from the manifest and registered `team-plan-reviewer`. Manifest now matches disk (18 agents).
+- **fix**: handoff filename drift resolved — `team-reviewer` writes `reviewer/review-{task-id}.md` (was `findings.md`, which collided with the researcher's output); `team-spec-reviewer` writes to the `spec-reviewer/` subdir (was session root); `team-security-auditor` writes `security-audit.md` (was `report.md`); SESSION-SCHEMA verifier output aligned to `verifier/results.md` (was `verification.md`); `{task}` unified to `{task-id}`. All agent docs now match the SCHEMA-CATALOG canonical paths.
+- **chore**: version sync — `plugin.json` 0.0.5 → 0.3.0 and `package.json` 0.2.0 → 0.3.0. Both manifests now aligned at 0.3.0.
+
 ## 0.2.0
 
 - **feat**: new team-kit skills family for self-contained team planning:

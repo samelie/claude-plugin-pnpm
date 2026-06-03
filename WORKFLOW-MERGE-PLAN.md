@@ -10,6 +10,22 @@
 4. **This session = decisions + plan refinement only.** No runtime/code changes yet.
 5. **No git worktrees — single-branch development (locked 2026-06-03).** Spike 2 proved workflow writers have no scope guard; worktrees were the structural fix for SAME-FILE source clobbering. Rejecting them constrains ONLY parallel same-file **source-code** edits → use single-writer or propose-then-apply for those. Everything else stays parallel: schema returns, `team-session/` artifact writes (disjoint per-agent paths), and all read-only stages. See "Single-branch write model".
 
+## Build status — autonomous wiring session (2026-06-03)
+
+Working-tree changes, UNCOMMITTED (for review). No prod mutations. Reverted `team-researcher.md` ToolSearch probe (clean).
+
+| Increment | Status | Artifacts |
+|-----------|--------|-----------|
+| Bug fix (vector-lightrag stale test) | ✅ via team-kit-run write path; spec+quality approved; suite 84/84 | `vector-lightrag/tests/test_ingest.py` |
+| #2 Canonical schema catalog | ✅ | NEW `team-templates/SCHEMA-CATALOG.md` (5 schemas); team-kit-run reconciled to canonical names + Validate stage added |
+| #4 agentType-selection table | ✅ | `skills/team-kit-run/SKILL.md` (stage→role map) |
+| #3 create↔run wiring | ✅ | `team-kit-create/SKILL.md` Step 7 hands off to `/team-kit-run` (legacy spawn = fallback); Relationship table + Human-Language + Edge-Cases + intro + Does-NOT-Do + artifact-chain updated; `PLANNER.md` gains `plan.workflow.ts` output + Workflow Output section |
+| FRAMEWORK workflow section | ✅ | NEW `## Workflow Execution` (human-gate seam, verified rules, prod-gating, Validate/N+2); hook caveat (no fire for workflow agents); two `## Model Selection` consolidated into one |
+| #5 hygiene — Arcana | ✅ live refs fixed | `team-kit-create/SKILL.md` ×2, `team-designer.md` ×1 → claude-mem/CocoIndex. CHANGELOG left as historical record. |
+| #1 convert 5 templates → saved /commands | ⏳ PARTIAL | NEW `team-templates/SAVED-WORKFLOW-RECIPE.md` (all 5, safety-classified) + exemplar `.claude/workflows/monorepo-health.js` (report-only default). **NEEDS-VALIDATION: mutating workflows require a supervised first run; migrate (gh repo create + rm dir) deliberately NOT auto-authored.** |
+
+**Deferred (need supervised session / not yet wired):** actual saved-/command creation for deep-clean/knip/debug/migrate; #9 ultracode policy in CLAUDE.md; full base.md dedup (still duplicates FRAMEWORK Roles/QB/Recovery/Token-Budget/Checklist + stale N+2/agent-typing/finalization-set); live reject→re-dispatch cycle (#8) not yet exercised. CHANGELOG Arcana ref intentionally kept (historical).
+
 ## Source confidence (verified 2026-06-03)
 
 Verified against the live official docs (`code.claude.com/docs/en/workflows` + changelog) and `github.com/shinpr/claude-code-workflows`.
@@ -160,13 +176,35 @@ That repo is the prompt-orchestrated paradigm we're replacing — but its contra
 
 **Do NOT copy:** their orchestrator-persona execution model (the non-determinism we're leaving), generic role names, or assume worktree/pnpm behavior — they have neither.
 
+## Skill architecture (plan vs execute)
+
+Two skills, split on the human-gate seam — `team-kit-create` plans, a new `team-kit-run` executes.
+
+| Skill | Role | Owns | Output |
+|-------|------|------|--------|
+| `team-kit-create` (evolve) | PLAN front-end (interactive) | clarify→explore→present→research→refine→plan→review→file-gate | `plan.workflow.ts` (sole source) + generated views (design.md / team-plan.md / Mermaid). Ends at approval gate. |
+| `team-kit-run` (NEW) | EXECUTE | canonical invocation contract; execution-stage TEMPLATES; single-branch write model; prod-gating; path-A knowledge routing; schema handoff; team-session artifacts; report-back + resume | launches/resumes the background workflow, returns results |
+
+Today: `team-kit-create` → manual spawn prompt (old, no workflow). Target: `team-kit-create` → `plan.workflow.ts` → `team-kit-run`.
+
+**`team-kit-run` has THREE entry modes** (don't force everything through full planning):
+1. **Approved `plan.workflow.ts`** (from create) — full pipeline.
+2. **Direct task** via the canonical invocation prompt (author-on-the-fly) — skips ceremony for clear tasks (the spike-4 path).
+3. **Saved template** workflow (`/monorepo-health`, etc.) — fully canned.
+
+**Hard constraint — execution "library" is templates, NOT a runtime import.** Workflow scripts are self-contained (no `import`/fs/Node). So `implementStage`/`reviewStage`/`finalizeStage`/`validateStage` are canonical CODE SNIPPETS + schemas the skill/planner INLINES into each generated script — library-as-template, not library-as-import. This shapes how the knowledge is captured: the skill holds the snippet catalog + the canonical invocation contract (see "Invocation").
+
+**Reproducibility tiers** (most→least canned): saved `/command` workflow  >  generated + committed `plan.workflow.ts`  >  ad-hoc orchestrator-authored. Pick the default per use: recurring shapes → saved command; bespoke features → tier 2.
+
+**Family fit:** `team-kit-create` (plan orchestrator) + clarify/explore/present/review (sub-dispatch) + `team-kit-run` (NEW execute). No duplication — create owns WHAT/HOW/plan; run owns EXECUTION.
+
 ## Migration steps
 
 1. **[FIRST — gates everything] Verify the bridge empirically:** throwaway workflow calling `agent(prompt, { agentType: 'claude-plugin-pnpm:team-coder', schema })`. Confirm the namespaced subagent registry resolves from inside a workflow AND that MCP/knowledge tools (cocoindex, claude-mem, context-mode) survive the runtime. **No other step starts until this passes.**
 2. Add a **Workflow Execution** section to FRAMEWORK.md declaring the human-gate seam as the canonical hybrid default. (Fold the duplicated FRAMEWORK vs team-template-base sections + the two Model Selection sections while editing — pre-existing debt.)
 3. Define a canonical handoff-schema set (ResearchFindings, ImplResult, ReviewVerdict, VerifyReport, ACEvidence). Document: schema for data, team-session/ path-in-schema for bulk only.
 4. Teach team-planner to emit `plan.workflow.ts` as the SOLE plan source of truth; `team-plan.md` is GENERATED from the script as a human-readable view (no hand-authored twin). Keep no-placeholders + type-consistency self-review, now applied to a real script. Build the script→markdown generator as part of this step.
-5. Build a reusable execution workflow library (implementStage/reviewStage/finalizeStage/validateStage). Planner composes these instead of bespoke orchestration each time.
+5. Build a reusable execution workflow library (implementStage/reviewStage/finalizeStage/validateStage). Planner composes these instead of bespoke orchestration each time. **✅ FIRST INCREMENT DONE (2026-06-03):** `skills/team-kit-run/SKILL.md` created — captures the canonical invocation contract, the verified hard rules (spikes 1–4), path-A knowledge routing, single-branch write model, prod-gating, and the stage templates as INLINE snippets (library-as-template, since workflow scripts can't import). Registered in plugin CLAUDE.md. Ad-hoc entry mode (2) live; entry modes 1 (plan.workflow.ts) + 3 (saved /commands) still to wire. **✅ VALIDATED IN REAL USE (2026-06-03):** invoked the skill to run the workflow-safe slice of the vlr follow-up plan — 4 test suites (llm-spend 70/70, lightrag-service 35/35, dnd-5 STT 7/7, vector-lightrag 83/1 with the fail correctly flagged pre-existing + NOT fixed) + cost math (gpt-4o-mini vs grok = −85%, ~6.7× cheaper). team-verifier agentType + default-agent cost, parallel `verify/*.md` writes, schema handoff, report-only discipline held, prod items gated. The captured contract reproduced a clean run.
 6. **Convert the 5 standalone templates first** (monorepo-health, deep-clean, knip-audit, debug-investigation, migrate-scripts) → saved workflows with `export meta` → `/<name>`, parameterized via args. No human gate, pure fan-out → safest first conversions, 100% of the benefit. Ship BEFORE touching the gated pipeline.
 7. Rewrite team-kit-create's tail: replace 'deliver spawn prompt' + E0 manual checklist with 'launch plan.workflow.ts'. Front-end skills stay interactive.
 8. Encode review/recovery loops as deterministic JS: reject → re-dispatch thunk with issues fed back, max 3 as a counter. Retire SendMessage for the back half.
@@ -195,9 +233,24 @@ Native-first only counts if we PROVE the native capability does what we claim. E
 | 1c | ToolSearch grant | (reloaded + retested) does adding `ToolSearch` to a role frontmatter unlock MCP for custom agentTypes | ❌ **FAILED** — frontmatter CANNOT add tools outside the harness whitelist; researcher still got only Read/Bash/Write/Skill. Edit reverted. → adopt path A |
 | 2 | Hook fire | does `check-team-scope` guard workflow writers | ❌ **NO** — out-of-scope `/tmp` write SUCCEEDED, no interception, no denial. PreToolUse scope guard INACTIVE for workflow agents → **worktree isolation mandatory** |
 | 3 | ~~Worktree×pnpm~~ | — | 🚫 **DROPPED** (decision #5: no worktrees) |
-| 4 | End-to-end | a tiny real task through `implementStage (single-writer) → reviewStage → finalizeStage` produces correct, reviewed, lint-clean output on one branch | pending |
+| 4 | End-to-end | revised kit triages real vlr follow-up work on one branch: parallel default-agent research → team-planner reduce | ✅ **PASS** — see below |
 
 **Acceptance rule:** no migration step proceeds until its spike passes. Spike 1's result rewrites this plan's "still unverified" claims into facts — or kills the thesis.
+
+### Spike 4 results (e2e, 2026-06-03) — revised kit on real vlr follow-up work
+
+Triaged the post-migration follow-up list (9 items) read-only → plan + prod-gating table. 4 agents, ~252k tokens, ~8.5 min, single branch, ZERO prod mutation. All proof points PASS:
+
+- **Bridge in real use:** 3 DEFAULT-agent researchers + 1 `team-planner` agentType reducer in one workflow.
+- **Path A confirmed IN PRACTICE:** all 3 researchers reached `mcp__cocoindex-code__search` + `mcp__plugin_claude-mem_mcp-search__*` via ToolSearch (`knowledgeToolsUsed`). Knowledge grounding works for default agents.
+- **Parallel team-session writes PROVEN:** 3 disjoint `research/*.md` written concurrently (09:11:58 / 09:12:38 / 09:15:05), no collision. Confirms the disjoint-path parallel-write model.
+- **Schema handoff** Triage→Plan validated through both stages.
+- **Prod-gating CORRECT:** planner gated all 7 prod-mutating items (kick/kubectl/pool-kill/live-paid-query) to a serial human-gated Phase D; kept only read-only/analysis as workflow-safe (Phases A/B1/C1). Even split items into EXECUTE (gated) vs WATCH (safe) halves.
+- **Real value, not toy output:** surfaced genuine blockers — "QUEUED is an IngestionStatus, not a BookStatus → 6 orphans need demote-to-PENDING before `triggerIngestForBook` accepts them"; "`ping_db` self-heals the asyncpg pool → forcing a sustained /livez 503 needs killing the PG pod, not `pool.close()`"; doc-count discrepancy (5289 vs ~5609+587); no audio fixtures for STT; grok fully removed from source.
+
+Artifacts: `team-session/20260603-vlr-followup-triage/{prompt,plan,gating}.md` + `research/{p0-ingest,p1-runtime,p2-debt}.md`. The plan is a usable execution plan for the actual follow-up work, prod ops correctly gated.
+
+**Verdict: the revised single-branch workflow team kit works end-to-end on real work, respecting the human-gate seam.** Spike ladder complete.
 
 ## Risks
 
