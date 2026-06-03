@@ -1,3 +1,9 @@
+## 0.3.2
+
+- **fix**: codify the two previously-uncoded `team-kit-run` recovery patterns (they were prose `//` comments): the **bounded reject→re-dispatch loop** (D) and **propose-then-apply collision-flag** (E). Both proven by a deterministic sandbox harness — D rejects→threads feedback→approves→caps at 3 then hands back to the human gate; E flags same-path proposals (never clobbers) and applies disjoint diffs serially.
+- **fix**: propose-then-apply now requires `diffs` (minItems 1) and flags proposers returning none — an optional `diffs` schema let coders silently drop work (caught live by the harness's first run; compliance went 2/3 → 3/3 once required).
+- **docs**: SCHEMA-CATALOG `ImplResult` documents the diff-fidelity guard.
+
 ## 0.3.1
 
 - **fix**: manifest guard — `lint` now runs `scripts/check-manifest.mjs`, which fails if `plugin.json` `agents[]` and `agents/*.md` drift. A mismatch silently breaks plugin load (it bit us before 0.3.0); the no-op echo is replaced with a real check (also run by `/monorepo-health`).

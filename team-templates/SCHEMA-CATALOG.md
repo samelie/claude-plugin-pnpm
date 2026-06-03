@@ -51,7 +51,7 @@ const ResearchFindings = {
 
 ## 2. ImplResult
 
-team-coder output. Single-writer fills the top fields; propose-then-apply fills `diffs[]` and writes NO file.
+team-coder output. Single-writer fills the top fields; propose-then-apply fills `diffs[]` and writes NO file. The apply stage MUST require `diffs` (minItems 1) and flag any proposer returning none — an optional `diffs` schema lets coders silently drop work (de-harness run 1). Same-path proposals are flagged for manual merge, never clobbered.
 
 ```js
 const ImplResult = {

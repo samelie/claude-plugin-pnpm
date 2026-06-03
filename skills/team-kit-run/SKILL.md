@@ -114,20 +114,44 @@ for (const m of modules) {                                  // serial: one sourc
       agentType: 'claude-plugin-pnpm:team-coder' })
 }
 // IMPLEMENT — propose-then-apply (parallel reasoning, serial mutation) → ImplResult with .diffs[]
+// PROVEN (de-harness): same-path proposals are FLAGGED for manual merge, not clobbered; disjoint applied serially.
+// diffs is REQUIRED (minItems 1) — an optional diffs schema let coders silently drop their work (harness run 1).
+const PROPOSE = ImplResult // + required:['taskId','status','diffs']; diffs:{minItems:1, items:{required:['path','newContent']}}
 const proposals = await parallel(modules.map(m => () =>
-  agent(`Propose changes for ${m.task}. RETURN diffs[] as data; do NOT write files.`,
-    { label: `propose:${m.name}`, phase: 'Propose', schema: ImplResult /* .diffs[] populated */,
-      agentType: 'claude-plugin-pnpm:team-coder' })))
-// then ONE apply stage (an agent, or the orchestrator) writes proposals.filter(Boolean) sequentially,
-// flagging any two proposals that target the same path instead of clobbering.
+  agent(`Propose changes for ${m.task}. RETURN diffs[] (path + newContent) as data; do NOT write files.`,
+    { label: `propose:${m.name}`, phase: 'Propose', schema: PROPOSE, agentType: 'claude-plugin-pnpm:team-coder' })))
+// APPLY (one writer): group diffs by target path; a path with >1 proposer = COLLISION → flag, never clobber.
+const byPath = {}, noDiff = []
+for (const p of proposals.filter(Boolean)) {
+  if (!p.diffs || !p.diffs.length) { noDiff.push(p.taskId); continue }   // never silently skip a no-diff proposer
+  for (const d of p.diffs) (byPath[d.path] = byPath[d.path] || []).push({ from: p.taskId, d })
+}
+const collisions = Object.entries(byPath).filter(([, v]) => v.length > 1)  // → human-gated manual merge
+const safe = Object.entries(byPath).filter(([, v]) => v.length === 1)      // → apply sequentially, single writer
+// apply `safe` in series via one team-coder/finisher; return `collisions` + `noDiff` to the human gate.
 
-// REVIEW — spec THEN quality (sequential ordering preserved) → ReviewVerdict (reviewType discriminates)
-const specV = await agent(`Spec-review the changes vs requirements. Return ReviewVerdict (reviewType:"spec").`,
-  { phase: 'Review', schema: ReviewVerdict, agentType: 'claude-plugin-pnpm:team-spec-reviewer' })
-const qualV = await agent(`Quality-review the changes. Return ReviewVerdict (reviewType:"quality").`,
-  { phase: 'Review', schema: ReviewVerdict, agentType: 'claude-plugin-pnpm:team-reviewer' })
-// reject (decision: needs_revision|rejected) → bounded re-dispatch of the implement thunk
-// with issues[]/incompleteImplementations[] fed back (max 3, JS counter)
+// REVIEW + bounded reject → re-dispatch (PROVEN de-harness: reject@1 → feedback → approve@2; max-3 cap).
+// spec gates quality; on reject, issues[] + incompleteImplementations[] feed back into the implement thunk.
+const MAX_REDISPATCH = 3
+let attempt = 0, verdict = null
+const feedback = []
+while (attempt < MAX_REDISPATCH) {
+  const fb = feedback.length ? `\nAddress these prior review issues:\n${JSON.stringify(feedback)}` : ''
+  await runImplement(fb)                                    // ← the IMPLEMENT thunk above (single-writer OR propose-apply)
+  const specV = await agent(`Spec-review vs requirements. Return ReviewVerdict (reviewType:"spec").`,
+    { label: `spec#${attempt + 1}`, phase: 'Review', schema: ReviewVerdict, agentType: 'claude-plugin-pnpm:team-spec-reviewer' })
+  const specOk = specV.decision === 'approved' || specV.decision === 'approved_with_conditions'
+  verdict = specOk                                          // spec fail → skip quality, go straight to re-dispatch
+    ? await agent(`Quality-review. Return ReviewVerdict (reviewType:"quality").`,
+        { label: `qual#${attempt + 1}`, phase: 'Review', schema: ReviewVerdict, agentType: 'claude-plugin-pnpm:team-reviewer' })
+    : specV
+  if (verdict.decision === 'approved' || verdict.decision === 'approved_with_conditions') break
+  feedback.push(...(verdict.issues || []), ...(verdict.incompleteImplementations || []))
+  attempt++
+}
+// still rejected at the cap → STOP, hand back to the human gate with accumulated feedback (no infinite churn).
+if (!verdict || (verdict.decision !== 'approved' && verdict.decision !== 'approved_with_conditions'))
+  return { status: 'errors_remaining', stage: 'review', attempts: attempt, blockedBy: feedback }
 
 // FINALIZE — parallel mechanical gates → VerifyReport (re-run ONLY failedGates to converge)
 const gates = await parallel(['lint','types','knip','test'].map(g => () =>
