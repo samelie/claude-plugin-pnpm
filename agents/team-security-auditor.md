@@ -2,6 +2,7 @@
 name: team-security-auditor
 description: Security audit specialist for team-based development. Performs OWASP-informed scans for vulnerabilities, secrets exposure, and insecure patterns. Cannot modify source code.
 tools: Read, Glob, Grep, Bash, Write, Skill
+disallowedTools: Write, Edit, NotebookEdit
 model: sonnet
 effort: max
 maxTurns: 20

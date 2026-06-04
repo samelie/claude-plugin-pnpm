@@ -24,6 +24,30 @@
         ]
       }
     ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/record-failure.mjs\"",
+            "timeout": 3000
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/record-lifecycle.mjs\"",
+            "timeout": 3000
+          }
+        ]
+      }
+    ],
     "SubagentStop": [
       {
         "matcher": "*",
@@ -31,6 +55,11 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/check-status-protocol\"",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/record-lifecycle.mjs\"",
             "timeout": 3000
           }
         ]

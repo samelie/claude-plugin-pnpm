@@ -245,6 +245,7 @@ If any check fails, fix before returning.
 - Prefer fewer agents with grouped tasks over many micro-task agents
 - No two agents modify the same file
 - Implementers use `mode: "plan"` — must submit plan for lead approval
+- Emitted spine coder lanes (single-writer mutation lanes) should set `permissionMode: 'acceptEdits'`; read-only lanes stay default/plan
 - Finalization agents use dedicated subagent types + sonnet model
 - Include STATUS protocol in all agent prompts
 - Carry forward ALL decisions from requirements.md
