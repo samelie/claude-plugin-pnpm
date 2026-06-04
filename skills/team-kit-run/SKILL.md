@@ -1,6 +1,7 @@
 ---
 name: team-kit-run
 description: "Execute a task as a native-workflow multi-agent run over the team-kit role agents. Reproducible, single-branch, prod-safe orchestration. Triggers: team-kit-run, run the team, execute the team plan, run the workflow team, orchestrate as a workflow, run plan.workflow, execute multi-agent workflow, fan out the team"
+disallowed-tools: AskUserQuestion
 ---
 
 # /team-kit-run — Execute work as a native-workflow multi-agent run

@@ -1,3 +1,12 @@
+## 0.3.5
+
+- **feat**: git-safety deny-gate — scoped `permissions.deny` for destructive git ops (`git stash`/`reset`/`checkout`/`restore`/`clean`/`rebase`) + `rm -rf`, committed to repo `.claude/settings.json`. Excludes `commit`/`push`/`merge` (the human-gate seam — lead still does git). NOT shippable via plugin `settings.json`, which only honors `agent`/`subagentStatusLine` keys — repo-level settings are the enforcement point.
+- **feat**: read-only role agents now disallow `Write`/`Edit`/`NotebookEdit` in frontmatter — enforces the read-only contract for observer/reviewer/research roles at the tool-permission layer.
+- **feat**: stall/timeout env vars — `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS` + `CLAUDE_CODE_MAX_RETRIES` to bound async-agent stalls and retry budgets on long workflow runs.
+- **feat**: observability hooks — `PostToolUseFailure` + `SubagentStart`/`SubagentStop` write ndjson ledgers to `team-session/_observability`. Confirmed for native-subagent/`Task`; workflow-path coverage pending D7.
+- **fix**: `team-kit-run` skill disallows `AskUserQuestion` — no mid-run blocking; the run drives to a `STATUS:` line without human prompts.
+- **fix**: `team-planner` emits coder lanes with `permissionMode: acceptEdits`.
+
 ## 0.3.4
 
 - **fix**: backport the rule-9 FILE+STATUS transport + try/catch abort-safety into the SAVED workflow recipes (`.claude/workflows/monorepo-health.js`, `monorepo-fix.js`). 0.3.3 fixed the SKILL prose but never the shipped recipes — heavy Check/Fix stages still schema-forced. Schema is now stripped from heavy stages (light Discover schema kept). `monorepo-health.js` Fix loop converted from a bare-`await` (mid-run abort risk after work landed) to `try/catch` + `STATUS:` parsing.

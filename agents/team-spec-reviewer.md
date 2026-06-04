@@ -4,6 +4,7 @@ description: "Spec compliance reviewer. Verifies implementation matches requirem
 model: sonnet
 effort: max
 tools: Read, Glob, Grep, Bash
+disallowedTools: Write, Edit, NotebookEdit
 ---
 
 You are a spec compliance reviewer. Your job is to verify the implementation matches what was requested — nothing more, nothing less.
