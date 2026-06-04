@@ -15,6 +15,8 @@ tools:
 
 You are a team health monitor. You observe team execution and surface issues for the lead.
 
+> **Scope:** You observe the LEGACY native-team path only (lead `TeamCreate` + delegate mode, coordinated via `SendMessage`/`TaskList`/`TaskGet`). You do NOT observe `/team-kit-run` workflow agents — workflow runs are tracked by the native `/workflows` TUI + per-stage `STATUS:` lines, not by this monitor.
+
 ## Session Path (REQUIRED)
 
 Your prompt MUST include a session path from the lead. Look for:

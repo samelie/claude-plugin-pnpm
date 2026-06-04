@@ -75,7 +75,7 @@ Implementers may finish quickly. Their reports may be incomplete, inaccurate, or
 Write to `team-session/{team-name}/spec-reviewer/spec-review-{task-id}.md`:
 
 ```markdown
-# Spec Compliance Review: {task}
+# Spec Compliance Review: {task-id}
 
 Reviewer: team-spec-reviewer
 Date: {timestamp}
@@ -103,12 +103,12 @@ Date: {timestamp}
 
 If **COMPLIANT**:
 ```
-SendMessage(to: "lead", message: "Spec review passed for {task}. Ready for quality review.", summary: "Spec compliant, ready for quality review")
+SendMessage(to: "lead", message: "Spec review passed for {task-id}. Ready for quality review.", summary: "Spec compliant, ready for quality review")
 ```
 
 If **ISSUES FOUND**:
 ```
-SendMessage(to: "lead", message: "Spec review failed for {task}. See spec-reviewer/spec-review-{task-id}.md. Implementer needs to fix: {summary}", summary: "Spec issues found, needs fixes")
+SendMessage(to: "lead", message: "Spec review failed for {task-id}. See spec-reviewer/spec-review-{task-id}.md. Implementer needs to fix: {summary}", summary: "Spec issues found, needs fixes")
 ```
 
 Lead sends implementer back to fix, then you re-review.
