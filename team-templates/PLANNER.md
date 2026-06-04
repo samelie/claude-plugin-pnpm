@@ -83,11 +83,13 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 
 Hook wiring note: the plugin's `hooks/hooks.json` already registers `PreToolUse`, `SubagentStop`, `SessionStart`, and `Stop` hooks. They run automatically whenever the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json` — nothing to wire per team. NOTE: these hooks do NOT fire for `/team-kit-run` workflow agents (verified) — they apply only to the legacy native-team path.
 
-### 3. `plan.workflow.ts` (optional) — executable workflow spine
+### 3. `plan.workflow.js` (optional) — executable workflow spine
 
 When the plan will execute via `/team-kit-run` (the default executor), ALSO emit a deterministic JS workflow script derived from `team-plan.md`. This is tier-2 reproducibility: a committed, re-runnable, resumable spine. `team-plan.md` stays the human-readable twin.
 
-Mapping `team-plan.md` → `plan.workflow.ts`:
+**Rule 7 — Workflows are plain JS — no TS imports/types; emit `plan.workflow.js`.**
+
+Mapping `team-plan.md` → `plan.workflow.js`:
 
 | team-plan.md element | workflow script |
 |----------------------|-----------------|
@@ -105,7 +107,7 @@ Constraints (verified — see `../WORKFLOW-MERGE-PLAN.md` + `../skills/team-kit-
 - Schemas = the 5 canonical shapes in `SCHEMA-CATALOG.md` (inline them; scripts have NO `import`).
 - No `Date.now()`/`Math.random()`/argless `new Date()` (they throw) — pass timestamps via `args`.
 
-If unsure whether to emit it, emit `team-plan.md` only; `/team-kit-run` entry mode 2 can author the workflow ad-hoc from the plan.
+If unsure whether to emit it, emit `team-plan.md` only; `/team-kit-run` entry mode 2 can author the workflow ad-hoc from the plan. (`plan.workflow.js` is plain JS — no imports/fs/Node, no TS types.)
 
 ---
 
@@ -174,6 +176,8 @@ Skip hooks for small teams (1-2 agents) — overhead isn't worth it.
 ---
 
 ## Generating Agent Prompts
+
+> **NOTE (execution model):** The `Task(...)` spawn snippets below are the LEGACY native-team path (lead `TeamCreate` + delegate mode). The default executor is now `/team-kit-run`, which drives the SAME role agents through the native `Workflow` tool via `agent(prompt, { agentType })` — no `Task`/`mode:"plan"`/`TeamCreate`. The prompt CONTENT (identity, tasks, scope, rules, STATUS) is identical either way; only the spawn mechanism differs. See `../skills/team-kit-run/SKILL.md`.
 
 Each agent prompt must include:
 

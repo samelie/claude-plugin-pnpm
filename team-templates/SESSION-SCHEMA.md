@@ -74,7 +74,7 @@ team-session/{team-name}/
 │   └── {timestamp}-{label}.txt
 │
 └── [VALIDATION]
-    └── validation-report.md ← lead (phase N+2)
+    └── validation-report.md ← team-verifier (phase N+2)
 ```
 
 ## Rules
@@ -126,7 +126,7 @@ When same agent type runs multiple times:
 | team-reviewer | coder output, spec-reviewer output | `reviewer/review-{task-id}.md` |
 | team-tester | `design.md`, coder output | `tester/test-plan.md`, `tester/test-results.md` |
 | team-auditor | `design.md`, coder output | `auditor/audit-notes.md` |
-| team-verifier | all source files | `verifier/results.md` |
+| team-verifier | all source files | `verifier/results.md`, `validation-report.md` (phase N+2) |
 | team-finisher | auditor output, coder output | `finisher/cleanup-report.md` |
 
 ### 5. Phase gates check file existence

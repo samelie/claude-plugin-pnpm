@@ -547,7 +547,7 @@ Planner produces:
 - `design.md` — human-readable architecture summary
 - `team-plan.md` — full plan with roles, tasks, ownership, phases
 - `team-scope.json` — scope config for hook enforcement (legacy native-team path)
-- `plan.workflow.ts` (optional, tier-2) — executable workflow spine derived from team-plan.md, consumed by `/team-kit-run`. See PLANNER.md → Workflow Output.
+- `plan.workflow.js` (optional, tier-2) — executable workflow spine derived from team-plan.md, consumed by `/team-kit-run`. See PLANNER.md → Workflow Output.
 
 ---
 
@@ -600,7 +600,7 @@ Before handoff, ask user to review actual files:
 > "Plan complete. Please review these files before execution:
 > - `team-session/{team-name}/design.md` — architecture summary
 > - `team-session/{team-name}/team-plan.md` — full execution plan
-> - `team-session/{team-name}/plan.workflow.ts` — executable workflow spine (if emitted; see below)
+> - `team-session/{team-name}/plan.workflow.js` — executable workflow spine (if emitted; see below)
 >
 > Let me know if you want any changes."
 
@@ -612,7 +612,7 @@ Wait for user approval. If changes requested → edit → re-present relevant se
 
 > **Plan approved.** To execute:
 > ```
-> /team-kit-run  — run team-session/{team-name}/plan.workflow.ts (entry mode 1)
+> /team-kit-run  — run team-session/{team-name}/plan.workflow.js (entry mode 1)
 > ```
 > Or just say "run it" / "execute the plan". `/team-kit-run` keeps the human-gate seam:
 > deterministic stages (research/implement/review/verify) run as a background workflow;
@@ -681,7 +681,7 @@ requirements.md        ← enriched by refine phase (traceable changes)
     ↓ reads requirements.md + findings.md + refine.md
 design.md + team-plan.md ← team-planner writes
     ↓ (optional, tier-2 reproducibility) executable spine emitted from team-plan.md
-plan.workflow.ts       ← team-planner writes (consumed by /team-kit-run, entry mode 1)
+plan.workflow.js       ← team-planner writes (consumed by /team-kit-run, entry mode 1)
 ```
 
 Handoff data shapes between workflow stages: `team-templates/SCHEMA-CATALOG.md` (the 5 canonical schemas). This artifact chain is the FILE-handoff model; `/team-kit-run` adds SCHEMA handoff for execution.
@@ -704,7 +704,7 @@ Handoff data shapes between workflow stages: `team-templates/SCHEMA-CATALOG.md` 
 
 | Skill | Relationship |
 |-------|-------------|
-| `team-kit-run` | **EXECUTOR** — runs the approved plan (`plan.workflow.ts` / `team-plan.md`) as a native-workflow multi-agent run. create=PLAN, run=EXECUTE. The Step 7 handoff target. |
+| `team-kit-run` | **EXECUTOR** — runs the approved plan (`plan.workflow.js` / `team-plan.md`) as a native-workflow multi-agent run. create=PLAN, run=EXECUTE. The Step 7 handoff target. |
 | `team-kit-clarify` | Dispatch guide for designer(phase: clarify) loop |
 | `team-kit-explore` | Dispatch guide for designer(phase: explore) |
 | `team-kit-present` | Invoked in Step 5 for planner output approval (design.md sections) |

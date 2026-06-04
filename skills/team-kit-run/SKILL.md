@@ -12,7 +12,7 @@ Design source of truth + verification evidence: `${CLAUDE_PLUGIN_ROOT}/WORKFLOW-
 ## When to use
 
 Three entry modes:
-1. **Approved `plan.workflow.ts`** (from `team-kit-create`) — run the full executable plan.
+1. **Approved `plan.workflow.js`** (from `team-kit-create`) — run the full executable plan.
 2. **Direct task** via the canonical invocation contract below — clear task that doesn't need the full clarify/explore planning ceremony. (Most common.)
 3. **Saved template workflow** (`/monorepo-health`, etc.) — fully canned, parameterized via `args`.
 
@@ -173,4 +173,4 @@ const validate = await agent(`Verify automatable acceptance criteria with comman
 
 ## Reproducibility tiers
 
-Most → least canned: saved `/command` workflow  >  generated + committed `plan.workflow.ts`  >  ad-hoc orchestrator-authored. For recurring shapes, save the script as a `/command` (`.claude/workflows/`); for bespoke work, tier 2/3.
+Most → least canned: saved `/command` workflow  >  generated + committed `plan.workflow.js`  >  ad-hoc orchestrator-authored. For recurring shapes, save the script as a `/command` (`.claude/workflows/`); for bespoke work, tier 2/3.

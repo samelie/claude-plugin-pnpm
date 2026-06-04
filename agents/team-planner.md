@@ -248,3 +248,4 @@ If any check fails, fix before returning.
 - Finalization agents use dedicated subagent types + sonnet model
 - Include STATUS protocol in all agent prompts
 - Carry forward ALL decisions from requirements.md
+- Workflows are plain JS — no TS imports/types; emit `plan.workflow.js` (not `.ts`)
