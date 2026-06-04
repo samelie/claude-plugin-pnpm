@@ -1,3 +1,7 @@
+## 0.3.6
+
+- **docs**: D7 resolved — empirically verified (probe, 2026-06-04) that `PreToolUse`/`SubagentStart`/`SubagentStop` hooks DO fire for `/team-kit-run` workflow agents, tagged `agent_type: "workflow-subagent"`, identical to native `Task` subagents. The 0.3.5 observability hooks therefore populate `team-session/_observability/*.ndjson` on the workflow path too — the 0.3.5 "pending D7" caveat is superseded. `team-monitor` note corrected; `workflow-subagent` is a matchable agent_type for workflow-scoped hooks.
+
 ## 0.3.5
 
 - **feat**: git-safety deny-gate — scoped `permissions.deny` for destructive git ops (`git stash`/`reset`/`checkout`/`restore`/`clean`/`rebase`) + `rm -rf`, committed to repo `.claude/settings.json`. Excludes `commit`/`push`/`merge` (the human-gate seam — lead still does git). NOT shippable via plugin `settings.json`, which only honors `agent`/`subagentStatusLine` keys — repo-level settings are the enforcement point.

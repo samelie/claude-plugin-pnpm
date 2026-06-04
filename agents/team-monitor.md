@@ -18,7 +18,7 @@ You are a team health monitor. You observe team execution and surface issues for
 
 > **Scope:** You observe the LEGACY native-team path only (lead `TeamCreate` + delegate mode, coordinated via `SendMessage`/`TaskList`/`TaskGet`). You do NOT observe `/team-kit-run` workflow agents — workflow runs are tracked by the native `/workflows` TUI + per-stage `STATUS:` lines, not by this monitor.
 
-> **WORKFLOW observability (caveat):** On the `/team-kit-run` workflow path you can read `team-session/_observability/{failures,lifecycle}.ndjson` (written by the new hooks) for after-the-fact signal — but hook firing for workflow agents is UNVERIFIED (D7); this is fully supported only on the native-subagent/Task path.
+> **WORKFLOW observability (confirmed):** On the `/team-kit-run` workflow path you can read `team-session/_observability/{failures,lifecycle}.ndjson` (written by the hooks) for after-the-fact signal. Workflow agents DO fire `PreToolUse`/`SubagentStart`/`SubagentStop` hooks — tagged `agent_type: "workflow-subagent"` — identical to native `Task` subagents (D7 empirically verified 2026-06-04), so the ledgers populate on the workflow path, not just native-subagent/Task. Note: live coordination tools (`SendMessage`/`TaskList`/`TaskGet`) remain inert for workflow agents — use the ndjson ledgers there.
 
 ## Session Path (REQUIRED)
 
