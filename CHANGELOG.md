@@ -1,3 +1,10 @@
+## 0.3.4
+
+- **fix**: backport the rule-9 FILE+STATUS transport + try/catch abort-safety into the SAVED workflow recipes (`.claude/workflows/monorepo-health.js`, `monorepo-fix.js`). 0.3.3 fixed the SKILL prose but never the shipped recipes — heavy Check/Fix stages still schema-forced. Schema is now stripped from heavy stages (light Discover schema kept). `monorepo-health.js` Fix loop converted from a bare-`await` (mid-run abort risk after work landed) to `try/catch` + `STATUS:` parsing.
+- **fix**: `monorepo-health.js` coverage assertion — fixes a false-clean when reports were silently dropped.
+- **fix**: `monorepo-fix.js` is report-only by default, gated behind `args.fix` (matches the health recipe contract).
+- **docs**: doc sweep — `plan.workflow.ts` → `.js` (×23 across 4 docs); D4/D5/D6/G-nit drift corrected; added AsyncFunction syntax-check guidance (`node --check` is a false gate for workflow files). Validated via an abort-safety harness. `NEEDS-VALIDATION` banners removed.
+
 ## 0.3.3
 
 - **fix**: team-kit-run transport correction — heavy execution agents (research/coder/review/verify/finish) now return FREE TEXT + a disk artifact + a `STATUS:` line the orchestrator parses, instead of schema-forcing. A live multi-package audit hit the `StructuredOutput` defect 5× (incl. a FATAL bare-`await` abort that killed a full run *after* all code had landed): agents doing heavy tool work reliably finish but skip the forced final tool call. Schema is now reserved for LIGHT stages (discovery/echo/tiny verdict). New rule 9 + "never bare-`await` a schema agent on the critical path." Supersedes the 0.3.2 schema-based D/E transport — the control-flow logic (reject-loop, collision-flag) is unchanged; only the handoff transport.
