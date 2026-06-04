@@ -28,6 +28,18 @@ export const meta = { name: '<name>', description: '...', phases: [{ title: '...
 | **debug-investigation** | P1 investigate (parallel, READ-ONLY) → gate → P2 fix (single-writer) | read → single-writer | LOW-MED (P2 writes a fix) | P1 fully safe; P2 fix behind the root-cause gate |
 | **migrate-monorepo-scripts** | consolidate + DELETE a dir + create remote repo | write + DESTRUCTIVE + EXTERNAL | **HIGH** | **DO NOT auto-author.** `gh repo create --public` (external) + `rm dir` + `pnpm install` are prod-gated human steps. Keep template-only or workflow with these steps EXCLUDED → human checklist. |
 
+## Syntax check
+
+Workflow scripts use top-level `await` + `return` — the runtime wraps the body in an async function. So `node --check <file>` **falsely** reports `SyntaxError: Illegal return` / `await is only valid in async functions…` (it parses the body as a standalone script/CJS, not the wrapped body). Do NOT use `node --check` to validate a workflow.
+
+Correct local check — evaluate the body inside an `AsyncFunction` with the runtime's injected globals (replace `F` with the file path):
+
+```sh
+node -e "const fs=require('fs');let s=fs.readFileSync(F,'utf8').replace(/^export const meta/m,'const meta');new (Object.getPrototypeOf(async()=>{}).constructor)('agent','parallel','pipeline','phase','log','args','budget','workflow',s)"
+```
+
+Strips the `export` (illegal inside a function body), then constructs — but does NOT call — the async body. Exit 0 = parses clean; a real `SyntaxError` throws with a non-zero exit.
+
 ## Acceptance gate = re-run check exit code
 
 For every write template, the workflow accept condition between propose/fix and "done" is the **exit code of the re-run check** (`pnpm -F <pkg> <check>` exit 0 / build / root check / test pass). Reuse `VerifyReport.failedGates` to re-run ONLY what failed.

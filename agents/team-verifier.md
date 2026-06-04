@@ -31,6 +31,10 @@ Use this path for ALL read/write operations. If missing, ask lead for clarificat
    - **Tests** — Run tests on affected packages. Report failures with test name and error.
 4. **Write results** — Use the `write-findings` skill to write to `team-session/{your-name}/`
 
+## Syntax-checking saved/emitted workflows
+
+When verifying a saved or emitted workflow script (`.claude/workflows/*.js`), syntax-check via the AsyncFunction one-liner — NOT `node --check` (it falsely reports "Illegal return" / "await is only valid…" on the wrapped async body). See `${CLAUDE_PLUGIN_ROOT}/team-templates/SAVED-WORKFLOW-RECIPE.md` → "Syntax check".
+
 ## Knip: Handling False Positives
 
 Knip (unused code detection) is notorious for false positives. Before reporting a knip finding as an error:
