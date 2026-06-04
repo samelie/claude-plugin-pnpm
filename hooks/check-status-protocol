@@ -22,7 +22,9 @@ if [ ! -d "team-session" ]; then
 fi
 
 # Extract the agent's final output/transcript
-TRANSCRIPT=$(echo "$INPUT" | jq -r '.transcript // .output // .content // empty' 2>/dev/null)
+# last_assistant_message is the documented SubagentStop final-text field; the
+# rest are fallbacks. without it the chain matched nothing and fail-opened universally (gaps-4).
+TRANSCRIPT=$(echo "$INPUT" | jq -r '.last_assistant_message // .transcript // .output // .content // empty' 2>/dev/null)
 if [ -z "$TRANSCRIPT" ]; then
   echo '{"hookSpecificOutput":{"hookEventName":"SubagentStop","permissionDecision":"allow","permissionDecisionReason":"Could not parse agent output"}}'
   exit 0
