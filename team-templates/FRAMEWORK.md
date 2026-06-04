@@ -275,6 +275,8 @@ Use the least powerful model that can handle each role — conserve cost + speed
 
 When user explicitly requests **fork** (e.g., "as a team (fork), implement..."), lead uses fork spawning for ~10x cost reduction on parallel agents.
 
+> **Fork = native-team path ONLY (verified, mutually exclusive with workflows).** Fork inherits the parent prompt cache via the **Agent tool** (omit `subagent_type`) — i.e. a real lead conversation (this team / `team-kit-create` path). It does NOT work on the `/team-kit-run` workflow path: workflow `agent()` calls are named subagents with **isolated caches** (live probe `wf_16f795f9-f2d`: followers re-create ~14.5k tokens each, even warm + serial — no cross-agent prefix reuse). The workflow cost lever is model tiering + lean per-agent context, NOT cache sharing. **Routing: shared-context-heavy fan-out → native-team + fork (this lane); deterministic / resumable / independent stages → workflow (`/team-kit-run`).** Native-team is a first-class sanctioned fork lane, not a legacy fallback.
+
 ### Prerequisites
 
 ```bash

@@ -101,7 +101,7 @@ Mapping `team-plan.md` → `plan.workflow.js`:
 | AC traceability | a `team-verifier` Validate stage → `ACEvidence` |
 
 Constraints (verified — see `../WORKFLOW-MERGE-PLAN.md` + `../skills/team-kit-run/SKILL.md`):
-- **Single branch, no worktrees.** Source writes = single-writer (serial) OR propose-then-apply; NEVER parallel same-file writes. Read-only stages + `team-session/` artifact writes (disjoint paths) = parallel-safe.
+- **Single branch, no worktrees.** Source writes = single-writer (serial) OR propose-then-apply; NEVER parallel same-file writes. Read-only stages + `team-session/` artifact writes (disjoint paths) = parallel-safe. Worktree isolation's structural job (keeping parallel writers off each other's files) is replaced by the deterministic `disjoint(owners)` glob pre-flight (reliability-7) `/team-kit-run` runs before any parallel source-write fan-out — so a `files_owned` matrix with any pairwise glob overlap will hard-fail or auto-downgrade to single-writer at execution time. Emit provably-disjoint globs for parallel coders.
 - **Knowledge stages = DEFAULT agent** (ToolSearch→MCP); execution stages = custom `agentType` (no raw MCP).
 - **Prod/irreversible/paid actions are NOT in the script** — list them in a human-gated checklist instead.
 - Schemas = the 5 canonical shapes in `SCHEMA-CATALOG.md` (inline them; scripts have NO `import`).
@@ -142,6 +142,8 @@ Anti-pattern: one agent per function/file. Group by module, not by line item.
 3. Express as glob patterns: `src/trpc/routers/**` not individual files
 4. **Test for overlap**: no glob pattern should match files in another agent's set
 5. Shared files (e.g., `index.ts` barrel exports) -> assign to the agent that owns the parent module
+
+> **Disjoint ownership is the structural replacement for worktree isolation (reliability-7).** Worktrees are banned (single-branch, no worktrees — see below), so for any phase where ≥2 coders write SOURCE in parallel, disjoint `files_owned` globs are the ONLY structural backstop against one coder clobbering another's uncommitted edits — and on the `/team-kit-run` workflow path NO scope hook fires to catch a stray write (the matrix is honored by discipline, not enforced at runtime). Your "no overlap" judgement here is therefore load-bearing. `/team-kit-run` re-checks it deterministically before any parallel source-write fan-out via the `disjoint(owners)` glob pre-flight (rule 14, see `../skills/team-kit-run/SKILL.md`): it computes the pairwise glob intersection of every coder's `files_owned` and HARD-FAILS the stage (or auto-downgrades the colliding pair to single-writer) if any two intersect. So if your matrix has even one overlap, that phase will refuse to parallelize. Make ownership provably disjoint, or deliberately put the coupled coders in ONE single-writer lane.
 
 ### How to order phases
 
