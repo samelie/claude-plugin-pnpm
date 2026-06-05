@@ -1,6 +1,6 @@
 ---
 name: team-kit-create
-description: "Scope a problem and create a multi-agent team plan with roles, task lists, and spawn prompt. Triggers: team, agent team, multi-agent, create team, team plan, orchestrate agents, team template, team-kit, parallel team, as a team, team up, work as a team, fork"
+description: "Scope a problem and create a multi-agent team plan with roles, task lists, and handoff to /team-kit-run. Triggers: team, agent team, multi-agent, create team, team plan, orchestrate agents, team template, team-kit, parallel team, as a team, team up, work as a team, fork"
 ---
 
 # /team-kit-create — Scope, Plan, and Structure a Multi-Agent Team
