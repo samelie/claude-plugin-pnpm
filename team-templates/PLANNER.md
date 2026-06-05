@@ -100,7 +100,7 @@ Mapping the deriver applies — `team-plan.md` elements → workflow-script cons
 | Verify commands | a final `team-verifier` stage → `VerifyReport` |
 | AC traceability | a `team-verifier` Validate stage → `ACEvidence` |
 
-Constraints (verified — see `../WORKFLOW-MERGE-PLAN.md` + `../skills/team-kit-run/SKILL.md`):
+Constraints (verified — see `../skills/team-kit-run/SKILL.md` + `../docs/teamkit-methodology.md`):
 - **Single branch, no worktrees.** Source writes = single-writer (serial) OR propose-then-apply; NEVER parallel same-file writes. Read-only stages + `team-session/` artifact writes (disjoint paths) = parallel-safe. Worktree isolation's structural job (keeping parallel writers off each other's files) is replaced by the deterministic `disjoint(owners)` glob pre-flight (reliability-7) `/team-kit-run` runs before any parallel source-write fan-out — so a `files_owned` matrix with any pairwise glob overlap will hard-fail or auto-downgrade to single-writer at execution time. Emit provably-disjoint globs for parallel coders.
 - **Knowledge stages = DEFAULT agent** (ToolSearch→MCP); execution stages = custom `agentType` (no raw MCP).
 - **Prod/irreversible/paid actions are NOT in the script** — list them in a human-gated checklist instead.

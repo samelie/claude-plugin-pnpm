@@ -19,7 +19,7 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 | Skill | Purpose |
 |-------|---------|
 | `team-kit-create` | Orchestrator — scope problem, create team plan (PLAN only) |
-| `team-kit-run` | Executor — run a task as a native-workflow multi-agent run over the role agents (EXECUTE). Single-branch, prod-safe. See `WORKFLOW-MERGE-PLAN.md` |
+| `team-kit-run` | Executor — run a task as a native-workflow multi-agent run over the role agents (EXECUTE). Single-branch, prod-safe. See `docs/teamkit-methodology.md` |
 | `team-kit-clarify` | Requirements extraction — one question at a time |
 | `team-kit-explore` | Approach exploration — propose 2-3 options with tradeoffs |
 | `team-kit-present` | Section-by-section design approval |

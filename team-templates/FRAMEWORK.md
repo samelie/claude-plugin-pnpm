@@ -192,7 +192,7 @@ Unit tests prove code is correct. Validation proves the feature **actually works
 
 ## Workflow Execution
 
-The phase ladder above has two execution counterparts, split on the **human-gate seam**. `team-kit-create` drives the gated half (interactive); `/team-kit-run` drives the deterministic half (native-workflow). Source of truth: `../skills/team-kit-run/SKILL.md` + `../WORKFLOW-MERGE-PLAN.md` (empirically verified, spikes 1–4; re-verified 2026-06-05 — see the reconsolidation addendum. The JS API is research-preview + vendor-unpublished → re-verify on each Claude Code upgrade).
+The phase ladder above has two execution counterparts, split on the **human-gate seam**. `team-kit-create` drives the gated half (interactive); `/team-kit-run` drives the deterministic half (native-workflow). Source of truth: `../skills/team-kit-run/SKILL.md` (rationale/evidence: `../docs/teamkit-methodology.md`) — empirically verified, spikes 1–4; re-verified 2026-06-05. The JS API is research-preview + vendor-unpublished → re-verify on each Claude Code upgrade.
 
 | Half | Phases | Execution |
 |------|--------|-----------|

@@ -8,7 +8,7 @@ disallowed-tools: AskUserQuestion
 
 Companion to `team-kit-create`. `create` PLANS (interactive, human-gated). `team-kit-run` EXECUTES — it drives the team-kit role agents through the native `Workflow` tool. You stay **orchestrator**: author + launch the workflow, gate the unsafe parts, report results. You do NOT do the work inline.
 
-Design source of truth + verification evidence: `${CLAUDE_PLUGIN_ROOT}/WORKFLOW-MERGE-PLAN.md` (spikes 1–4; reconsolidation 2026-06-05).
+Design rationale + verification evidence (ADR): `${CLAUDE_PLUGIN_ROOT}/docs/teamkit-methodology.md` (spikes 1–4; reconsolidation 2026-06-05). THIS skill is the operational source of truth for the rules.
 
 > **VERSION-FRAGILITY BANNER.** Verified vs the runtime **research-preview workflow API (v2.1.154+) on 2026-06-05**. This JS API (`agent`/`parallel`/`pipeline`/`schema`/`agentType`/…) is **NOT in the public docs** — every rule below is a dated EMPIRICAL claim, not vendor doctrine. **Re-verify after each Claude Code upgrade.**
 

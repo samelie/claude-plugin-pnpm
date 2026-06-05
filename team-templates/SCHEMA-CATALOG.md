@@ -1,6 +1,6 @@
 # SCHEMA-CATALOG.md — Canonical workflow handoff schemas
 
-Source of truth for the 5 schemas the workflow EXECUTE path (`/team-kit-run`) passes between stages. Names are LOCKED (`WORKFLOW-MERGE-PLAN.md` step 3). Sibling of `SESSION-SCHEMA.md` — that file defines the on-disk LAYOUT; this defines the DATA shapes.
+Source of truth for the schemas the workflow EXECUTE path (`/team-kit-run`) passes between stages. Names are LOCKED (rationale: `../docs/teamkit-methodology.md`). Sibling of `SESSION-SCHEMA.md` — that file defines the on-disk LAYOUT; this defines the DATA shapes.
 
 ## Two handoff models (coexist)
 
@@ -9,7 +9,7 @@ Source of truth for the 5 schemas the workflow EXECUTE path (`/team-kit-run`) pa
 | FILE (legacy/team-style) | agent writes `{session}/{agent}/file.md`, peer reads via read-findings | bulk artifacts a downstream agent reads in full (design.md, findings.md, large diffs) |
 | SCHEMA (workflow) | `agent(p,{schema})` returns tool-validated JSON in JS vars | DATA handoff between workflow stages — never enters main context |
 
-Rule (`WORKFLOW-MERGE-PLAN.md` handoff rule): **schema for DATA; `team-session/` file (path passed IN the schema as `sessionFile`) only for BULK.** Every schema below carries `sessionFile` + a `status` enum (from the STATUS protocol) so both models coexist.
+Handoff rule: **schema for DATA; `team-session/` file (path passed IN the schema as `sessionFile`) only for BULK.** Every schema below carries `sessionFile` + a `status` enum (from the STATUS protocol) so both models coexist.
 
 **Transport note (re-verified 2026-06-05 — supersedes the 0.3.3 caveat):** schema is RELIABLE on the current runtime — 4/4 heavy custom-agentType agents (each Read 5 large files) returned valid `StructuredOutput` (skip 0/4); the earlier "~5× skip / 1 fatal abort" claim did NOT reproduce. Heavy execution stages (research/coder/review/verify/finish) STILL DEFAULT to the FILE model + a `STATUS:` line — for **lean context + bulk handoff to disk**, NOT because schema breaks. A separate, still-live failure vector is TRANSPORT (stall-watchdog/rate-limit/subprocess) aborting a bare critical-path `await agent()` — wrap those in `tryAgent` (team-kit-run rule 11). The shapes below still define the on-disk artifact CONTENT.
 

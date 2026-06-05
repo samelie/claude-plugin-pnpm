@@ -1,6 +1,6 @@
 # SAVED-WORKFLOW-RECIPE.md — Converting templates → saved `/command` workflows
 
-How to turn the 5 standalone `team-templates/*.md` into tier-1 reproducible saved workflows (`/<name>`), executed by the native Workflow runtime via `/team-kit-run` patterns. Source of truth for rules: `../WORKFLOW-MERGE-PLAN.md` + `../skills/team-kit-run/SKILL.md` + `SCHEMA-CATALOG.md`.
+How to turn the 5 standalone `team-templates/*.md` into tier-1 reproducible saved workflows (`/<name>`), executed by the native Workflow runtime via `/team-kit-run` patterns. Source of truth for rules: `../skills/team-kit-run/SKILL.md` + `SCHEMA-CATALOG.md` (rationale/history: `../docs/teamkit-methodology.md`).
 
 > **Validation gate:** every mutating saved workflow MUST get a supervised first run (human present, `/workflows` open with `x` ready) before it's trusted. Do NOT auto-create + run mutating workflows unattended. Scripts shipped here start as NEEDS-VALIDATION.
 
