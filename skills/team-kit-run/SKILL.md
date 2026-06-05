@@ -15,7 +15,7 @@ Design source of truth + verification evidence: `${CLAUDE_PLUGIN_ROOT}/WORKFLOW-
 ## When to use
 
 Three entry modes:
-1. **Approved `plan.workflow.js`** (from `team-kit-create`) — run the full executable plan. **(NOT-YET-IMPLEMENTED — no generator / exemplar / consumer step yet; pending Option B. Use entry mode 2 today.)**
+1. **Approved `team-plan.md`** (from `team-kit-create`) — **derive + validate + run** the committed spine `plan.workflow.js` (the reproducible, committed path). See `## Entry-mode-1 — derive + validate the committed spine` below.
 2. **Direct task** via the canonical invocation contract below — clear task that doesn't need the full clarify/explore planning ceremony. (Most common.)
 3. **Saved template workflow** (`/monorepo-health`, etc.) — fully canned, parameterized via `args`.
 
@@ -128,6 +128,21 @@ BRANCH:          single branch, no worktrees.
 3. **Author the workflow** by composing the stage templates below. Use `phase()` per stage; set `opts.phase` inside `parallel`/`pipeline`. Heavy stages return FREE TEXT + a disk artifact + a `STATUS:` line (rule 9); reserve `schema:` for LIGHT stages.
 4. **Launch** via the `Workflow` tool (background). **Capture the launch's `WorkflowOutput.runId`.** For multi-gate work, run ONLY up to the next human gate, present, then launch the next run — and pass the prior `runId` as `resumeFromRunId` **AND re-pass the SAME `args`** on that next launch so already-completed, unchanged `agent()` calls return cached instead of re-running (rule 6 + sub-note + resume-args contract). Dropping `args` on resume re-renders every prompt → full silent cache miss + `/repo/undefined*` writes (reliability-9). Same-session-only. The reject→re-dispatch review loop is the prime beneficiary: thread the prior `runId` (with identical `args`) so only the changed implement/review stage re-runs, not the whole pipeline.
 5. **Report**: relay the structured result + team-session artifact paths. Return the prod-gated checklist for the user to run manually.
+
+## Entry-mode-1 — derive + validate the committed spine (Option B)
+
+Input: an APPROVED `team-plan.md` (+ `design.md`) from `team-kit-create`. The markdown is the GROUND TRUTH; `plan.workflow.js` is a DERIVED, validated BUILD ARTIFACT — never hand-authored as a source, and md changes → re-derive (md is canonical). This is the reproducible, committed counterpart to mode-2's ad-hoc authoring.
+
+1. **DERIVE** — author `team-session/{team}/plan.workflow.js` from the md ground-truth + the stage templates above + the hard rules. Either inline (you, the orchestrator) or via a dedicated deriver agent (DEFAULT agentType, rules injected) for reproducibility. Map: plan phases → `phase()` groups; file-ownership matrix → per-agent thunks (disjoint); `blockedBy` → stage ordering; verify cmds → finalize stage; AC → validate stage.
+2. **VALIDATE — two axes, BOTH must pass (the trust gate for LLM-derived code):**
+   - **Axis A — structural / safety (deterministic):** run `node ${CLAUDE_PLUGIN_ROOT}/scripts/validate-workflow.mjs <path> --json`. ERRORs (invalid syntax / missing `meta`) → BLOCK. WARNINGs (rule7 forbidden-API / rule10 coverage / rule11 tryAgent / prod-gate) → must be adjudicated — forbidden/prod warns can be string-content false-positives, so Axis B decides.
+   - **Axis B — semantic fidelity (LLM):** dispatch `team-spec-reviewer` with the **AlignmentVerdict** schema (`SCHEMA-CATALOG.md` §6) — read `team-plan.md` + `design.md` + the derived `.js` → `{covered[], missing[], invented[], verdict}`, writing `alignment-review.md`. `verdict == approved` required.
+3. **RE-DERIVE LOOP** — Axis-A ERROR or Axis-B `verdict != approved` → feed the gaps (`errors[]` + `missing[]`/`invented[]`) back to the deriver, re-derive, re-validate. `MAX_REDISPATCH = 3`. `blocked` / NEEDS_CONTEXT → STOP at the human gate (rule 12 — don't burn the budget on an unwinnable derivation).
+4. **HUMAN APPROVE (first derivation per plan)** — present the validated `.js` + the AlignmentVerdict; human approves before the FIRST run. After both axes pass + approval, re-runs need no re-approval.
+5. **PERSIST** — commit `team-session/{team}/plan.workflow.js` (bespoke), or save to `.claude/workflows/<name>.js` (recurring → a `/command`). The md stays canonical; never edit the `.js` as a source.
+6. **RUN** — launch the validated spine via the `Workflow` tool (resumable; re-pass identical `args` on resume — rule 6).
+
+Modes 2 (ad-hoc) and 3 (saved `/command`) are unchanged; mode-1 adds the reproducible, committed, fidelity-checked path.
 
 ## agentType selection (stage → role)
 
@@ -358,4 +373,4 @@ const validate = await tryAgent('validate', `Verify automatable acceptance crite
 
 ## Reproducibility tiers
 
-Most → least canned: saved `/command` workflow  >  generated + committed `plan.workflow.js` **(TO-BUILD — Option B; not yet available)**  >  ad-hoc orchestrator-authored. For recurring shapes, save the script as a `/command` (`.claude/workflows/`); for bespoke work today, use ad-hoc entry mode 2.
+Most → least canned: saved `/command` workflow  >  derived + validated + committed `plan.workflow.js` (mode-1; see "derive + validate the committed spine")  >  ad-hoc orchestrator-authored (mode-2). For recurring shapes, save the script as a `/command` (`.claude/workflows/`); for bespoke reproducible work, mode-1; for one-offs, mode-2.
