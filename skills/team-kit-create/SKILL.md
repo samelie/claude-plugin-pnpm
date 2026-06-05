@@ -547,7 +547,7 @@ Planner produces:
 - `design.md` — human-readable architecture summary
 - `team-plan.md` — full plan with roles, tasks, ownership, phases
 - `team-scope.json` — scope config for hook enforcement (legacy native-team path)
-- `plan.workflow.js` **(TO-BUILD — Option B; not emitted today)** — the committed, re-runnable workflow spine. Target ontology = SOURCE (js→md), but no generator/exemplar exists yet, so `/team-kit-run` authors the workflow ad-hoc from `team-plan.md` (entry mode 2). See PLANNER.md → `### 3. plan.workflow.js`.
+- `plan.workflow.js` — the committed, re-runnable workflow spine. The planner does NOT emit it; `/team-kit-run` mode-1 **DERIVES + validates** it from `team-plan.md` (md is the ground truth; md→js, re-derive on change). See PLANNER.md → `### 3. plan.workflow.js` + team-kit-run → "derive + validate the committed spine".
 
 ---
 
@@ -600,7 +600,7 @@ Before handoff, ask user to review actual files:
 > "Plan complete. Please review these files before execution:
 > - `team-session/{team-name}/design.md` — architecture summary
 > - `team-session/{team-name}/team-plan.md` — full execution plan
-> - `team-session/{team-name}/plan.workflow.js` — executable workflow spine (NOT-YET-IMPLEMENTED — Option B; not emitted today)
+> - `team-session/{team-name}/plan.workflow.js` — committed spine, derived + validated by `/team-kit-run` mode-1 from team-plan.md (not produced at plan time)
 >
 > Let me know if you want any changes."
 
@@ -612,7 +612,7 @@ Wait for user approval. If changes requested → edit → re-present relevant se
 
 > **Plan approved.** To execute:
 > ```
-> /team-kit-run  — execute the approved plan (authors the workflow from team-plan.md; entry mode 2 today — mode 1 plan.workflow.js is TO-BUILD)
+> /team-kit-run  — execute the approved plan: mode-1 DERIVES + validates plan.workflow.js from team-plan.md, then runs it (or mode-2 ad-hoc for one-offs)
 > ```
 > Or just say "run it" / "execute the plan". `/team-kit-run` keeps the human-gate seam:
 > deterministic stages (research/implement/review/verify) run as a background workflow;
@@ -680,8 +680,8 @@ designer/refine.md     ← designer(refine) writes, each invocation appends
 requirements.md        ← enriched by refine phase (traceable changes)
     ↓ reads requirements.md + findings.md + refine.md
 design.md + team-plan.md ← team-planner writes
-    ↓ (TO-BUILD, Option B) committed spine — sole-source target (js→md), not emitted today
-plan.workflow.js       ← TO-BUILD (Option B); today /team-kit-run authors ad-hoc from team-plan.md (entry mode 2)
+    ↓ /team-kit-run mode-1 DERIVES + validates (Axis A static + Axis B fidelity) — team-plan.md is canonical
+plan.workflow.js       ← derived, validated, committed build artifact; re-derive on team-plan.md change
 ```
 
 Handoff data shapes between workflow stages: `team-templates/SCHEMA-CATALOG.md` (the 5 canonical schemas). This artifact chain is the FILE-handoff model; `/team-kit-run` adds SCHEMA handoff for execution.
@@ -704,7 +704,7 @@ Handoff data shapes between workflow stages: `team-templates/SCHEMA-CATALOG.md` 
 
 | Skill | Relationship |
 |-------|-------------|
-| `team-kit-run` | **EXECUTOR** — runs the approved plan (`team-plan.md` today; `plan.workflow.js` = TO-BUILD, Option B) as a native-workflow multi-agent run. create=PLAN, run=EXECUTE. The Step 7 handoff target. |
+| `team-kit-run` | **EXECUTOR** — runs the approved plan: mode-1 derives + validates `plan.workflow.js` from `team-plan.md`, then executes (or mode-2 ad-hoc). create=PLAN, run=EXECUTE. The Step 7 handoff target. |
 | `team-kit-clarify` | Dispatch guide for designer(phase: clarify) loop |
 | `team-kit-explore` | Dispatch guide for designer(phase: explore) |
 | `team-kit-present` | Invoked in Step 5 for planner output approval (design.md sections) |

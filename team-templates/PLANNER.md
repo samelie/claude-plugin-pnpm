@@ -83,13 +83,13 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 
 Hook wiring note: the plugin's `hooks/hooks.json` already registers `PreToolUse`, `SubagentStop`, `SessionStart`, and `Stop` hooks. They run automatically whenever the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json` — nothing to wire per team. NOTE: these hooks do NOT fire for `/team-kit-run` workflow agents (verified) — they apply only to the legacy native-team path.
 
-### 3. `plan.workflow.js` (TO-BUILD — Option B) — executable workflow spine
+### 3. `plan.workflow.js` (DERIVED by team-kit-run mode-1) — executable workflow spine
 
-**STATUS: TO-BUILD (Option B) — do NOT emit today.** The TARGET design (locked, decision #2): `plan.workflow.js` is the SOLE SOURCE of truth — a committed, re-runnable, resumable spine — and `team-plan.md` is GENERATED from it (**js→md**). That requires a script→markdown generator + an exemplar + a workflow-script schema, NONE of which exist yet. **Until Option B lands, emit `team-plan.md` only; `/team-kit-run` authors the workflow ad-hoc from it (entry mode 2).** The mapping below is the reference for building the spine, not a today-instruction.
+**The planner does NOT emit this.** `team-plan.md` is the GROUND TRUTH; `plan.workflow.js` is DERIVED from it (md→js) by `/team-kit-run` mode-1, then validated on two axes (Axis A static `scripts/validate-workflow.mjs` + Axis B fidelity review via `team-spec-reviewer` → `AlignmentVerdict`). The planner's job is a clean, complete `team-plan.md` — the better the ground truth, the cleaner the derivation. md is canonical; the `.js` is a re-derivable build artifact (re-derive on md change; never hand-edit it as a source).
 
-**Rule 7 — Workflows are plain JS — no TS imports/types.** (Applies when the spine is built.)
+**Rule 7 — Workflows are plain JS — no TS imports/types.** (The deriver follows this.)
 
-Reference mapping `team-plan.md` elements → workflow-script constructs (for Option B):
+Mapping the deriver applies — `team-plan.md` elements → workflow-script constructs:
 
 | team-plan.md element | workflow script |
 |----------------------|-----------------|
@@ -107,7 +107,7 @@ Constraints (verified — see `../WORKFLOW-MERGE-PLAN.md` + `../skills/team-kit-
 - Schemas = the 5 canonical shapes in `SCHEMA-CATALOG.md` (inline them; scripts have NO `import`).
 - No `Date.now()`/`Math.random()`/argless `new Date()` (they throw) — pass timestamps via `args`.
 
-Today, ALWAYS emit `team-plan.md` only (the generator/exemplar for `plan.workflow.js` is TO-BUILD); `/team-kit-run` entry mode 2 authors the workflow ad-hoc from the plan. (When built, `plan.workflow.js` is plain JS — no imports/fs/Node, no TS types.)
+ALWAYS emit `team-plan.md` only — it is the ground truth. `/team-kit-run` mode-1 derives + validates `plan.workflow.js` from it (md→js, re-derive on change). (The derived `plan.workflow.js` is plain JS — no imports/fs/Node, no TS types.)
 
 ---
 

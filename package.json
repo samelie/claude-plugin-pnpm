@@ -30,7 +30,8 @@
     "lint": "node scripts/check-manifest.mjs",
     "lint:fix": "node scripts/check-manifest.mjs",
     "types": "echo 'no tsconfig'",
-    "test": "echo 'no tests'",
+    "test": "node scripts/validate-workflow.mjs --selftest",
+    "validate:workflow": "node scripts/validate-workflow.mjs",
     "dev": "tsx src/index.ts",
     "knip": "knip"
   },

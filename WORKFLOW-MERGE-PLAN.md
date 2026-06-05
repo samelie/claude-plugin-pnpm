@@ -331,3 +331,12 @@ The filename had THREE contradictory framings: SOURCE js→md (this doc) / GENER
 - **Keystone WANTED** → Option B (build generator + exemplar + workflow-script schema + mode-1 consumer) is the eventual target; NOT abandoned.
 - **Option C done now** — re-verify rules (above) + rewrite the stale framing across `team-kit-run`/`team-kit-create`/`PLANNER.md`/`team-planner.md`/`CLAUDE.md` + this addendum.
 - **Deferred to B:** generator, exemplar `plan.workflow.js`, workflow-script schema, mode-1 consumer step, granting `team-planner` the `Workflow`/`StructuredOutput` tools, the resume/args `undefined`-path fix, and a lightweight research/audit lane.
+
+### Option B — BUILT 2026-06-05 (leaner derived-spine; supersedes decision #2's generator)
+Built the same day, in the LEANER native-first shape (NO js↔md generator):
+- **md→js LLM derivation** (not hand-coded mapping) — `/team-kit-run` mode-1 derives `plan.workflow.js` from `team-plan.md`. md canonical; `.js` = re-derivable build artifact. Decision #2 (js sole-source + generator) is REPLACED by this.
+- **Two-axis validation gate** on the derived script: **Axis A** static = `scripts/validate-workflow.mjs` (parse via wrapped `node --check` + `meta` + rule7/10/11 + prod-gate lint; self-tested via `pnpm -F @adddog/claude-plugin-pnpm test`); **Axis B** semantic = `team-spec-reviewer` + the new `AlignmentVerdict` schema (`SCHEMA-CATALOG.md` §6) — fidelity of `.js` vs md.
+- **mode-1 procedure** wired in `team-kit-run` (derive → validate ×2 → re-derive loop max 3 → human-approve first run → persist → run). `team-kit-create`/`PLANNER`/`team-planner` updated: planner emits md only, run derives the `.js`.
+- Probe `wf_1d2dd417-323` proved the mutating-workflow + pipeline + resume mechanics this relies on.
+
+**Still deferred:** granting `team-planner`/deriver the `Workflow`/`StructuredOutput` tools (self-derivation smoke-test), the resume/args `undefined`-path hardening, the lightweight research/audit lane, and an optional read-only dry-run before mutating stages.
