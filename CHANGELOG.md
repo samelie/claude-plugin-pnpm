@@ -1,3 +1,33 @@
+## 0.4.0
+
+### Minor Changes
+
+- c4514b0: Fix cocoindex search + restore agents' knowledge-tool access
+  - cocoindex-code: install the `[full]` extra (local sentence-transformers embeddings). The slim install lacked torch/sentence-transformers, so the daemon threw `ModuleNotFoundError` and semantic search silently returned nothing. Fixed install commands in the update-deps and third-party-manager skills and the cocoindex-code doc; added a daemon-restart step, ModuleNotFoundError troubleshooting, and a leading-edge + health verify block (compares installed vs latest release and confirms the embedding model loads).
+  - agents: grant MCP knowledge tools (cocoindex, claude-mem, context-mode, context7) to researcher, team-researcher, team-investigator, team-architect, team-planner, and team-designer. The explicit `tools:` allowlist previously excluded all MCP tools, making the preloaded investigation-methodology mandate unsatisfiable. Uses server-level wildcards (`mcp__server__*`) for upgrade resilience.
+  - agents: grant the `Skill` tool to the 9 team agents instructed to use write-findings/read-findings — they could not invoke those skills before.
+  - CLAUDE.md: task-gate investigation guidance (exploration only, not trivial lookups or mutations) and clarify per-tool roles (cocoindex = code locate, claude-mem = passive recall, context-mode = token hygiene).
+
+- f4fd98c: Phase-based designer dispatch pattern
+  - team-designer now stateless and phase-aware (clarify|explore|present|write)
+  - Each dispatch does ONE thing and returns — lead maintains state between dispatches
+  - team-kit-clarify/explore become dispatch instructions for lead orchestration
+  - Lead stays lean, context doesn't bloat, interactive control preserved
+  - Renamed spec.md → requirements.md for clearer 3-stage separation
+
+- 6733e51: team-kit committed-spine (`team-kit-run` mode-1): the native "Claude writes the workflow, you save it" model with a thin guardrail — NOT a bespoke derivation pipeline. The orchestrator authors `plan.workflow.js` from the approved `team-plan.md` ground-truth, lints it, optionally fidelity-checks it, and saves it. md is canonical; the `.js` is a re-authorable build artifact.
+  - **Advisory lint** (`scripts/validate-workflow.mjs`): syntax (wrapped `node --check`, handles top-level `await`/`return`), required `export const meta`, determinism/forbidden-API scan (rule 7), conditional invariant lint (coverage after `parallel()` rule 10, `tryAgent` on `await agent()` rule 11), prod-gate deny-scan. Self-tested (8 cases), wired as `test` + `validate:workflow`. **Encodes dated, reverse-engineered preview-API rules — advisory, not a correctness guarantee; re-verify on upgrade.**
+  - **Optional fidelity check**: `team-spec-reviewer` + new `AlignmentVerdict` schema (SCHEMA-CATALOG §6) confirms the authored `.js` covers the plan (covered/missing/invented) — for high-stakes plans only.
+
+  `team-kit-create`/`PLANNER`/`team-planner` updated: planner emits `team-plan.md` only; mode-1 authors the `.js`. Also reconsolidates the methodology (re-verified platform rules 2/3/4/6/9 against the current runtime, version-fragility banner) and replaces the 342-line `WORKFLOW-MERGE-PLAN.md` proposal with the lean `docs/teamkit-methodology.md` ADR. NOTE: the whole workflow JS API is vendor-unpublished + research-preview — this is a legible bet on a preview surface, not a guaranteed-stable one.
+
+- 0431888: Semi-autonomous refine, per-agent tool scoping, interrupt protocol
+  - designer refine phase now semi-autonomous: self-dispatches for code exploration questions, returns to lead only for human judgment. Round tracking in refine.md header.
+  - Added `tools:` frontmatter to team-designer, team-planner, team-investigator (all agents now have explicit tool scoping)
+  - Added structured interrupt protocol to FRAMEWORK.md (pause/abort/report_status)
+  - Updated SESSION-SCHEMA refine.md template with Source column and round tracking
+  - Rewrote README to lead with agentic pipeline documentation
+
 ## 0.3.6
 
 - **docs**: D7 resolved — empirically verified (probe, 2026-06-04) that `PreToolUse`/`SubagentStart`/`SubagentStop` hooks DO fire for `/team-kit-run` workflow agents, tagged `agent_type: "workflow-subagent"`, identical to native `Task` subagents. The 0.3.5 observability hooks therefore populate `team-session/_observability/*.ndjson` on the workflow path too — the 0.3.5 "pending D7" caveat is superseded. `team-monitor` note corrected; `workflow-subagent` is a matchable agent_type for workflow-scoped hooks.
@@ -20,7 +50,7 @@
 
 ## 0.3.3
 
-- **fix**: team-kit-run transport correction — heavy execution agents (research/coder/review/verify/finish) now return FREE TEXT + a disk artifact + a `STATUS:` line the orchestrator parses, instead of schema-forcing. A live multi-package audit hit the `StructuredOutput` defect 5× (incl. a FATAL bare-`await` abort that killed a full run *after* all code had landed): agents doing heavy tool work reliably finish but skip the forced final tool call. Schema is now reserved for LIGHT stages (discovery/echo/tiny verdict). New rule 9 + "never bare-`await` a schema agent on the critical path." Supersedes the 0.3.2 schema-based D/E transport — the control-flow logic (reject-loop, collision-flag) is unchanged; only the handoff transport.
+- **fix**: team-kit-run transport correction — heavy execution agents (research/coder/review/verify/finish) now return FREE TEXT + a disk artifact + a `STATUS:` line the orchestrator parses, instead of schema-forcing. A live multi-package audit hit the `StructuredOutput` defect 5× (incl. a FATAL bare-`await` abort that killed a full run _after_ all code had landed): agents doing heavy tool work reliably finish but skip the forced final tool call. Schema is now reserved for LIGHT stages (discovery/echo/tiny verdict). New rule 9 + "never bare-`await` a schema agent on the critical path." Supersedes the 0.3.2 schema-based D/E transport — the control-flow logic (reject-loop, collision-flag) is unchanged; only the handoff transport.
 - **fix**: propose-then-apply writes unified-diff patches to `proposals/{name}.diff` (FILE handoff) — robust vs the schema diff-fidelity gap; apply stage reads patches + flags same-path collisions in pure JS.
 - **docs**: SCHEMA-CATALOG documents the heavy-agent FILE+STATUS transport caveat.
 
