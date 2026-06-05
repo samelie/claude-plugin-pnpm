@@ -132,11 +132,11 @@ const ACEvidence = {
 
 ## 6. AlignmentVerdict
 
-**Axis-B fidelity gate for the derived spine (Option B).** `team-spec-reviewer` reads the md ground-truth (`team-plan.md` + `design.md`) AND the derived `plan.workflow.js`, then judges whether the script faithfully implements the plan — every phase, role, ownership lane, task, AC present; nothing invented; nothing dropped. The script is the "implementation", the md is the "spec" → this is a spec-compliance review of generated code. `verdict != approved` → re-derive with `missing`/`invented` fed back (bounded loop, max 3). Pairs with Axis-A static checks (`scripts/validate-workflow.mjs`).
+**Axis-B fidelity check (OPTIONAL) for the committed spine.** For high-stakes plans, `team-spec-reviewer` reads the md ground-truth (`team-plan.md` + `design.md`) AND the authored `plan.workflow.js`, then judges whether the script covers the plan — every phase, role, ownership lane, task, AC present; nothing invented; nothing dropped. The script is the "implementation", the md is the "spec" → a spec-compliance review of the authored workflow. `verdict != approved` → revise the script with `missing`/`invented` fed back. Optional companion to the Axis-A advisory lint (`scripts/validate-workflow.mjs`); skip for small/obvious plans — don't over-ceremony.
 
 ```js
 const AlignmentVerdict = {
-  artifact: 'plan.workflow.js',                       // the derived script under review
+  artifact: 'plan.workflow.js',                       // the authored script under review
   verdict: 'approved|needs_revision|blocked',         // approved => fidelity OK; blocked => human gate
   covered: ['string'],                                // plan/design elements present in the .js
   missing: ['string'],                                // plan/design elements ABSENT from the .js (drift)
@@ -161,6 +161,6 @@ const AlignmentVerdict = {
 | ReviewVerdict | `reviewer/review-{task-id}.md` (quality) · `spec-reviewer/spec-review-{task-id}.md` (spec) |
 | VerifyReport | `verifier/results.md` |
 | ACEvidence | `validation-report.md` (session root) |
-| AlignmentVerdict | `alignment-review.md` (session root; Axis-B derived-spine gate) |
+| AlignmentVerdict | `alignment-review.md` (session root; Axis-B optional fidelity check) |
 
 Drift resolved (0.3.0): agent docs aligned to the canonical paths above — `team-reviewer` writes `reviewer/review-{task-id}.md` (was `findings.md`), `team-spec-reviewer` writes to the `spec-reviewer/` subdir (was session root), `team-security-auditor` writes `security-audit.md` (was `report.md`), and SESSION-SCHEMA verifier output is `verifier/results.md` (was `verification.md`).

@@ -1,6 +1,10 @@
 #!/usr/bin/env node
-// Workflow-script validator — Axis A (structural / safety) of the team-kit derived-spine gate.
-// Reusable for ANY workflow script (.js), not just LLM-derived ones. Axis B (semantic fidelity
+// Workflow-script validator — Axis A (structural / safety) ADVISORY lint for team-kit workflow scripts.
+// ADVISORY, NOT a correctness guarantee: it encodes DATED, REVERSE-ENGINEERED preview-API rules
+// (rule7 forbidden-APIs / rule10 coverage / rule11 tryAgent / prod-gate). The workflow JS API is
+// vendor-unpublished + research-preview — when it shifts these invariants go stale. Re-verify on every
+// Claude Code upgrade; treat as a disposable guardrail, NOT load-bearing infra.
+// Reusable for ANY workflow script (.js), not just team-kit ones. Axis B (semantic fidelity
 // of the script vs the plan/design markdown ground-truth) is an LLM review — see team-kit-run, NOT here.
 //
 // Two severities:
