@@ -12,7 +12,7 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 
 **Design trigger:** "as a team, design..." or "as a team, spec..." → spawns team-designer first, then planner.
 
-**Fork trigger:** "as a team (fork), ..." or "fork team, ..." → enables fork mode for ~10x cost reduction on parallel agents. Children inherit lead context via cache, self-discover their agent definitions. Requires `CLAUDE_CODE_FORK_SUBAGENT=1` env var.
+**Fork trigger:** "as a team (fork), ..." or "fork team, ..." → enables fork mode for ~10x cost reduction on parallel agents. Children inherit lead context via cache, self-discover their agent definitions. Requires `CLAUDE_CODE_FORK_SUBAGENT=1` env var. (NOTE: "~10x" is reverse-engineered / version-fragile — not a guarantee. Fork applies to the native-team / Agent-tool path ONLY, NEVER the `/team-kit-run` workflow path — workflow `agent()` calls have isolated caches; see team-kit-run fork-vs-workflow routing.)
 
 ## Teamkit Skills
 
@@ -29,7 +29,7 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 
 ## Ultracode Policy
 
-When **ultracode is on** (standing workflow opt-in), author + run a workflow for every substantive span — don't hand-orchestrate. Map each span to the cheapest reproducibility tier:
+When **ultracode is on** (standing opt-in; the literal trigger keyword is `ultracode` as of v2.1.160 — was `workflow` before; natural language always works), author + run a workflow for every substantive span — don't hand-orchestrate. Map each span to the cheapest reproducibility tier:
 
 - **Saved `/command` workflow** (`.claude/workflows/*.js`) — recurring shapes (health, deep-clean, knip, migrate). Most canned.
 - **`team-kit-run`** — bespoke multi-agent work over the role agents. Single-branch, prod-safe.

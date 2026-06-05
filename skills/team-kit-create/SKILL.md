@@ -44,7 +44,7 @@ Designer owns: research, question generation, approach exploration, requirements
 ## Pipeline
 
 ```
-[problem] → persist prompt → clarify loop → explore → present loop → write → research → REFINE loop → plan → review → spawn prompt
+[problem] → persist prompt → clarify loop → explore → present loop → write → research → REFINE loop → plan → review → file gate → /team-kit-run (execute)
 ```
 
 ```dot
@@ -74,12 +74,12 @@ digraph team_kit_create {
   "Invoke team-kit-review" [shape=box];
   "Review passed?" [shape=diamond];
   "User file review gate" [shape=box];
-  "Deliver spawn prompt" [shape=doublecircle];
+  "Hand off to /team-kit-run" [shape=doublecircle];
 
   "Input received" -> "Persist prompt.md";
   "Persist prompt.md" -> "Is it a known template?";
   "Is it a known template?" -> "Present template summary" [label="yes"];
-  "Present template summary" -> "Deliver spawn prompt";
+  "Present template summary" -> "Hand off to /team-kit-run";
   "Is it a known template?" -> "Is the problem well-scoped?" [label="no"];
   "Is the problem well-scoped?" -> "Dispatch designer(clarify)" [label="no"];
   "Dispatch designer(clarify)" -> "Present question to user";
@@ -108,7 +108,7 @@ digraph team_kit_create {
   "Invoke team-kit-review" -> "Review passed?";
   "Review passed?" -> "Dispatch planner" [label="major issues"];
   "Review passed?" -> "User file review gate" [label="yes"];
-  "User file review gate" -> "Deliver spawn prompt";
+  "User file review gate" -> "Hand off to /team-kit-run";
 }
 ```
 
@@ -230,7 +230,7 @@ Map shortcut to file:
 
 1. Read the template
 2. Present summary (name, agents, phases, cost estimate)
-3. Generate the spawn prompt (see Step 7)
+3. Hand off to `/team-kit-run` (see Step 7)
 4. **Done** — skill ends here
 
 ## Step 2c: Clarify Loop (dispatch designer)
@@ -547,7 +547,7 @@ Planner produces:
 - `design.md` — human-readable architecture summary
 - `team-plan.md` — full plan with roles, tasks, ownership, phases
 - `team-scope.json` — scope config for hook enforcement (legacy native-team path)
-- `plan.workflow.js` (optional, tier-2) — executable workflow spine derived from team-plan.md, consumed by `/team-kit-run`. See PLANNER.md → Workflow Output.
+- `plan.workflow.js` **(TO-BUILD — Option B; not emitted today)** — the committed, re-runnable workflow spine. Target ontology = SOURCE (js→md), but no generator/exemplar exists yet, so `/team-kit-run` authors the workflow ad-hoc from `team-plan.md` (entry mode 2). See PLANNER.md → `### 3. plan.workflow.js`.
 
 ---
 
@@ -600,7 +600,7 @@ Before handoff, ask user to review actual files:
 > "Plan complete. Please review these files before execution:
 > - `team-session/{team-name}/design.md` — architecture summary
 > - `team-session/{team-name}/team-plan.md` — full execution plan
-> - `team-session/{team-name}/plan.workflow.js` — executable workflow spine (if emitted; see below)
+> - `team-session/{team-name}/plan.workflow.js` — executable workflow spine (NOT-YET-IMPLEMENTED — Option B; not emitted today)
 >
 > Let me know if you want any changes."
 
@@ -612,7 +612,7 @@ Wait for user approval. If changes requested → edit → re-present relevant se
 
 > **Plan approved.** To execute:
 > ```
-> /team-kit-run  — run team-session/{team-name}/plan.workflow.js (entry mode 1)
+> /team-kit-run  — execute the approved plan (authors the workflow from team-plan.md; entry mode 2 today — mode 1 plan.workflow.js is TO-BUILD)
 > ```
 > Or just say "run it" / "execute the plan". `/team-kit-run` keeps the human-gate seam:
 > deterministic stages (research/implement/review/verify) run as a background workflow;
@@ -680,8 +680,8 @@ designer/refine.md     ← designer(refine) writes, each invocation appends
 requirements.md        ← enriched by refine phase (traceable changes)
     ↓ reads requirements.md + findings.md + refine.md
 design.md + team-plan.md ← team-planner writes
-    ↓ (optional, tier-2 reproducibility) executable spine emitted from team-plan.md
-plan.workflow.js       ← team-planner writes (consumed by /team-kit-run, entry mode 1)
+    ↓ (TO-BUILD, Option B) committed spine — sole-source target (js→md), not emitted today
+plan.workflow.js       ← TO-BUILD (Option B); today /team-kit-run authors ad-hoc from team-plan.md (entry mode 2)
 ```
 
 Handoff data shapes between workflow stages: `team-templates/SCHEMA-CATALOG.md` (the 5 canonical schemas). This artifact chain is the FILE-handoff model; `/team-kit-run` adds SCHEMA handoff for execution.
@@ -704,7 +704,7 @@ Handoff data shapes between workflow stages: `team-templates/SCHEMA-CATALOG.md` 
 
 | Skill | Relationship |
 |-------|-------------|
-| `team-kit-run` | **EXECUTOR** — runs the approved plan (`plan.workflow.js` / `team-plan.md`) as a native-workflow multi-agent run. create=PLAN, run=EXECUTE. The Step 7 handoff target. |
+| `team-kit-run` | **EXECUTOR** — runs the approved plan (`team-plan.md` today; `plan.workflow.js` = TO-BUILD, Option B) as a native-workflow multi-agent run. create=PLAN, run=EXECUTE. The Step 7 handoff target. |
 | `team-kit-clarify` | Dispatch guide for designer(phase: clarify) loop |
 | `team-kit-explore` | Dispatch guide for designer(phase: explore) |
 | `team-kit-present` | Invoked in Step 5 for planner output approval (design.md sections) |

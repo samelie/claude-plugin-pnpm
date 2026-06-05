@@ -11,7 +11,7 @@ Source of truth for the 5 schemas the workflow EXECUTE path (`/team-kit-run`) pa
 
 Rule (`WORKFLOW-MERGE-PLAN.md` handoff rule): **schema for DATA; `team-session/` file (path passed IN the schema as `sessionFile`) only for BULK.** Every schema below carries `sessionFile` + a `status` enum (from the STATUS protocol) so both models coexist.
 
-**Transport caveat (0.3.3, audit-derived):** schema-forcing is UNRELIABLE for HEAVY agents — they finish the work but skip the final `StructuredOutput` call (5 live failures, 1 fatal abort). Heavy execution stages (research/coder/review/verify/finish) use the FILE model + a `STATUS:` line the orchestrator parses; reserve forced `schema:` for LIGHT stages (discovery/echo/tiny verdict). The shapes below still define the on-disk artifact CONTENT.
+**Transport note (re-verified 2026-06-05 — supersedes the 0.3.3 caveat):** schema is RELIABLE on the current runtime — 4/4 heavy custom-agentType agents (each Read 5 large files) returned valid `StructuredOutput` (skip 0/4); the earlier "~5× skip / 1 fatal abort" claim did NOT reproduce. Heavy execution stages (research/coder/review/verify/finish) STILL DEFAULT to the FILE model + a `STATUS:` line — for **lean context + bulk handoff to disk**, NOT because schema breaks. A separate, still-live failure vector is TRANSPORT (stall-watchdog/rate-limit/subprocess) aborting a bare critical-path `await agent()` — wrap those in `tryAgent` (team-kit-run rule 11). The shapes below still define the on-disk artifact CONTENT.
 
 ## Universal invariants (every schema)
 

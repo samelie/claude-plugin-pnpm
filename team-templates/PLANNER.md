@@ -83,13 +83,13 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 
 Hook wiring note: the plugin's `hooks/hooks.json` already registers `PreToolUse`, `SubagentStop`, `SessionStart`, and `Stop` hooks. They run automatically whenever the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json` — nothing to wire per team. NOTE: these hooks do NOT fire for `/team-kit-run` workflow agents (verified) — they apply only to the legacy native-team path.
 
-### 3. `plan.workflow.js` (optional) — executable workflow spine
+### 3. `plan.workflow.js` (TO-BUILD — Option B) — executable workflow spine
 
-When the plan will execute via `/team-kit-run` (the default executor), ALSO emit a deterministic JS workflow script derived from `team-plan.md`. This is tier-2 reproducibility: a committed, re-runnable, resumable spine. `team-plan.md` stays the human-readable twin.
+**STATUS: TO-BUILD (Option B) — do NOT emit today.** The TARGET design (locked, decision #2): `plan.workflow.js` is the SOLE SOURCE of truth — a committed, re-runnable, resumable spine — and `team-plan.md` is GENERATED from it (**js→md**). That requires a script→markdown generator + an exemplar + a workflow-script schema, NONE of which exist yet. **Until Option B lands, emit `team-plan.md` only; `/team-kit-run` authors the workflow ad-hoc from it (entry mode 2).** The mapping below is the reference for building the spine, not a today-instruction.
 
-**Rule 7 — Workflows are plain JS — no TS imports/types; emit `plan.workflow.js`.**
+**Rule 7 — Workflows are plain JS — no TS imports/types.** (Applies when the spine is built.)
 
-Mapping `team-plan.md` → `plan.workflow.js`:
+Reference mapping `team-plan.md` elements → workflow-script constructs (for Option B):
 
 | team-plan.md element | workflow script |
 |----------------------|-----------------|
@@ -107,7 +107,7 @@ Constraints (verified — see `../WORKFLOW-MERGE-PLAN.md` + `../skills/team-kit-
 - Schemas = the 5 canonical shapes in `SCHEMA-CATALOG.md` (inline them; scripts have NO `import`).
 - No `Date.now()`/`Math.random()`/argless `new Date()` (they throw) — pass timestamps via `args`.
 
-If unsure whether to emit it, emit `team-plan.md` only; `/team-kit-run` entry mode 2 can author the workflow ad-hoc from the plan. (`plan.workflow.js` is plain JS — no imports/fs/Node, no TS types.)
+Today, ALWAYS emit `team-plan.md` only (the generator/exemplar for `plan.workflow.js` is TO-BUILD); `/team-kit-run` entry mode 2 authors the workflow ad-hoc from the plan. (When built, `plan.workflow.js` is plain JS — no imports/fs/Node, no TS types.)
 
 ---
 
