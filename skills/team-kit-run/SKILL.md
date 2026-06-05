@@ -8,12 +8,14 @@ disallowed-tools: AskUserQuestion
 
 Companion to `team-kit-create`. `create` PLANS (interactive, human-gated). `team-kit-run` EXECUTES — it drives the team-kit role agents through the native `Workflow` tool. You stay **orchestrator**: author + launch the workflow, gate the unsafe parts, report results. You do NOT do the work inline.
 
-Design source of truth + verification evidence: `${CLAUDE_PLUGIN_ROOT}/WORKFLOW-MERGE-PLAN.md` (spikes 1–4). The rules below are EMPIRICALLY VERIFIED — do not assume otherwise.
+Design source of truth + verification evidence: `${CLAUDE_PLUGIN_ROOT}/WORKFLOW-MERGE-PLAN.md` (spikes 1–4; reconsolidation 2026-06-05).
+
+> **VERSION-FRAGILITY BANNER.** Verified vs the runtime **research-preview workflow API (v2.1.154+) on 2026-06-05**. This JS API (`agent`/`parallel`/`pipeline`/`schema`/`agentType`/…) is **NOT in the public docs** — every rule below is a dated EMPIRICAL claim, not vendor doctrine. **Re-verify after each Claude Code upgrade.**
 
 ## When to use
 
 Three entry modes:
-1. **Approved `plan.workflow.js`** (from `team-kit-create`) — run the full executable plan.
+1. **Approved `plan.workflow.js`** (from `team-kit-create`) — run the full executable plan. **(NOT-YET-IMPLEMENTED — no generator / exemplar / consumer step yet; pending Option B. Use entry mode 2 today.)**
 2. **Direct task** via the canonical invocation contract below — clear task that doesn't need the full clarify/explore planning ceremony. (Most common.)
 3. **Saved template workflow** (`/monorepo-health`, etc.) — fully canned, parameterized via `args`.
 
@@ -21,7 +23,7 @@ NOT for: tiny 1–3 file tight-coupling fixes (single agent, no orchestration); 
 
 ### fork vs workflow — routing rule (verified, mutually exclusive)
 
-Fork (~10x child cost discount) and the workflow path do NOT mix. Fork inherits the parent prompt cache via the **Agent tool** (omit `subagent_type`) = the native-team / `team-kit-create`-lead path ONLY. Workflow `agent()` calls are **named subagents with isolated caches** — live probe `wf_16f795f9-f2d` showed followers re-create ~14.5k tokens each (even warm + serial); there is NO cross-agent prefix reuse on the workflow path. So fork is architecturally N/A here.
+Fork (~10x child cost discount — reverse-engineered/version-fragile, NOT a guarantee) and the workflow path do NOT mix. Fork inherits the parent prompt cache via the **Agent tool** (omit `subagent_type`) = the native-team / `team-kit-create`-lead path ONLY. Workflow `agent()` calls are **named subagents with isolated caches** — live probe `wf_16f795f9-f2d` showed followers re-create ~14.5k tokens each (even warm + serial); there is NO cross-agent prefix reuse on the workflow path. So fork is architecturally N/A here.
 
 | If the work is… | Route to | Why |
 |---|---|---|
@@ -30,32 +32,34 @@ Fork (~10x child cost discount) and the workflow path do NOT mix. Fork inherits 
 
 **The workflow cost lever is model tiering (`opts.model:'sonnet'` on mechanical/review stages) + lean per-agent context — NOT cache sharing.** A workflow fanning out N agents that all need the same big blob pays N× for it: keep workflow prompts lean, push shared bulk to disk, agents read only their slice. Native-team is a **first-class sanctioned fork lane** for shared-context-heavy fan-out, not a legacy fallback.
 
-## Hard platform rules (verified — non-negotiable)
+## Hard platform rules (empirically verified — dated, re-verify on upgrade)
 
-These come from spikes 1–4 and shape EVERY workflow you author here.
+These come from spikes 1–4 + the 2026-06-05 re-verification (`wf_2a347dc4-297`, `wf_e3818563-661`) and shape EVERY workflow you author here. They are dated empirical observations against a research-preview API — treat as current-best, not permanent.
 
 | # | Rule | Consequence |
 |---|------|-------------|
-| 1 | **Bridge works.** `agent(p, {agentType:'claude-plugin-pnpm:team-coder'})` loads the role agent verbatim. (It *composes* with schema, but see rule 9 — don't schema-force heavy agents.) | Reuse role agents as workers — zero rewrite. |
-| 2 | **Custom agentType = FIXED toolset:** `Read, Bash, Write, Edit (only if role grants), Skill, StructuredOutput`. Frontmatter CANNOT add tools. No `mcp__*`, no `ToolSearch`, no `Glob`/`Grep`. | Role agents can't reach raw MCP. |
-| 3 | **Only the DEFAULT agent (no agentType) has `ToolSearch`** → can load any MCP on demand (cocoindex/claude-mem/context-mode), no permission prompt for reads. | Knowledge stages use the default agent — see path A. |
-| 4 | **No scope guard fires for workflow writers** (`check-team-scope` inactive) AND workflow agents auto-`acceptEdits`. | A workflow agent can write anywhere, unattended. Writes need a discipline, not a hook. |
+| 1 | **Bridge works.** `agent(p, {agentType:'claude-plugin-pnpm:team-coder'})` loads the role agent verbatim. (It *composes* with schema — schema is reliable on the current runtime; see rule 9.) | Reuse role agents as workers — zero rewrite. |
+| 2 | **Custom agentType = FIXED toolset (workflow `agent()` sandbox only — NOT ordinary Agent/Task subagents, which inherit MCP per docs).** Baseline `{Read, Bash, StructuredOutput}`; role frontmatter FILTERS in `{Write, Edit, Skill}` (cannot ADD beyond this). Measured 2026-06-05: spec-reviewer=`{Read,Bash,StructuredOutput}`; coder=`+Write+Edit+Skill`; verifier/architect/researcher=`+Write+Skill`. **Zero `mcp__*`, `ToolSearch`, `Glob`, `Grep` on ANY type.** | Role agents can't reach raw MCP. |
+| 3 | **Only the DEFAULT agent (no agentType) reaches MCP** — and it reaches it via **BOTH inheritance (direct `mcp__*` call) AND `ToolSearch`** (verified 2026-06-05; old rule said ToolSearch-only — incomplete). Loads any MCP (cocoindex/claude-mem/context-mode), no prompt for reads. | Knowledge stages use the default agent — see path A. |
+| 4 | **(a) Workflow agents auto-`acceptEdits` (DOC-CONFIRMED). (b) Scope-guard did NOT block an out-of-scope write** — re-verified 2026-06-05: a `/tmp` write SUCCEEDED unblocked for both default + custom agents, no denial. (Whether any PreToolUse hook fires at all is indeterminate — rtk-rewrite is harness-transparent; don't rely on it either way.) | A workflow agent can write anywhere, unattended. Writes need a discipline, NOT a hook. |
 | 5 | **No worktrees** (project decision). Single branch. | Same-file parallel source writes are unguarded → serialize or propose-then-apply. |
 | 6 | **Resume is within-session only**; each gated stage = a separate workflow run with its own journal. No mid-run user input. | Multi-gate work = several sequential runs; human gates live BETWEEN runs. |
 | 7 | **Determinism:** `Date.now()`/`Math.random()`/argless `new Date()` THROW; scripts have NO `import`/fs/Node. | Pass timestamps via `args`; inline stage code (no imports). |
 | 8 | **Kill switch:** `/workflows` TUI → `x` stops a run, `p` pause. Guard loops with `budget.total`. | Human can always stop a runaway run. |
-| 9 | **Schema-forcing is unreliable for HEAVY agents.** Agents doing real tool work (multi-file edits, 100s of calls) reliably finish but skip the final `StructuredOutput` call — observed 5× in a live audit. In `parallel()` it degrades to `null` (survivable); a bare `await agent({schema})` **throws and aborts the whole run**. | Heavy stages (research/coder/review/verify/finish) take NO schema → write their artifact to `team-session/` + end with a `STATUS:` line the orchestrator parses. Reserve `schema:` for LIGHT stages (discovery/echo/tiny verdict). NEVER bare-`await` a schema agent on the critical path. |
-| 10 | **Assert coverage after EVERY `parallel()` fan-out.** Rule 9's null-degradation + the standard `.filter(Boolean)` cleanup can silently DROP a fan-out element — a missing slice then reads as "all clean". | Capture the `parallel()` result; assert `results.filter(Boolean).length === inputs.length`. On a gap, return `errors_remaining` + a `coverageGap {expected, got, missing}` object and do NOT proceed — a dropped/skipped element must never read as covered (`coverage()` helper + pattern `monorepo-health.js:71-84`). |
-| 11 | **Wrap EVERY critical-path heavy `await agent()` in try/catch (reliability-2).** Schema isn't the only abort vector: a stall-watchdog abort, a transient server/rate-limit throw, or a subprocess error makes a bare `await agent()` (even schema-less) **throw and abort the whole run** — losing every prior stage's in-memory progress. The `parallel()` null-degradation in rules 9–10 does NOT cover a *thrown* heavy await on the serial critical path (implement/spec/quality/finalize/validate). | Route every critical-path heavy `await agent()` through the `tryAgent()` wrapper: on throw it logs, synthesizes a `STATUS: ERRORS_REMAINING` result, and lets the orchestrator route to the human gate instead of crashing the run (pattern `monorepo-health.js:98-112`). |
-| 12 | **`statusOf()` is a 4-way classifier — BLOCKED/NEEDS_CONTEXT escalate, they do NOT re-dispatch (reliability-3).** A 3-way `{clean\|errors\|partial}` collapses an agent's **escalate** signal ("the plan is wrong / I'm missing context") into the re-dispatchable bucket, so the review loop burns the FULL `MAX_REDISPATCH` budget re-running an unwinnable stage. Missing STATUS must NOT read as a soft `partial` either (no silent clean; observability-3). | Classify into `clean` / `blocked` (BLOCKED\|NEEDS_CONTEXT) / `errors` (ERRORS_REMAINING\|PARTIAL\|DONE_WITH_CONCERNS\|**missing STATUS**). Check BLOCKED/NEEDS_CONTEXT BEFORE ERRORS. `escalates(s)` → **break the loop immediately and return to the human gate** (don't increment `attempt`); only `errors` re-dispatches; only `clean` passes the gate (pattern `plan.workflow.js statusOf`). |
-| 13 | **Mechanical / review / finalize stages MUST pass `model:'sonnet'` — reserve inherited opus for implement/design (cost-perf-2).** A stage with NO `opts.model` inherits the SESSION model (opus on the common path), so the documented tiering table is aspirational — finalize/validate/spec-review/quality-review silently run on opus, the single biggest avoidable workflow cost (the workflow path has NO cross-agent cache lever — model tiering IS the cost lever; see fork-vs-workflow routing). | Pass `model:'sonnet'` on EVERY mechanical (verifier/finalize/validate), review (spec/quality/plan/security), and finalize/finisher `agent()` call — set it on the `phases[]` entry AND each `agent()` opts (pattern `monorepo-fix.js:8-9,132`, `monorepo-health.js` Check/Fix). Only **implement** and **design/planning** stages keep inherited opus (real judgment work) — do NOT add `model:'sonnet'` there. |
-| 14 | **Glob-disjointness pre-flight BEFORE any parallel source-write fan-out (reliability-7).** Worktrees are banned (rule 5), so disjoint `files_owned` is the ONLY structural backstop against two same-batch coders clobbering each other's uncommitted edits — yet no hook fires for workflow writers (rule 4) and the planner's "non-overlapping globs" is LLM discipline, not a runtime check (`PLANNER.md` file-ownership). A stale/typo'd plan with two coders sharing `src/**` will silently last-writer-win. | Before launching a parallel source-writing fan-out, run the deterministic `disjoint(owners)` pre-flight: compute the pairwise glob intersection of every coder's `files_owned`; if ANY two intersect, do NOT fan out — HARD-FAIL (`return { stage, status: 'errors_remaining', overlaps }`) or auto-DOWNGRADE the colliding pair to a single-writer serial pipeline (or propose-then-apply). Disjoint = parallel OK. Pure JS (no fs/glob import — rule 7) — see the `disjoint()` helper + pattern below (mirrors the report-only `plan.workflow.js overlapPairs()`). Read-only fan-out and per-agent `team-session/` artifact writes (disjoint paths by construction) are EXEMPT — this gates source edits only. |
+| 9 | **Schema is RELIABLE on the current runtime** (re-verified 2026-06-05: 4/4 heavy custom-agentType agents, each Read 5 large files, returned valid `StructuredOutput`; skip-rate 0/4 — the earlier ~5×-skip claim did NOT reproduce). | Heavy stages (research/coder/review/verify/finish) STILL DEFAULT to NO schema → write their artifact to `team-session/` + end with a `STATUS:` line. This is for **lean context + bulk handoff to disk**, NOT because schema breaks. Bare-`await` of a schema agent is now acceptable, but ALWAYS wrap critical-path `await agent()` in `tryAgent` — transport errors (stall-watchdog/rate-limit/subprocess) are a SEPARATE abort vector from schema (rule 11). |
+| 10 | **Assert coverage after EVERY `parallel()` fan-out.** Rule 9's null-degradation + the standard `.filter(Boolean)` cleanup can silently DROP a fan-out element — a missing slice then reads as "all clean". | Capture the `parallel()` result; assert `results.filter(Boolean).length === inputs.length`. On a gap, return `errors_remaining` + a `coverageGap {expected, got, missing}` object and do NOT proceed — a dropped/skipped element must never read as covered (see the `coverage()` helper below). |
+| 11 | **Wrap EVERY critical-path heavy `await agent()` in try/catch (reliability-2).** Schema isn't the only abort vector: a stall-watchdog abort, a transient server/rate-limit throw, or a subprocess error makes a bare `await agent()` (even schema-less) **throw and abort the whole run** — losing every prior stage's in-memory progress. The `parallel()` null-degradation in rules 9–10 does NOT cover a *thrown* heavy await on the serial critical path (implement/spec/quality/finalize/validate). | Route every critical-path heavy `await agent()` through the `tryAgent()` wrapper: on throw it logs, synthesizes a `STATUS: ERRORS_REMAINING` result, and lets the orchestrator route to the human gate instead of crashing the run (see the `tryAgent` helper below). |
+| 12 | **`statusOf()` is a 4-way classifier — BLOCKED/NEEDS_CONTEXT escalate, they do NOT re-dispatch (reliability-3).** A 3-way `{clean\|errors\|partial}` collapses an agent's **escalate** signal ("the plan is wrong / I'm missing context") into the re-dispatchable bucket, so the review loop burns the FULL `MAX_REDISPATCH` budget re-running an unwinnable stage. Missing STATUS must NOT read as a soft `partial` either (no silent clean; observability-3). | Classify into `clean` / `blocked` (BLOCKED\|NEEDS_CONTEXT) / `errors` (ERRORS_REMAINING\|PARTIAL\|DONE_WITH_CONCERNS\|**missing STATUS**). Check BLOCKED/NEEDS_CONTEXT BEFORE ERRORS. `escalates(s)` → **break the loop immediately and return to the human gate** (don't increment `attempt`); only `errors` re-dispatches; only `clean` passes the gate (see the `statusOf` helper below — the canonical impl). |
+| 13 | **Mechanical / review / finalize stages MUST pass `model:'sonnet'` — reserve inherited opus for implement/design (cost-perf-2).** A stage with NO `opts.model` inherits the SESSION model (opus on the common path), so the documented tiering table is aspirational — finalize/validate/spec-review/quality-review silently run on opus, the single biggest avoidable workflow cost (the workflow path has NO cross-agent cache lever — model tiering IS the cost lever; see fork-vs-workflow routing). | Pass `model:'sonnet'` on EVERY mechanical (verifier/finalize/validate), review (spec/quality/plan/security), and finalize/finisher `agent()` call — set it on the `phases[]` entry AND each `agent()` opts (see the `model:'sonnet'` usages in `monorepo-fix.js` + `monorepo-health.js` Check/Fix stages). Only **implement** and **design/planning** stages keep inherited opus (real judgment work) — do NOT add `model:'sonnet'` there. |
+| 14 | **Glob-disjointness pre-flight BEFORE any parallel source-write fan-out (reliability-7).** Worktrees are banned (rule 5), so disjoint `files_owned` is the ONLY structural backstop against two same-batch coders clobbering each other's uncommitted edits — yet no hook fires for workflow writers (rule 4) and the planner's "non-overlapping globs" is LLM discipline, not a runtime check (`PLANNER.md` file-ownership). A stale/typo'd plan with two coders sharing `src/**` will silently last-writer-win. | Before launching a parallel source-writing fan-out, run the deterministic `disjoint(owners)` pre-flight: compute the pairwise glob intersection of every coder's `files_owned`; if ANY two intersect, do NOT fan out — HARD-FAIL (`return { stage, status: 'errors_remaining', overlaps }`) or auto-DOWNGRADE the colliding pair to a single-writer serial pipeline (or propose-then-apply). Disjoint = parallel OK. Pure JS (no fs/glob import — rule 7) — see the `disjoint()` helper below (the canonical impl — there is no separate `plan.workflow.js`). Read-only fan-out and per-agent `team-session/` artifact writes (disjoint paths by construction) are EXEMPT — this gates source edits only. |
 
 ### Rule 6 sub-note — `resumeFromRunId` + caching semantics
 
 Capture each launch's `WorkflowOutput.runId` and, after a **partial** run (some stages done, one crashed/rate-limited/timed out), prefer **resuming** over a cold relaunch: pass the prior `runId` as `resumeFromRunId`. Completed `agent()` calls whose inputs are UNCHANGED return cached — the run skips re-paying for already-finished stages and picks up at the failed one. Re-launching cold re-runs everything (live this audit: a cold relaunch re-ran ~72 agents).
 
-`resumeFromRunId` is the within-session incremental-cache mechanism that backs rule 6. Use it for: the bounded reject→re-dispatch review loop (only the changed stage re-runs) and any single within-session multi-stage run that partially failed.
+`resumeFromRunId` is the within-session incremental-cache mechanism that backs rule 6. Use it for: the bounded reject→re-dispatch review loop and any single within-session multi-stage run that partially failed.
+
+**VERIFIED 2026-06-05 (probe `wf_1d2dd417-323`):** resume with **byte-identical args + script = 100% cache hit** (0 tokens, ~5ms — nothing re-ran). But changing **ANY** `args` field re-ran the run BROADLY (~70%), even stages whose prompts never referenced that field — because `args` are destructured at script top, so the engine conservatively treats all downstream calls as arg-dependent. **Implication:** resume is a real cost-saver ONLY when you re-pass IDENTICAL args (the resume-args contract below). Do NOT expect surgical "only the changed stage re-runs" from an ARG change — that surgical behavior comes from editing the SCRIPT (a specific `agent()` call's prompt/opts), not from changing args. So for the reject→re-dispatch loop, feed reviewer feedback through a channel that does NOT alter `args` (re-dispatch WITHIN one run, or have the re-dispatched stage read feedback from a `team-session/` file) — that keeps the prior stages cached.
 
 **Thread the `runId` — don't just document it (gaps-1).** Two threading levels: (a) WITHIN one workflow run the engine already caches completed `agent()` calls, so the in-script reject→re-dispatch loop costs nothing extra for unchanged stages; (b) ACROSS launches — when a re-dispatch crosses a human gate and becomes a SEPARATE `Workflow` launch — the orchestrator MUST keep the prior run's `WorkflowOutput.runId` (captured at step 4) and pass it as `resumeFromRunId` on the relaunch. Skip that and every prior passing stage re-runs from scratch. Same-session-only.
 
@@ -86,7 +90,7 @@ if (!PKG) throw new Error('args missing: `pkg` is undefined (rule 6 resume-args 
 ## Knowledge routing (path A — verified)
 
 - **Research / investigation / knowledge-heavy** stages → **DEFAULT agent** (no `agentType`). Inject the role in the prompt + tell it to `Skill('investigation-methodology')` and use `ToolSearch` to load `mcp__cocoindex-code__search`, `mcp__plugin_claude-mem_mcp-search__*`, `mcp__plugin_context-mode_context-mode__*`. (Spike 4: default agents reached cocoindex + claude-mem this way.)
-- **Execution** stages (implement/review/verify/finalize) → custom `agentType` directly (no raw MCP needed). In-role lookups fall back to Skill wrappers (`ccc`, `mem-search`, `context-mode`) or Bash ripgrep.
+- **Execution** stages (implement/review/verify/finalize) → custom `agentType` directly (no raw MCP needed). In-role lookups: **Bash/ripgrep + pure-prompt skills ONLY** — the `ccc`/`mem-search`/`context-mode` Skill wrappers CANNOT bridge to MCP inside a custom agent (they bottom out in absent `mcp__*` tools; verified 2026-06-05). For real knowledge mid-execution, route through the DEFAULT agent (rule 3).
 
 ## Single-branch write model (verified)
 
@@ -170,7 +174,7 @@ if (!SESSION) throw new Error('args missing: `session` undefined — re-pass the
 //   • MISSING STATUS     → 'errors', NOT 'partial' (no silent clean; observability-3). A dropped/
 //                          truncated terminal text must fail closed, never pass the gate.
 // BLOCKED/NEEDS_CONTEXT MUST be checked BEFORE ERRORS_REMAINING so an "ERRORS_REMAINING but BLOCKED"
-// line still escalates. Mirrors plan.workflow.js statusOf.
+// line still escalates.
 const statusOf = (t) => {
   const s = String(t || '')
   if (/STATUS:\s*CLEAN/i.test(s)) return 'clean'
@@ -187,7 +191,7 @@ const escalates = (s) => s === 'blocked'   // BLOCKED/NEEDS_CONTEXT — break lo
 // subprocess errors — even with NO schema. That loses every prior stage's in-memory progress. Wrap
 // every critical-path heavy await through this: on throw it logs + synthesizes a STATUS:
 // ERRORS_REMAINING result text (which statusOf() reads as 'errors') so the orchestrator routes to the
-// HUMAN GATE instead of crashing. Mirrors monorepo-health.js:98-112. (parallel() degrades to null on
+// HUMAN GATE instead of crashing. (parallel() degrades to null on
 // its own — rule 9/10 — so this wrapper is for the SERIAL critical path: implement/spec/quality/finalize/validate.)
 const tryAgent = async (label, p, opts) => {
   try { return await agent(p, opts) }
@@ -202,7 +206,7 @@ const tryAgent = async (label, p, opts) => {
 // a schema-skipping heavy agent degrades to null (rule 9) and .filter(Boolean) erases it, so a
 // missing slice would read as "all clean". After EVERY parallel() fan-out, assert full coverage:
 // results.filter(Boolean).length === inputs.length, else return errors_remaining + a coverageGap
-// object. A coverage gap MUST NOT return clean (pattern: monorepo-health.js:71-84).
+// object. A coverage gap MUST NOT return clean (see the `coverage()` helper).
 const coverage = (results, expected) => {
   const got = results.filter(Boolean).length
   return got === expected ? null : { expected, got, missing: expected - got }
@@ -215,7 +219,7 @@ const coverage = (results, expected) => {
 // import (rule 7); compares the literal segments of each glob (`**`/`*`/`?` as wildcards). Conservative:
 // it FLAGS a pair when their patterns could match a common path; a flagged pair is downgraded/halted,
 // never trusted. Read-only fan-out + per-agent team-session/ writes (disjoint paths) are EXEMPT.
-// Mirrors the report-only plan.workflow.js overlapPairs().
+// Canonical disjointness helper (there is no separate plan.workflow.js).
 //
 // segMatch(a, b): could glob `a` and glob `b` match a common path? Walk segments; `**` swallows the rest.
 const segMatch = (a, b) => {
@@ -354,4 +358,4 @@ const validate = await tryAgent('validate', `Verify automatable acceptance crite
 
 ## Reproducibility tiers
 
-Most → least canned: saved `/command` workflow  >  generated + committed `plan.workflow.js`  >  ad-hoc orchestrator-authored. For recurring shapes, save the script as a `/command` (`.claude/workflows/`); for bespoke work, tier 2/3.
+Most → least canned: saved `/command` workflow  >  generated + committed `plan.workflow.js` **(TO-BUILD — Option B; not yet available)**  >  ad-hoc orchestrator-authored. For recurring shapes, save the script as a `/command` (`.claude/workflows/`); for bespoke work today, use ad-hoc entry mode 2.

@@ -192,7 +192,7 @@ Unit tests prove code is correct. Validation proves the feature **actually works
 
 ## Workflow Execution
 
-The phase ladder above has two execution counterparts, split on the **human-gate seam**. `team-kit-create` drives the gated half (interactive); `/team-kit-run` drives the deterministic half (native-workflow). Source of truth: `../skills/team-kit-run/SKILL.md` + `../WORKFLOW-MERGE-PLAN.md` (empirically verified, spikes 1–4).
+The phase ladder above has two execution counterparts, split on the **human-gate seam**. `team-kit-create` drives the gated half (interactive); `/team-kit-run` drives the deterministic half (native-workflow). Source of truth: `../skills/team-kit-run/SKILL.md` + `../WORKFLOW-MERGE-PLAN.md` (empirically verified, spikes 1–4; re-verified 2026-06-05 — see the reconsolidation addendum. The JS API is research-preview + vendor-unpublished → re-verify on each Claude Code upgrade).
 
 | Half | Phases | Execution |
 |------|--------|-----------|
@@ -202,10 +202,11 @@ The phase ladder above has two execution counterparts, split on the **human-gate
 **Verified platform rules that shape execution:**
 
 1. **Bridge:** `agent(p, { agentType: 'claude-plugin-pnpm:team-coder', schema })` loads the role agent verbatim. Reuse roles as workers — no rewrite.
-2. **Custom agentType = fixed toolset** (Read/Bash/Write/Edit-if-granted/Skill/StructuredOutput). No raw MCP/ToolSearch/Glob/Grep. → Knowledge stages use the DEFAULT agent (has ToolSearch→MCP) with the role injected via prompt.
-3. **No scope hook fires for workflow agents** (they auto-acceptEdits). The file-ownership matrix + `check-team-scope` only guard the legacy native-team path. In workflows the guard is discipline, not a hook.
+2. **Custom agentType = fixed toolset** in the workflow `agent()` sandbox: baseline Read/Bash/StructuredOutput + role-filtered Write/Edit/Skill. No raw MCP/ToolSearch/Glob/Grep (verified across 5 types 2026-06-05). → Knowledge stages use the DEFAULT agent (reaches MCP via inheritance AND ToolSearch) with the role injected via prompt. In-role lookups in customs = Bash/ripgrep only (ccc/mem-search Skill wrappers can't bridge to absent MCP).
+3. **Workflow agents auto-acceptEdits; no scope guard blocked an out-of-scope write** (re-verified 2026-06-05, both default+custom). The file-ownership matrix + `check-team-scope` only guard the legacy native-team path. In workflows the guard is discipline, not a hook.
 4. **Single branch, no worktrees.** Clobber risk = same-FILE writes only. Schema returns + `team-session/` artifact writes (disjoint paths) are parallel-safe; SOURCE edits are single-writer (serial) or propose-then-apply (parallel reason → one serial apply). Never parallel same-file writers.
 5. **No mid-run input; resume within-session only.** A multi-gate job = several sequential workflow runs, human gates BETWEEN runs.
+6. **Schema is reliable** (re-verified 2026-06-05, 4/4 heavy agents returned). Heavy stages STILL default to FILE + `STATUS:` for lean context + bulk handoff, NOT because schema breaks. Wrap critical-path `await agent()` in `tryAgent` for transport aborts (stall/rate-limit/subprocess).
 
 **Handoff:** stages pass the 5 canonical schemas in `SCHEMA-CATALOG.md` (data) + `sessionFile` pointers (bulk). The N+2 Validation phase is the workflow's Validate stage → `ACEvidence` (automatable AC only; `automatable:false` → in-session manual).
 

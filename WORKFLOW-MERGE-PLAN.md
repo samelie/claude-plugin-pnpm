@@ -2,6 +2,8 @@
 
 > Status: PROPOSAL (not yet shipped methodology). Refines the team kit (`team-templates/FRAMEWORK.md`, `PLANNER.md`, `team-kit-*` skills) to be workflow-aware. Generated from a parallel research workflow over the current kit + latest Claude Code workflows/ultracode docs.
 
+> **⚠️ 2026-06-05 RECONSOLIDATION SUPERSEDES PARTS OF THIS DOC.** `plan.workflow.js` (decision #2 keystone) + the script→markdown generator + Mermaid emission + `disable-model-invocation` were **never built** (PHANTOM). Spike rules re-checked live: rules 2/3/4 hold (dated), **rule 9 is REFUTED** (schema now reliable). Decision: KEEP the keystone vision (Option B, TO-BUILD), do Option C now (re-verify + rewrite). Authoritative current state = the `## 2026-06-05 Reconsolidation` addendum at the END of this file + `team-session/20260605-teamkit-reconsolidation/RECONSOLIDATION-REPORT.md`.
+
 ## Decisions locked (2026-06-03)
 
 1. **First action = verify the bridge empirically.** Namespaced `agentType` resolution from inside a workflow is the load-bearing assumption. Nothing else starts until this passes (open question #1).
@@ -44,7 +46,7 @@ Operational facts that affect the design, confirmed against published docs:
 - **Workflow subagents ALWAYS run in `acceptEdits` mode and inherit your tool allowlist, regardless of session mode — file edits auto-approved.** Implication: the back-half loses the per-implementer `mode:'plan'` gate AND edits auto-apply. Since `check-team-scope` ALSO doesn't fire (spike 2) and worktrees are rejected (decision #5), the ONLY safety left is the upfront human plan-approval (phase 7) + strictly serialized writes (single-writer / propose-then-apply).
 - **MCP tools are available inside workflow agents, allowlist-gated** (non-allowlisted MCP/shell/web prompt mid-run). So cocoindex/claude-mem/context-mode should work for workflow-spawned role agents IF allowlisted — but the repo gave no proof for the workflow-`agent()` sandbox specifically, so still confirm in the bridge spike.
 - **Human kill-switch exists:** `/workflows` TUI → `x` stops an agent or the whole run, `p` pause/resume, `r` restart agent, `s` save script. Works even under auto-mode/ultracode (which only skip the *launch* prompt, not the TUI controls).
-- **Saved-workflow locations:** `.claude/workflows/` (project, shared/committed) or `~/.claude/workflows/` (personal). Becomes a `/<name>` command. **Project wins on name collision** → our 5 converted templates live in the plugin's `.claude/workflows/`.
+- **Saved-workflow locations:** `.claude/workflows/` (project, shared/committed) or `~/.claude/workflows/` (personal). Becomes a `/<name>` command. **Project wins on name collision** → the converted templates live at REPO-ROOT `.claude/workflows/` (NOT the plugin dir — corrected 2026-06-05; only 2 of 5 exist: `monorepo-health`, `monorepo-fix`).
 - **Disable:** `disableWorkflows:true` in settings / `CLAUDE_CODE_DISABLE_WORKFLOWS=1` → ultracode removed from `/effort` menu.
 - **Per-stage model override exists** (docs: "uses your session's model unless the script routes a stage to a different one") — confirms `opts.model`.
 - **Run script is written to `~/.claude/projects/<session>/` and the path returned** — readable/diffable/relaunchable. Only `/deep-research` ships built-in.
@@ -291,3 +293,41 @@ Artifacts: `team-session/20260603-vlr-followup-triage/{prompt,plan,gating}.md` +
 1. **[spike 4]** Run a tiny real task through serial implement → parallel review → finalize on one branch; confirm propose-then-apply (or single-writer) produces correct, reviewed, lint-clean output and that the apply stage flags a deliberate same-file collision.
 2. Where does the interactive front-end hand off to the background workflow — what exactly must pass through `args` vs a written artifact path to preserve approved-spec context?
 3. ~~Fork mode (~10x cache discount) vs workflow stateless agents — mutually exclusive, or can workflow agents fork-inherit?~~ → **RESOLVED (live probe `wf_16f795f9-f2d` + `code.claude.com/docs/en/sub-agents`, 2026-06-04): MUTUALLY EXCLUSIVE.** Fork inherits the parent prompt cache via the **Agent tool** (omit `subagent_type`) = the native-team / lead path. Workflow `agent()` calls are **named subagents with isolated caches** — the probe (7 haiku agents, ~7.6k-token identical prefix) showed followers re-create ~14.5k tokens EACH instead of reading the prime's prefix, even warm + serial (control: serial == parallel → not a timing race). So cross-agent prefix caching does NOT work on the workflow path; fork-inherit is architecturally N/A there. **Routing rule:** shared-context ≫ per-task context AND N large → **native-team + fork** (pay shared context once via cache inheritance); deterministic / resumable / independent stages → **workflow** (lean per-agent context; cost levers = model tiering + keep shared bulk on disk, NOT cache sharing). Native-team = first-class sanctioned fork lane, not a legacy fallback. The "order shared prefix first" alternative is REFUTED — it helps only within one agent's multi-turn loop, not across a fan-out. Documented in `skills/team-kit-run/SKILL.md` (fork-vs-workflow routing rule) + `team-templates/FRAMEWORK.md` (`## Fork Mode`).
+
+---
+
+## 2026-06-05 Reconsolidation (authoritative — supersedes conflicting claims above)
+
+Re-audited the whole effort (workflows `wf_2a347dc4-297` recover+audit, `wf_e3818563-661` rule re-verify) + official `code.claude.com` docs. Full report: `team-session/20260605-teamkit-reconsolidation/RECONSOLIDATION-REPORT.md`; change manifest: `.../C-MANIFEST.md`.
+
+### Phantoms (claimed/implied done — NEVER built)
+| Item | Reality |
+|---|---|
+| `plan.workflow.js` (decision #2 keystone) | NEVER created/committed (`git log --all -- '*plan.workflow.js'` empty). Only a filename-string in docs, referenced 24-29×. |
+| script→markdown generator (js→md, "no drift") | never built; `scripts/` = only `check-manifest.mjs`. |
+| Mermaid emission from script | never built. |
+| `disable-model-invocation` on entry skills | never applied. |
+| run entry-mode-1 (run approved `plan.workflow.js`) | DEAD — no producer, no consumer. Entry-mode-2 (ad-hoc) = the only working path. |
+| `base.md` (cited in "still deferred" dedup) | does not exist. |
+
+### Ontology contradiction (RESOLVED)
+The filename had THREE contradictory framings: SOURCE js→md (this doc) / GENERATED-OPTIONAL md→js (PLANNER) / REFERENCE-IMPL (team-kit-run "mirror" refs). RESOLVED → ONE: **SOURCE (js→md), decision #2**, marked **TO-BUILD (Option B)**. PLANNER md→js inversion fixed; phantom "mirror" refs removed; fragile `file.js:NN` line-refs → function-name anchors (2 of 3 were already wrong).
+
+### Spike rules re-verified LIVE (dated 2026-06-05, runtime research-preview v2.1.154+)
+| Rule | Verdict |
+|---|---|
+| 2 custom agentType fixed toolset, no MCP/ToolSearch | **CONFIRMED + refined** — baseline `{Read,Bash,StructuredOutput}` + role-filtered `{Write,Edit,Skill}`; zero `mcp__*`/ToolSearch/Glob/Grep across 5 types. |
+| 3 only default agent reaches MCP | **CONFIRMED + corrected** — default reaches via inheritance AND ToolSearch (not ToolSearch-only). |
+| 4 no scope-guard fires; auto-acceptEdits | **CONFIRMED** — out-of-scope `/tmp` write SUCCEEDED unblocked, both default+custom. |
+| 9 schema unreliable for heavy agents | **REFUTED** — 4/4 heavy agents returned valid schema; skip 0/4. Softened: STATUS+artifact KEPT as the lean-context default, not because schema breaks. |
+| path-A Skill fallback | **partially BROKEN** — ccc/mem-search bottom out in absent `mcp__*` inside customs; only Bash/ripgrep + pure-prompt skills survive. |
+
+### Platform / doc staleness
+- The whole JS workflow API is **vendor-unpublished** (not in public docs) → reverse-engineered, version-fragile, research-preview (no GA). Every rule = a dated empirical claim. **Re-verify on each Claude Code upgrade.**
+- keyword `workflow` → `ultracode` renamed at v2.1.160 (L36 already noted; trigger strings updated 2026-06-05).
+- Converted templates live at **repo-root** `.claude/workflows/`, not the plugin's (corrected above).
+
+### Decisions (2026-06-05)
+- **Keystone WANTED** → Option B (build generator + exemplar + workflow-script schema + mode-1 consumer) is the eventual target; NOT abandoned.
+- **Option C done now** — re-verify rules (above) + rewrite the stale framing across `team-kit-run`/`team-kit-create`/`PLANNER.md`/`team-planner.md`/`CLAUDE.md` + this addendum.
+- **Deferred to B:** generator, exemplar `plan.workflow.js`, workflow-script schema, mode-1 consumer step, granting `team-planner` the `Workflow`/`StructuredOutput` tools, the resume/args `undefined`-path fix, and a lightweight research/audit lane.
