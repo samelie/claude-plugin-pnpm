@@ -249,4 +249,4 @@ If any check fails, fix before returning.
 - Finalization agents use dedicated subagent types + sonnet model
 - Include STATUS protocol in all agent prompts
 - Carry forward ALL decisions from requirements.md
-- Workflows are plain JS — no TS imports/types. **Do NOT emit `plan.workflow.js` — produce `team-plan.md` only (the ground truth); `/team-kit-run` mode-1 DERIVES + validates the `.js` from it (md→js).**
+- Workflows are plain JS — no TS imports/types. **Do NOT emit `plan.workflow.js` — produce `team-plan.md` only (the ground truth); `/team-kit-run` mode-1 AUTHORS the `.js` from it (native), then lints + saves it.**

@@ -11,14 +11,14 @@ Native-first orchestration, **role-expertise-as-payload**. The platform's `Workf
 
 Default shape = HYBRID (interactive front-end → approved plan → background workflow). Pure-deterministic work (audits/migrations/research) = full workflow. Tiny coupled fix = single agent.
 
-## The committed derived-spine (Option B — the plan.workflow.js model)
+## The committed spine (the plan.workflow.js model) — native author → lint → save
 - `team-plan.md` (from `team-kit-create`) is the **canonical GROUND TRUTH**.
-- `plan.workflow.js` is **DERIVED from it (md→js) by an LLM** in `team-kit-run` mode-1 — NOT a hand-coded generator. The deriver reads the live rules + the md and authors a current-valid script; nothing brittle to maintain. md changes → re-derive. The `.js` is a re-derivable build artifact, never a hand-edited source.
-- This **supersedes the original decision #2** (js sole-source + a js→md generator), which was brittle on a research-preview API.
-- **Trust gate = two axes** (both must pass before the derived script is run/committed):
-  - **Axis A — structural/safety (deterministic):** `scripts/validate-workflow.mjs` — syntax (wrapped `node --check`), `export const meta`, determinism/forbidden-API scan, conditional invariant lint (coverage after `parallel()`, `tryAgent` on `await agent()`), prod-gate deny-scan. Self-tested (`pnpm -F @adddog/claude-plugin-pnpm test`).
-  - **Axis B — semantic fidelity (LLM):** `team-spec-reviewer` + the `AlignmentVerdict` schema (SCHEMA-CATALOG §6) — does the `.js` faithfully implement the plan/design md? `{covered, missing, invented, verdict}`.
-  - Fail → re-derive with gaps fed back (max 3; escalate to human on BLOCKED). First derivation per plan = human-approved before first run.
+- `plan.workflow.js` is the workflow **Claude AUTHORS from it** in `team-kit-run` mode-1. This IS the native Claude Code model — "Claude writes the script, you save it" — not a bespoke pipeline. The orchestrator already holds `team-plan.md` in context; it authors the script inline, then saves it. md changes → re-author. The `.js` is a re-authorable BUILD ARTIFACT, never a hand-edited source, and **not load-bearing infra**.
+- This **supersedes the original decision #2** (js sole-source + a js→md generator) — no generator is built or wanted.
+- **Guardrails (NOT correctness gates):**
+  - **Axis A — advisory lint** (`scripts/validate-workflow.mjs`): syntax (wrapped `node --check`), `export const meta`, determinism/forbidden-API scan, conditional invariant lint (coverage after `parallel()`, `tryAgent` on `await agent()`), prod-gate deny-scan. Self-tested (`pnpm -F @adddog/claude-plugin-pnpm test`). **It encodes dated, reverse-engineered preview-API rules → advisory, disposable, re-verify on upgrade; NOT a guarantee.**
+  - **Axis B — optional fidelity check:** `team-spec-reviewer` + `AlignmentVerdict` (SCHEMA-CATALOG §6) for high-stakes plans; skip small/obvious ones.
+- **Honest status (do not oversell):** the machinery — the advisory lint, the mode-1 procedure, the `AlignmentVerdict` schema — is shipped + unit-verified, but **no real `plan.workflow.js` has been authored/committed and the end-to-end path is unexercised**. The keystone artifact is absent by design until a real task runs through it (supervised, human-approve-first-run). The whole thing is a **legible bet on a vendor-unpublished preview API — better-documented, not safer.** Durable bets (survive API churn): the role agents, the md ground-truth, the human-gate seam. Disposable (bet on the preview): the lint's encoded rules + the mode-1 ceremony.
 
 ## Verified platform rules (dated 2026-06-05, runtime research-preview v2.1.154+)
 The JS workflow API (`agent`/`parallel`/`pipeline`/`phase`/`schema`/`agentType`/`resumeFromRunId`) is **vendor-unpublished** → every rule is a dated empirical claim. Full detail + stage templates: `skills/team-kit-run/SKILL.md`.
@@ -39,13 +39,13 @@ Write model (single branch, no worktrees): schema returns + per-agent `team-sess
 
 ## Decision log
 1. Verify the `agentType` bridge first → PASS.
-2. ~~`plan.workflow.js` = sole source + js→md generator~~ → **SUPERSEDED** by the md→js LLM derivation + two-axis gate (Option B, built 2026-06-05).
+2. ~~`plan.workflow.js` = sole source + js→md generator~~ → **SUPERSEDED** by the native author→lint→save model — Claude authors the script from the md, an advisory lint guards, native save persists (no generator, no derivation pipeline).
 3. Keep the live-team (SendMessage) path as a documented minority escape hatch.
 4. No git worktrees — single-branch development (hard, user-settled).
 5. Reconsolidation 2026-06-05: re-verified rules 2/3/4/6/9 (9 refuted→softened; 2/3/4 confirmed+reframed); collapsed the 3 `plan.workflow.js` ontologies → one; killed phantom/line-number refs; added the version-fragility banner.
 
 ## Reproducibility tiers
-saved `/command` workflow  >  derived+validated+committed `plan.workflow.js` (mode-1)  >  ad-hoc orchestrator-authored (mode-2).
+saved `/command` workflow  >  authored+linted+saved `plan.workflow.js` (mode-1)  >  ad-hoc orchestrator-authored (mode-2).
 
 ## Deferred
-Grant `team-planner`/deriver `Workflow`+`StructuredOutput` (self-derivation smoke-test) · resume/args `undefined`-path hardening · lightweight research/audit lane · optional read-only dry-run before mutating stages · first true end-to-end mode-1 run (supervised, gated by human-approve-first-run).
+Grant the mode-1 author `Workflow`+`StructuredOutput` (self-authoring smoke-test) · resume/args `undefined`-path hardening · lightweight research/audit lane · optional read-only dry-run before mutating stages · first true end-to-end mode-1 run (supervised, gated by human-approve-first-run).

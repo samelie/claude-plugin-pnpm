@@ -83,13 +83,13 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 
 Hook wiring note: the plugin's `hooks/hooks.json` already registers `PreToolUse`, `SubagentStop`, `SessionStart`, and `Stop` hooks. They run automatically whenever the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json` — nothing to wire per team. NOTE: these hooks do NOT fire for `/team-kit-run` workflow agents (verified) — they apply only to the legacy native-team path.
 
-### 3. `plan.workflow.js` (DERIVED by team-kit-run mode-1) — executable workflow spine
+### 3. `plan.workflow.js` (AUTHORED by team-kit-run mode-1) — executable workflow spine
 
-**The planner does NOT emit this.** `team-plan.md` is the GROUND TRUTH; `plan.workflow.js` is DERIVED from it (md→js) by `/team-kit-run` mode-1, then validated on two axes (Axis A static `scripts/validate-workflow.mjs` + Axis B fidelity review via `team-spec-reviewer` → `AlignmentVerdict`). The planner's job is a clean, complete `team-plan.md` — the better the ground truth, the cleaner the derivation. md is canonical; the `.js` is a re-derivable build artifact (re-derive on md change; never hand-edit it as a source).
+**The planner does NOT emit this.** `team-plan.md` is the GROUND TRUTH; `plan.workflow.js` is the workflow `/team-kit-run` mode-1 AUTHORS from it (the native "Claude writes the script" model), then lints (advisory `scripts/validate-workflow.mjs`) + optionally fidelity-checks (`team-spec-reviewer` → `AlignmentVerdict`) + saves. The planner's job is a clean, complete `team-plan.md` — the better the ground truth, the cleaner the authored script. md is canonical; the `.js` is a re-authorable build artifact (re-author on md change; never hand-edit it as a source).
 
-**Rule 7 — Workflows are plain JS — no TS imports/types.** (The deriver follows this.)
+**Rule 7 — Workflows are plain JS — no TS imports/types.** (The mode-1 author follows this.)
 
-Mapping the deriver applies — `team-plan.md` elements → workflow-script constructs:
+Mapping mode-1 applies when authoring — `team-plan.md` elements → workflow-script constructs:
 
 | team-plan.md element | workflow script |
 |----------------------|-----------------|
@@ -107,7 +107,7 @@ Constraints (verified — see `../skills/team-kit-run/SKILL.md` + `../docs/teamk
 - Schemas = the 5 canonical shapes in `SCHEMA-CATALOG.md` (inline them; scripts have NO `import`).
 - No `Date.now()`/`Math.random()`/argless `new Date()` (they throw) — pass timestamps via `args`.
 
-ALWAYS emit `team-plan.md` only — it is the ground truth. `/team-kit-run` mode-1 derives + validates `plan.workflow.js` from it (md→js, re-derive on change). (The derived `plan.workflow.js` is plain JS — no imports/fs/Node, no TS types.)
+ALWAYS emit `team-plan.md` only — it is the ground truth. `/team-kit-run` mode-1 AUTHORS `plan.workflow.js` from it (native), then lints + saves (re-author on change). (The authored `plan.workflow.js` is plain JS — no imports/fs/Node, no TS types.)
 
 ---
 

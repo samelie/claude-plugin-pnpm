@@ -46,4 +46,4 @@ For every write template, the workflow accept condition between propose/fix and 
 
 ## Exemplar
 
-See `.claude/workflows/monorepo-health.js` (this repo root) — the LOW-risk reference implementation. Validate it on a supervised run, then clone its shape for deep-clean (all packages) and adapt knip/debug per the table. Leave migrate as template-only until a dedicated supervised session.
+See `.claude/workflows/monorepo-health.js` (in THIS source repo's root — illustrative; NOT shipped in the plugin package). It's the LOW-risk reference implementation: validate it on a supervised run, then clone its shape for deep-clean (all packages) and adapt knip/debug per the table. Leave migrate as template-only until a dedicated supervised session.
