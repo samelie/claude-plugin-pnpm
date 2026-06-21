@@ -78,8 +78,9 @@ team-session/{team-name}/
 ├── evidence/                ← team-investigator (raw output)
 │   └── {timestamp}-{label}.txt
 │
-└── [VALIDATION]
-    └── validation-report.md ← team-verifier (phase N+2)
+└── [VALIDATION + LEDGER]
+    ├── validation-report.md ← team-verifier (phase N+2, per-AC grading vs definition-of-done.md)
+    └── build-state.md        ← lead/orchestrator (execution AC ledger — pending/passed/failed/needs-human per AC, rolled up from validation-report.md)
 ```
 
 ## Rules
@@ -135,6 +136,7 @@ When same agent type runs multiple times:
 | team-auditor | `design.md`, coder output | `auditor/audit-notes.md` |
 | team-verifier | all source files | `verifier/results.md`, `validation-report.md` (phase N+2) |
 | team-finisher | auditor output, coder output | `finisher/cleanup-report.md` |
+| lead/orchestrator (execution) | `validation-report.md`, `verifier/results.md`, `definition-of-done.md` | `build-state.md` (AC ledger, re-read each gate) |
 
 ### 5. Phase gates check file existence
 
@@ -148,6 +150,7 @@ When same agent type runs multiple times:
 | Implementation | `coder-*/progress.md` for each assigned coder |
 | Review | `spec-reviewer/spec-review-*.md`, `reviewer/review-*.md` |
 | Finalization | `verifier/results.md`, `finisher/cleanup-report.md` |
+| Validation | `validation-report.md`, `build-state.md` (every blocking AC resolved) |
 
 ## File Content Templates
 
@@ -315,7 +318,7 @@ Anchored to: prompt.md  ·  Derived from: requirements.md + team-plan.md
 | AC-1 | ... | T-1 | deterministic | `pnpm -F pkg test` → exit0 | true |
 | AC-2 | ... | T-2,T-3 | semantic | team-goal-auditor(audit) grades rubric | true |
 
-STATUS: CLEAN | PARTIAL | ERRORS_REMAINING: N
+STATUS: CLEAN | ERRORS_REMAINING: N
 ```
 
 ### goal-audit.md (team-goal-auditor)
@@ -331,6 +334,25 @@ Auditor: team-goal-auditor (audit phase) — fresh context (prompt + DoD + team-
 ## Recommendation
 
 STATUS: CLEAN | ERRORS_REMAINING: N | BLOCKED
+```
+
+### build-state.md (lead/orchestrator — execution AC ledger)
+
+The orchestrator's externalized memory during execution. Re-read each gate; do not trust
+recollection. Rolled up from `validation-report.md` + `verifier/results.md`. Keyed on AC ids.
+
+```markdown
+# Build State: {team-name}
+
+Updated: {timestamp}  ·  Source: validation-report.md + verifier/results.md  ·  Contract: definition-of-done.md
+
+| AC | blocking | status | grader | last verdict |
+|----|----------|--------|--------|--------------|
+| AC-1 | true | passed | team-verifier | exit0 `pnpm -F x test` |
+| AC-2 | true | failed | team-verifier | missing `flex-col` on search row |
+| AC-7 | true | needs-human | (render) | screenshot evidence required — human gate |
+
+Done = every blocking AC `passed` AND mechanical gates green. `needs-human` / `failed` ⇒ not done.
 ```
 
 ## Using This Schema

@@ -102,6 +102,8 @@ Clobber risk is **same-FILE** writes, not parallel writes. Three write types:
   - **single-writer** (serial pipeline, one source-writer at a time) — default, safe; also the auto-downgrade target when the disjointness pre-flight flags an overlap.
   - **propose-then-apply** — parallel coders WRITE a unified-diff patch to `<session>proposals/{name}.diff` (FILE handoff — robust vs schema diff-fidelity); ONE sequential apply stage reads the patches, applies disjoint ones + flags same-file collisions. Parallel reasoning, serial mutation.
 
+**Contract is immutable to writers.** No coder/tester may edit `definition-of-done.md`, `requirements.md`, `team-plan.md`, or weaken a gate config to pass — the finalize gate-gaming guard treats any such edit as a FAILED gate. The contract is graded, never edited, by the things it grades.
+
 ## Prod-gating (mandatory)
 
 NEVER place prod-mutating / irreversible / paid-live actions inside the autonomous workflow: deploys (`pulumi up`), DB migrations, deletes, `kubectl` mutations, scaling, ingest kicks, live cost-incurring API calls. Classify each task item; route unsafe ones to a **human-gated checklist** you return to the user. The workflow does the read-only / analysis / safe-code parts. (Spike 4: the planner correctly gated all 7 prod items.)
@@ -113,7 +115,7 @@ If the user hasn't supplied these, infer from context or ask briefly. Fields:
 ```
 TASK:            <what to accomplish>
 SCOPE:           <pnpm -F targets / dirs / files>
-ACCEPTANCE:      <done = tests green / endpoint works / AC list>
+ACCEPTANCE:      <done = the blocking AC in definition-of-done.md (from team-kit-create) — or an inline AC list for a direct task>
 GATES:           <what needs human approval — or "standard: approve plan before execution">
 DO-NOT-AUTOMATE: <prod/irreversible/paid → human-gated — or "none">
 KNOWLEDGE:       <codebase research needed? y/n>
@@ -121,13 +123,37 @@ WRITES:          <single-writer (default) | propose-then-apply>
 BRANCH:          single branch, no worktrees.
 ```
 
+## Sealed contract + context firebreak (entry-mode-1)
+
+When executing an approved plan from `team-kit-create`, the run boots from a **sealed contract on
+disk** — it does NOT inherit create's conversation context:
+
+```
+prompt.md  requirements.md  design.md  team-plan.md  team-scope.json  definition-of-done.md
+```
+
+- **Fresh orchestrator, disk-only.** Read these files; do not rely on planning-chat memory.
+  Completeness test: *could a zero-memory agent execute from the contract alone?* If not, the gap
+  lives only in create's head — it should have been written to disk before the seal (team-kit-create
+  Step 7 gate).
+- **`definition-of-done.md` is the stop condition.** All `blocking` AC PASS + mechanical gates green
+  ⇒ done — NOT an iteration counter. The validate (N+2) stage grades the contract's AC; the
+  `build-state.md` ledger tracks them (below).
+- **Pass the ABSOLUTE session path** to every `agent()` (`team-session/` is a symlink — relative
+  paths fail from a workflow agent's cwd).
+- **The contract is generator-immune.** Coders may NEVER edit `definition-of-done.md` or weaken a
+  gate to pass it (gate-gaming guard, finalize stage).
+- **Workflow can't render.** A blocking SEMANTIC AC whose evidence is a screenshot / running UI the
+  custom-agentType sandbox can't produce (no MCP, no browser) is routed to the human-gated checklist
+  as `NEEDS_HUMAN_EVIDENCE` — never silently passed, never auto-failed.
+
 ## Procedure (orchestrator)
 
 1. **Triage the task** against the rules: which parts are read-only (parallel-safe), which are source-writes (serialize/propose-apply), which are prod (gate out).
 2. **Seed team-session** (optional but preferred for traceability): `mkdir team-session/{YYYYMMDD-slug}/`; write `prompt.md` (raw task). Pass the absolute session path into agents.
 3. **Author the workflow** by composing the stage templates below. Use `phase()` per stage; set `opts.phase` inside `parallel`/`pipeline`. Heavy stages return FREE TEXT + a disk artifact + a `STATUS:` line (rule 9); reserve `schema:` for LIGHT stages.
 4. **Launch** via the `Workflow` tool (background). **Capture the launch's `WorkflowOutput.runId`.** For multi-gate work, run ONLY up to the next human gate, present, then launch the next run — and pass the prior `runId` as `resumeFromRunId` **AND re-pass the SAME `args`** on that next launch so already-completed, unchanged `agent()` calls return cached instead of re-running (rule 6 + sub-note + resume-args contract). Dropping `args` on resume re-renders every prompt → full silent cache miss + `/repo/undefined*` writes (reliability-9). Same-session-only. The reject→re-dispatch review loop is the prime beneficiary: thread the prior `runId` (with identical `args`) so only the changed implement/review stage re-runs, not the whole pipeline.
-5. **Report**: relay the structured result + team-session artifact paths. Return the prod-gated checklist for the user to run manually.
+5. **Update the build-state ledger + report**: write/refresh `<session>build-state.md` keyed on AC ids (pending/passed/failed/needs-human + grader + verdict), rolled up from the finalize+validate artifacts — the orchestrator's externalized memory (re-read it each gate; don't trust recollection). Relay the structured result + team-session artifact paths. Return the prod-gated checklist — incl. any blocking SEMANTIC AC marked `NEEDS_HUMAN_EVIDENCE` — for the user to run manually. The run is DONE only when every blocking AC reads `passed`.
 
 ## Entry-mode-1 — committed spine (native author → lint → save)
 
@@ -348,13 +374,23 @@ if (!ok(status)) return { stage: 'review', attempts: attempt, blocked: true, fee
 // tryAgent-wrapped (rule 11): a thrown verifier (stall/rate-limit/subprocess) → ERRORS_REMAINING text, not a run abort.
 const verify = await tryAgent('finalize',
   `Run lint/types/knip/test on the changed packages (git diff → pnpm -F filters). knip-skeptical. ` +
+  `GATE-GAMING GUARD: scan the git diff for NEW eslint-disable / @ts-expect-error / @ts-ignore / knip-ignore / ` +
+  `.skip()ed tests / weakened-or-loosened types — a gate that passes ONLY via a new suppression is a FAILED gate, ` +
+  `not a pass. Flag any edit to definition-of-done.md / requirements.md / team-plan.md (writers may not touch the contract). ` +
   `Write <session>verifier/results.md; END with a STATUS line and a one-line "failedGates:" list.`,
   // model:'sonnet' — finalize is a mechanical gate (rule 13). Reserve inherited opus for implement/design.
   { label: 'finalize', phase: 'Finalize', agentType: 'claude-plugin-pnpm:team-verifier', model: 'sonnet' })   // NO schema
 
-// VALIDATE (N+2) — automatable AC. FREE TEXT → <session>validation-report.md + STATUS. (Verifier runs the commands.)
+// VALIDATE (N+2) — grade the CONTRACT's AC. Reads <session>definition-of-done.md, grades each blocking AC and
+// writes per-AC PASS/FAIL to <session>validation-report.md (orchestrator rolls these into build-state.md). The
+// blocking AC are the STOP CONDITION — CLEAN only if every blocking AC is PASS. Workflow can't render: a blocking
+// SEMANTIC AC needing screenshots/a running UI → NEEDS_HUMAN_EVIDENCE (NOT pass, NOT fail) → human-gated checklist.
 // tryAgent-wrapped (rule 11): on throw → ERRORS_REMAINING text → orchestrator routes to the human gate.
-const validate = await tryAgent('validate', `Verify automatable acceptance criteria with commands; write <session>validation-report.md; END with STATUS.`,
+const validate = await tryAgent('validate',
+  `Read <session>definition-of-done.md. For each blocking AC: kind=deterministic → run its verify command, record ` +
+  `PASS/FAIL + evidence; kind=semantic needing rendered evidence you cannot produce → record NEEDS_HUMAN_EVIDENCE ` +
+  `(do NOT pass or fail it). Write per-AC results to <session>validation-report.md; END with STATUS ` +
+  `(CLEAN only if every blocking AC is PASS; PARTIAL if any NEEDS_HUMAN_EVIDENCE; ERRORS_REMAINING if any FAIL).`,
   // model:'sonnet' — validate is a mechanical gate (rule 13). Reserve inherited opus for implement/design.
   { label: 'validate', phase: 'Validate', agentType: 'claude-plugin-pnpm:team-verifier', model: 'sonnet' })   // NO schema
 
@@ -366,7 +402,8 @@ const validate = await tryAgent('validate', `Verify automatable acceptance crite
 
 - Structured result returned to the orchestrator (relay what matters).
 - `team-session/{slug}/` artifacts: `prompt.md`, `research/*.md`, plan/review/verify outputs.
-- A **human-gated checklist** of prod/irreversible items the workflow did NOT run.
+- A **human-gated checklist** of prod/irreversible items the workflow did NOT run — plus any blocking SEMANTIC AC marked `NEEDS_HUMAN_EVIDENCE` (render-required, workflow can't produce).
+- `<session>build-state.md` — the AC ledger (every blocking AC → pending/passed/failed/needs-human + grader + verdict). The run is DONE only when every blocking AC reads `passed` and mechanical gates are green.
 
 ## Reproducibility tiers
 

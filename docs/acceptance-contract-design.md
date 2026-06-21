@@ -107,8 +107,10 @@ disk-backed, mirroring `team-designer` (which has 5 phases). One agent owns the 
 - STATUS contract: `STATUS: CLEAN` (plan faithfully encodes goal) | `STATUS: ERRORS_REMAINING`
   (gaps listed → back to planner) | `STATUS: BLOCKED` (needs human judgment → escalate).
 
-Tools: `Read, Glob, Grep, Write, Skill` (+ knowledge MCP for `define`). **No `Edit`** — it
-grades, it does not fix. Review-only, like `team-plan-reviewer` / `team-reviewer`.
+Tools: `Read, Glob, Grep, Bash, Write, Skill` (+ knowledge MCP, used in `define` only). **No
+`Edit`** — it grades, it does not fix. Review-only, same toolset as `team-plan-reviewer`. The
+`audit` phase's blindness (reads only prompt + DoD + plan) is enforced by the dispatch prompt, not
+by withholding tools.
 
 > Maker/checker note: the auditor authors the AC then audits the *plan* (authored by
 > `team-planner`) — it never grades its own artifact, and the audit is anchored to `prompt.md`,
@@ -229,10 +231,10 @@ Bounds (asymmetric — plans are cheap to fix, code is not):
 **Modified**
 - `skills/team-kit-create/SKILL.md` — insert Steps 4d/4e; tighten Step 7 handoff gate (§6,§7)
 - `skills/team-kit-run/SKILL.md` — boot-from-contract rule; AC-parameterized verify/validate;
-  build-state ledger; impl-vs-goal reiteration loop; gate-gaming guard (§8,§9,§11)
-- `team-templates/SCHEMA-CATALOG.md` — add `definition-of-done` + `goal-audit-verdict` schemas
+  build-state ledger; gate-gaming guard (§8,§9). [impl-vs-goal reiteration loop = Phase 3, §11]
+- `team-templates/SCHEMA-CATALOG.md` — add `definition-of-done` + `goal-audit-verdict` schemas *(Phase 4 — deferred)*
 - `team-templates/SESSION-SCHEMA.md` — add `definition-of-done.md` + `build-state.md` to layout
-- `team-templates/FRAMEWORK.md` — document context-firebreak principle + handoff gate + cap
+- `team-templates/FRAMEWORK.md` — document context-firebreak principle + handoff gate + cap *(Phase 4 — deferred)*
 - `CLAUDE.md` (package) — add `team-goal-auditor` to roster; note new phases
 - `docs/teamkit-methodology.md` — ADR entry for this change
 
@@ -259,7 +261,7 @@ Bounds (asymmetric — plans are cheap to fix, code is not):
    Matches the existing `team-designer` multi-phase pattern; avoids roster bloat. (If a purist
    split is ever wanted, the `define` phase splits out cleanly later — non-breaking.)
 3. **`definition-of-done.md` at session root** (canonical contract, peer to `requirements.md` /
-   `team-plan.md`). Agent scratch (`goal-audit.md`) under `team-goal-auditor/`.
+   `team-plan.md`). Agent scratch (`goal-audit.md`) under `goal-auditor/` (`team-` prefix stripped).
 4. **Caps asymmetric: plan-vs-goal = 2, impl-vs-goal = 3** (see §11 rationale).
 5. **Semantic-AC grader = `team-goal-auditor(audit)`.** It is goal-anchored and already does
    disprove-own-finding; `team-reviewer` stays focused on code quality. Deterministic AC →
@@ -283,3 +285,25 @@ caught no-op stub gates + the SearchBar no-op, added the generator-immune guard 
   new Rule 6 in `DEFINITION-OF-DONE.md`, a self-check bullet in `team-goal-auditor` define phase,
   and a new row in the Step-7 handoff gate. (Maker missed it, checker caught it — working as
   designed; now the maker self-checks and the gate backstops.)
+
+## 16. Phase 2 — run consumption (built)
+
+`team-kit-run` now consumes the sealed contract (§8/§9 realized):
+
+- **Context firebreak.** New "Sealed contract + context firebreak" section: run boots from
+  `{prompt, requirements, design, team-plan, team-scope, definition-of-done}` on disk, does NOT
+  inherit create's context; absolute session paths; completeness test stated.
+- **AC = stop condition.** VALIDATE (N+2) stage now reads `definition-of-done.md` and grades each
+  blocking AC (deterministic by command); CLEAN only when every blocking AC PASS.
+- **Workflow-can't-render reality.** Blocking semantic AC needing rendered evidence → routed to the
+  human-gated checklist as `NEEDS_HUMAN_EVIDENCE` (sandbox has no browser/MCP) — honest, not faked.
+- **build-state.md ledger.** Orchestrator's externalized memory keyed on AC ids; rolled up from
+  validate+verifier artifacts; re-read each gate. Added to SESSION-SCHEMA (layout, reads/writes,
+  phase gate, template).
+- **Gate-gaming guard.** FINALIZE + `team-verifier` now scan the diff for new suppressions
+  (`eslint-disable`/`@ts-expect-error`/knip-ignore/`.skip()`/weakened types) and flag any edit to
+  the contract files — a gate passing only via a new suppression is FAILED. Contract is immutable to
+  writers (write-model note).
+
+Still deferred: **Phase 3** (impl-vs-goal reiteration loop — the execution-end adversarial cycle
+that grades built code against the contract, reusing the cap-bounded pattern).
