@@ -1,3 +1,9 @@
+## 0.5.0
+
+### Minor Changes
+
+- 18e4d8b: Add acceptance-contract goal-fidelity gate to team-kit planning. New `team-goal-auditor` agent (define + adversarial audit phases), `team-kit-acceptance` dispatch skill, and `definition-of-done.md` contract authored after planning and audited against the original prompt before handoff to execution. Wires Steps 4d/4e into `team-kit-create`, tightens the Step 7 handoff gate (sealed-contract validation + context firebreak), and extends SESSION-SCHEMA + CLAUDE.md roster. Hardening from a real dry-run: absolute session paths (symlink-safe dispatch) and a semantic-AC producible-evidence rule.
+
 ## 0.4.0
 
 ### Minor Changes
