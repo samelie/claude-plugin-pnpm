@@ -30,7 +30,12 @@ team-session/{team-name}/
 ├── design.md                ← team-planner (reads requirements.md + refine.md)
 ├── team-plan.md             ← team-planner (reads requirements.md + refine.md)
 ├── team-scope.json          ← team-planner (hook config)
+├── definition-of-done.md    ← team-goal-auditor (define phase, acceptance contract — the stop condition)
 ├── plan-review.md           ← team-plan-reviewer
+│
+├── [ACCEPTANCE - goal-fidelity gate at the plan→execution seam]
+├── goal-auditor/
+│   └── goal-audit.md        ← team-goal-auditor (audit phase, plan-vs-goal verdict)
 │
 ├── [RESEARCH - subfolders by agent name]
 ├── researcher/
@@ -120,6 +125,8 @@ When same agent type runs multiple times:
 | team-designer (refine) | `requirements.md`, `researcher/findings.md`, `prompt.md` | `designer/refine.md` + updates `requirements.md` |
 | team-planner | `requirements.md`, `researcher/findings.md`, `designer/refine.md` | `design.md`, `team-plan.md` (root) |
 | team-plan-reviewer | `requirements.md`, `design.md`, `team-plan.md` | `plan-review.md` (root) |
+| team-goal-auditor (define) | `prompt.md`, `requirements.md`, `team-plan.md` | `definition-of-done.md` (root) |
+| team-goal-auditor (audit) | `prompt.md`, `definition-of-done.md`, `team-plan.md` (fresh context) | `goal-auditor/goal-audit.md` |
 | team-architect | `design.md`, `team-plan.md` | `architect/brief.md` |
 | team-coder | `design.md`, `team-plan.md`, `architect/brief.md` | `coder-{name}/progress.md` |
 | team-spec-reviewer | `requirements.md`, coder output | `spec-reviewer/spec-review-{task-id}.md` |
@@ -135,6 +142,7 @@ When same agent type runs multiple times:
 |-------------|----------------|
 | Prompt | `prompt.md` |
 | Planning | `requirements.md`, `design.md`, `team-plan.md`, `plan-review.md` |
+| Acceptance | `definition-of-done.md`, `goal-auditor/goal-audit.md` |
 | Research | `researcher/findings.md` |
 | Refine | `designer/refine.md`, updated `requirements.md` |
 | Implementation | `coder-*/progress.md` for each assigned coder |
@@ -287,6 +295,42 @@ STATUS: CLEAN | PARTIAL | ERRORS_REMAINING: N
 ## Open Questions
 
 STATUS: CLEAN | PARTIAL | ERRORS_REMAINING: N
+```
+
+### definition-of-done.md (team-goal-auditor)
+
+Full schema + example: `${CLAUDE_PLUGIN_ROOT}/team-templates/DEFINITION-OF-DONE.md`
+
+```markdown
+# Definition of Done: {Feature Name}
+
+Created: {date}
+Author: team-goal-auditor (define phase)
+Anchored to: prompt.md  ·  Derived from: requirements.md + team-plan.md
+
+## Acceptance Criteria
+
+| id | statement | maps_to | kind | verify | blocking |
+|----|-----------|---------|------|--------|----------|
+| AC-1 | ... | T-1 | deterministic | `pnpm -F pkg test` → exit0 | true |
+| AC-2 | ... | T-2,T-3 | semantic | team-goal-auditor(audit) grades rubric | true |
+
+STATUS: CLEAN | PARTIAL | ERRORS_REMAINING: N
+```
+
+### goal-audit.md (team-goal-auditor)
+
+```markdown
+# Goal Audit: {team-name}
+
+Auditor: team-goal-auditor (audit phase) — fresh context (prompt + DoD + team-plan only)
+
+## Verdict: ✅ CLEAN | ❌ GAPS FOUND
+## Goal Coverage (table: goal element → AC → task → status)
+## Findings (survived self-refutation)
+## Recommendation
+
+STATUS: CLEAN | ERRORS_REMAINING: N | BLOCKED
 ```
 
 ## Using This Schema

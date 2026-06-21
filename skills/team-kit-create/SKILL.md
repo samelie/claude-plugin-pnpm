@@ -44,7 +44,7 @@ Designer owns: research, question generation, approach exploration, requirements
 ## Pipeline
 
 ```
-[problem] → persist prompt → clarify loop → explore → present loop → write → research → REFINE loop → plan → review → file gate → /team-kit-run (execute)
+[problem] → persist prompt → clarify loop → explore → present loop → write → research → REFINE loop → plan → acceptance → goal-audit loop → review → file gate → /team-kit-run (execute)
 ```
 
 ```dot
@@ -69,6 +69,9 @@ digraph team_kit_create {
   "Dispatch designer(refine)" [shape=box];
   "More insights?" [shape=diamond];
   "Dispatch planner" [shape=box];
+  "Dispatch goal-auditor(define)" [shape=box];
+  "Dispatch goal-auditor(audit)" [shape=box];
+  "Plan satisfies goal?" [shape=diamond];
   "Invoke team-kit-present" [shape=box];
   "Design approved?" [shape=diamond];
   "Invoke team-kit-review" [shape=box];
@@ -101,7 +104,11 @@ digraph team_kit_create {
   "Dispatch designer(refine)" -> "More insights?";
   "More insights?" -> "Dispatch designer(refine)" [label="yes"];
   "More insights?" -> "Dispatch planner" [label="no"];
-  "Dispatch planner" -> "Invoke team-kit-present";
+  "Dispatch planner" -> "Dispatch goal-auditor(define)";
+  "Dispatch goal-auditor(define)" -> "Dispatch goal-auditor(audit)";
+  "Dispatch goal-auditor(audit)" -> "Plan satisfies goal?";
+  "Plan satisfies goal?" -> "Dispatch planner" [label="gaps (cap 2)"];
+  "Plan satisfies goal?" -> "Invoke team-kit-present" [label="clean"];
   "Invoke team-kit-present" -> "Design approved?";
   "Design approved?" -> "Invoke team-kit-present" [label="no, revise"];
   "Design approved?" -> "Invoke team-kit-review" [label="yes"];
@@ -146,10 +153,18 @@ Stop until enabled.
 **Before any triage or dispatch**, save the raw user request to disk. This is the source of truth for original intent — the refine phase references it to prevent scope drift.
 
 ```javascript
-const session_path = `team-session/${team_name}/`
+// session_path MUST be absolute — `team-session/` is a symlink (session hook), and a relative
+// path fails to resolve from a dispatched subagent's cwd (silent false BLOCKED).
+const repo_root = /* `git rev-parse --show-toplevel` */
+const session_path = `${repo_root}/team-session/${team_name}/`
 // mkdir -p ${session_path}
 // Write prompt.md with the raw user request
 ```
+
+> **Absolute session paths (required).** Every dispatch passes this ABSOLUTE `session_path`.
+> `team-session/` is a symlink to a temp dir; relative paths resolve only from repo root, so a
+> subagent running from another cwd (e.g. a plugin dir) silently fails to find session files and
+> may return a false `BLOCKED`. Always pass the absolute path. (Surfaced by a real dry-run.)
 
 **File format** (`prompt.md`):
 ```markdown
@@ -551,6 +566,73 @@ Planner produces:
 
 ---
 
+## Step 4d: Author Acceptance Contract (invoke team-kit-acceptance)
+
+After the planner returns, turn requirements + plan into a checkable **acceptance contract** —
+the keystone the whole pipeline converges on. **Follow `team-kit-acceptance` skill.**
+
+```javascript
+Agent({
+  subagent_type: "claude-plugin-pnpm:team-goal-auditor",
+  model: "opus",
+  description: "Author acceptance contract (definition-of-done)",
+  prompt: `
+Phase: define
+Session path: \`${session_path}\`
+
+Read \`${session_path}prompt.md\`, \`${session_path}requirements.md\`, \`${session_path}team-plan.md\`.
+Author \`${session_path}definition-of-done.md\` — checkable acceptance criteria, anchored to
+prompt.md (the goal, not the plan). Coverage both directions: every deliverable ≥1 AC; every AC
+maps_to ≥1 real task. Hybrid grading: mostly deterministic, at least ONE semantic.
+`
+})
+```
+
+Writes `definition-of-done.md` (root). If `STATUS: ERRORS_REMAINING` (a deliverable can't be made
+checkable) → route back to planner/designer to sharpen, then re-run define. Proceed to Step 4e.
+
+---
+
+## Step 4e: Plan-vs-Goal Audit (invoke team-kit-acceptance)
+
+Adversarial, fresh-context check that the plan + contract faithfully satisfy the **original**
+goal. Cheapest place to catch intent drift — fixing a plan is free vs. fixing built code.
+
+```javascript
+// Bounded loop, cap 2 (plans are cheap; persistent gaps = the goal needs a human decision)
+let attempt = 0;
+while (attempt < 2) {
+  const result = Agent({
+    subagent_type: "claude-plugin-pnpm:team-goal-auditor",
+    model: "opus",
+    description: "Adversarial plan-vs-goal audit",
+    prompt: `
+Phase: audit
+Session path: \`${session_path}\`
+
+FRESH CONTEXT. Read ONLY: \`${session_path}prompt.md\`, \`${session_path}definition-of-done.md\`,
+\`${session_path}team-plan.md\`. Do NOT read clarify/explore/refine history or any agent reasoning.
+Does plan + DoD faithfully satisfy the original goal? Find gaps / drift / scope-creep / weak AC.
+Disprove each finding before reporting. Write \`${session_path}goal-auditor/goal-audit.md\`.
+`
+  })
+
+  // STATUS: CLEAN     → break, proceed to Step 5
+  // STATUS: BLOCKED   → escalate to human (goal ambiguous); does NOT burn the cap
+  // STATUS: ERRORS_REMAINING → re-dispatch planner with goal-audit.md findings, attempt++
+  if (result includes 'STATUS: CLEAN') break;
+  if (result includes 'STATUS: BLOCKED') { /* escalate to human gate */ break; }
+  // re-dispatch team-planner with goal-audit.md findings (fix plan and/or DoD)
+  attempt++;
+}
+// not CLEAN after 2 → escalate to user: the goal itself likely needs a decision
+```
+
+**Exit condition**: `goal-audit.md` STATUS = CLEAN. The `definition-of-done.md` now travels with
+the contract into `/team-kit-run` as the execution stop condition. Proceed to Step 5.
+
+---
+
 ## Step 5: Present Design (invoke team-kit-present)
 
 After planner returns, present design section-by-section:
@@ -593,6 +675,24 @@ If issues found → fix or re-run planner → re-review.
 
 ## Step 7: File Review Gate + Handoff to /team-kit-run
 
+### 7-gate: Seal the contract (handoff validation)
+
+Before the human file review, validate the sealed contract — mostly mechanical:
+
+| Check | Catches |
+|-------|---------|
+| every `team-plan.md` task maps to ≥1 AC in `definition-of-done.md` | orphan work (building unasked things) |
+| every AC `maps_to` ≥1 task | unaddressed goal (the dangerous direction) |
+| every AC has a `verify` method (command or grader agent) | un-checkable "done" |
+| every blocking **semantic** AC has a producible evidence artifact (a task writes it to a known path) | ungradeable "done" (semantic AC with no input) |
+| `goal-auditor/goal-audit.md` STATUS = CLEAN | intent drift vs `prompt.md` |
+| `team-scope.json` file globs disjoint | parallel write collisions |
+
+Any check fails → fix (re-dispatch planner or goal-auditor) before proceeding. These files are
+the contract `/team-kit-run` boots from: a **fresh** orchestrator with zero planning context must
+be able to execute from them alone. If it can't, something lives only in the lead's head — write
+it down before sealing.
+
 ### 7a: User file review
 
 Before handoff, ask user to review actual files:
@@ -600,6 +700,7 @@ Before handoff, ask user to review actual files:
 > "Plan complete. Please review these files before execution:
 > - `team-session/{team-name}/design.md` — architecture summary
 > - `team-session/{team-name}/team-plan.md` — full execution plan
+> - `team-session/{team-name}/definition-of-done.md` — acceptance contract (the execution stop condition)
 > - `team-session/{team-name}/plan.workflow.js` — committed spine, authored + linted + saved by `/team-kit-run` mode-1 from team-plan.md (not produced at plan time)
 >
 > Let me know if you want any changes."
@@ -645,6 +746,8 @@ Lead orchestrates, does NOT implement. Lead dispatches:
 | `team-researcher` | Deep context via CocoIndex + claude-mem + code | Step 4a (background) | `researcher/findings.md` |
 | `team-designer` (refine) | Grill user with research insights, sharpen requirements | Step 4b (loop, after researcher) | `designer/refine.md` + updates `requirements.md` |
 | `team-planner` | Generate design.md + team-plan.md | Step 4c (after refine) | `design.md`, `team-plan.md` |
+| `team-goal-auditor` (define) | Author acceptance contract from requirements + plan | Step 4d (after planner) | `definition-of-done.md` |
+| `team-goal-auditor` (audit) | Adversarial plan-vs-goal check (fresh context) | Step 4e (loop, cap 2) | `goal-auditor/goal-audit.md` |
 
 Lead owns:
 - User communication (presenting questions, getting approvals)
@@ -680,6 +783,11 @@ designer/refine.md     ← designer(refine) writes, each invocation appends
 requirements.md        ← enriched by refine phase (traceable changes)
     ↓ reads requirements.md + findings.md + refine.md
 design.md + team-plan.md ← team-planner writes
+    ↓ reads prompt.md + requirements.md + team-plan.md
+definition-of-done.md  ← team-goal-auditor(define) writes (root, canonical acceptance contract)
+    ↓ reads prompt.md + definition-of-done.md + team-plan.md (fresh context, blind to planning history)
+goal-auditor/goal-audit.md ← team-goal-auditor(audit) writes; gaps loop back to planner (cap 2)
+    ↓ contract sealed after audit CLEAN + Step 7 handoff gate
     ↓ /team-kit-run mode-1 AUTHORS (native) → lints (advisory) → saves — team-plan.md is canonical
 plan.workflow.js       ← authored, linted, saved build artifact; re-author on team-plan.md change
 ```
@@ -707,6 +815,7 @@ Handoff data shapes between workflow stages: `team-templates/SCHEMA-CATALOG.md` 
 | `team-kit-run` | **EXECUTOR** — runs the approved plan: mode-1 authors `plan.workflow.js` from `team-plan.md` (native), lints + saves it, then executes (or mode-2 ad-hoc). create=PLAN, run=EXECUTE. The Step 7 handoff target. |
 | `team-kit-clarify` | Dispatch guide for designer(phase: clarify) loop |
 | `team-kit-explore` | Dispatch guide for designer(phase: explore) |
+| `team-kit-acceptance` | Dispatch guide for goal-auditor(define) + goal-auditor(audit) — Steps 4d/4e |
 | `team-kit-present` | Invoked in Step 5 for planner output approval (design.md sections) |
 | `team-kit-review` | Invoked in Step 6 for post-plan review |
 | `investigation-methodology` | Used by designer and researcher for codebase exploration |
@@ -720,6 +829,7 @@ Handoff data shapes between workflow stages: `team-templates/SCHEMA-CATALOG.md` 
 | `team-designer` | clarify, explore, present, write, refine | `designer/*.md`, `requirements.md` | Steps 2c, 3, 3b, 3c, 4b |
 | `team-planner` | — | `design.md`, `team-plan.md` | Step 4c (reads requirements.md + refine.md) |
 | `team-researcher` | — | `researcher/findings.md` | Step 4a (background, reads requirements.md) |
+| `team-goal-auditor` | define, audit | `definition-of-done.md`, `goal-auditor/goal-audit.md` | Steps 4d/4e (after planner) |
 | `team-architect` | — | `architect/brief.md` | Mid-execution only (NOT initial planning) |
 
 ## Human Language → Phase Transitions
@@ -739,6 +849,7 @@ The lead (orchestrator) listens for natural language cues to progress through ph
 | "dig deeper into X" / "explore Y more" | Designer investigates X/Y specifically in next round |
 | "good enough" / "plan it" / "let's plan" / "move to planning" | Exit refine loop → dispatch planner |
 | "skip refine" / "straight to planning" | Skip refine entirely → dispatch planner |
+| (after planner, automatic) | Lead runs acceptance (define DoD) + goal-audit loop; surfaces to you only on BLOCKED or cap-2 gaps |
 | (during present design) "approved" | Approve design section → next |
 | "ship it" / "spawn" / "execute" / "start the team" / "run it" | File-review gate → hand off to `/team-kit-run` |
 

@@ -22,6 +22,7 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 | `team-kit-run` | Executor — run a task as a native-workflow multi-agent run over the role agents (EXECUTE). Single-branch, prod-safe. See `docs/teamkit-methodology.md` |
 | `team-kit-clarify` | Requirements extraction — one question at a time |
 | `team-kit-explore` | Approach exploration — propose 2-3 options with tradeoffs |
+| `team-kit-acceptance` | Acceptance contract — author `definition-of-done.md` + adversarial plan-vs-goal audit (Steps 4d/4e) |
 | `team-kit-present` | Section-by-section design approval |
 | `team-kit-review` | Post-plan review checklist |
 | `debug-session` | Root cause investigation methodology — single-agent or team escalation |
@@ -44,7 +45,7 @@ Deterministic spans that SHOULD auto-author a workflow under ultracode: migratio
 ### Artifact Chain (all disk-backed)
 
 ```
-prompt.md → designer/clarify.md → designer/explore.md → designer/present.md → requirements.md → researcher/findings.md → designer/refine.md (updates requirements.md) → design.md + team-plan.md
+prompt.md → designer/clarify.md → designer/explore.md → designer/present.md → requirements.md → researcher/findings.md → designer/refine.md (updates requirements.md) → design.md + team-plan.md → definition-of-done.md → goal-auditor/goal-audit.md
 ```
 
 Each phase reads previous phase's file from `team-session/{team-name}/`. No in-memory-only state. `prompt.md` persists the raw user request at session start — never modified, referenced for intent drift.
@@ -59,6 +60,8 @@ Each phase reads previous phase's file from `team-session/{team-name}/`. No in-m
 | 2. Research | `team-researcher` | `requirements.md` | `researcher/findings.md` | Deep codebase context |
 | 3. Refine | `team-designer` (refine) | `requirements.md`, `findings.md`, `prompt.md` | `designer/refine.md` + updates `requirements.md` | Research-informed grilling, sharpen requirements |
 | 4. Design + Plan | `team-planner` | `requirements.md`, `findings.md`, `refine.md` | `design.md`, `team-plan.md` | HOW + TASKS |
+| 4b. Acceptance | `team-goal-auditor` (define) | `prompt.md`, `requirements.md`, `team-plan.md` | `definition-of-done.md` | Author acceptance contract |
+| 4c. Goal-audit | `team-goal-auditor` (audit) | `prompt.md`, `definition-of-done.md`, `team-plan.md` | `goal-auditor/goal-audit.md` | Adversarial plan-vs-goal (cap 2) |
 | 5. Review | `team-plan-reviewer` | `requirements.md`, `design.md`, `team-plan.md` | `plan-review.md` | Completeness, consistency |
 
 ### Planning phase (used by team-kit-create skill)
@@ -69,6 +72,7 @@ Each phase reads previous phase's file from `team-session/{team-name}/`. No in-m
 | `team-planner` | `claude-plugin-pnpm:team-planner` | Design + planning — reads `requirements.md`, produces `design.md` (HOW) + `team-plan.md` (TASKS). |
 | `team-researcher` | `claude-plugin-pnpm:team-researcher` | Read-only investigation via CocoIndex + claude-mem + code. Reads `requirements.md` for context. |
 | `team-plan-reviewer` | `claude-plugin-pnpm:team-plan-reviewer` | Plan critic — reviews `requirements.md` + `design.md` + `team-plan.md` with fresh context. |
+| `team-goal-auditor` | `claude-plugin-pnpm:team-goal-auditor` | Acceptance contract owner. 2 phases: `define` (author `definition-of-done.md` from requirements + plan, anchored to `prompt.md`) → `audit` (adversarial plan-vs-goal, fresh context, disprove-own-finding, cap 2). Distinct from `team-auditor` (post-impl `[AUDIT]` logging). |
 
 ### Execution phase (dispatched by team lead)
 
