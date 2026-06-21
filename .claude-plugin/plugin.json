@@ -11,6 +11,7 @@
     "./agents/team-planner.md",
     "./agents/quarterback.md",
     "./agents/team-plan-reviewer.md",
+    "./agents/team-goal-auditor.md",
     "./agents/pnpm-workspace-filter.md",
     "./agents/researcher.md",
     "./agents/team-architect.md",
