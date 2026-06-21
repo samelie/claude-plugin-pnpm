@@ -42,7 +42,7 @@ disprove-own-finding required. Return `{ pass, evidence: "file:line", refutation
 | token rejection | AC-1 | T-2 |
 | audit logging | AC-4 | T-2 |
 
-STATUS: CLEAN | PARTIAL | ERRORS_REMAINING: N
+STATUS: CLEAN | ERRORS_REMAINING: N
 ```
 
 ## Field Reference

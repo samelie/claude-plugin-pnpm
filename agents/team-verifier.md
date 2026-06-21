@@ -31,6 +31,15 @@ Use this path for ALL read/write operations. If missing, ask lead for clarificat
    - **Knip** — Run knip on affected packages. **Be extremely skeptical of knip results** (see Knip section below).
    - **Tests** — Run tests on affected packages. Report failures with test name and error.
 4. **Write results** — Use the `write-findings` skill to write to `team-session/{your-name}/`
+5. **Grade the acceptance contract** (if `{session_path}definition-of-done.md` exists) — for each
+   blocking AC: `deterministic` → run its `verify` command, record PASS/FAIL + evidence;
+   `semantic` needing rendered evidence you CANNOT produce (screenshot / running UI — you have no
+   browser or MCP) → record `NEEDS_HUMAN_EVIDENCE` (do NOT pass or fail). Write per-AC results to
+   `{session_path}validation-report.md` (the orchestrator rolls these into `build-state.md`).
+6. **Gate-gaming guard** — scan the `git diff` for NEW `eslint-disable`, `@ts-expect-error`,
+   `@ts-ignore`, knip-ignores, `.skip()`ed tests, or weakened/loosened types. A gate that passes
+   ONLY via a new suppression is a **FAILED** gate, not a pass. Flag any edit to
+   `definition-of-done.md` / `requirements.md` / `team-plan.md` — writers may not touch the contract.
 
 ## Syntax-checking saved/emitted workflows
 
@@ -77,3 +86,7 @@ You MUST end your final message with exactly one of:
 - `STATUS: CLEAN` — all checks pass, no errors
 - `STATUS: PARTIAL` — some checks ran but not all (explain what was skipped)
 - `STATUS: ERRORS_REMAINING: <count>` — <count> errors found across all checks
+
+When grading the acceptance contract: `STATUS: CLEAN` requires EVERY blocking AC = PASS (none
+outstanding) AND no gamed gates. Any blocking AC `NEEDS_HUMAN_EVIDENCE` → `STATUS: PARTIAL` (route
+to human gate). Any failed or gamed gate → `STATUS: ERRORS_REMAINING: <count>`.
