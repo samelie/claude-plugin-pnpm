@@ -33,6 +33,9 @@ node -e "console.log('context-mode:', require('$HOME/.claude/plugins/marketplace
 node -e "console.log('claude-mem:', require('$HOME/.claude/plugins/marketplaces/thedotmack/package.json').version)" 2>/dev/null || echo "claude-mem: not installed"
 node -e "console.log('caveman:', require('$HOME/.claude/plugins/marketplaces/caveman/package.json').version)" 2>/dev/null || echo "caveman: not installed"
 
+# Truth source — package.json can lag (caveman stays 0.1.0 even at latest; upstream tags by git hash):
+claude plugin list 2>/dev/null | grep -iE "context-mode|claude-mem|caveman"
+
 # Cocoindex — no --version flag; use uv tool list
 uv tool list 2>/dev/null | grep cocoindex-code || echo "cocoindex-code: not installed"
 
@@ -52,7 +55,21 @@ gh release view --repo rtk-ai/rtk --json tagName -q .tagName
 
 ## Force Update Plugins
 
-When marketplace update fails, force update by clearing cache + marketplace, then restart.
+**Preferred — `claude plugin update` (non-interactive, no `rm`, works in-session).** This is the
+clean upgrade path for ALL marketplace plugins. Restart afterward to apply.
+
+```bash
+claude plugin marketplace update                 # refresh all manifests (or name: thedotmack|caveman|context-mode)
+claude plugin update context-mode@context-mode
+claude plugin update claude-mem@thedotmack       # bypasses the broken interactive installer
+claude plugin update caveman@caveman             # bypasses the rm-rf policy block
+claude plugin list                               # verify (truth source; package.json can lag)
+```
+
+⚠️ **`rm -rf ~/.claude/plugins/...` is BLOCKED by the Bash security deny-pattern (`rm -rf:*`)** — the
+agent CANNOT run the cache/marketplace-clear flow below; it errors out. Use the CLI path above. The
+per-plugin sections that follow are **fallbacks** for a from-scratch reinstall when a plugin is broken
+or missing — and their `rm` steps must be run by a human via `!`.
 
 ### context-mode
 
@@ -74,12 +91,15 @@ Reinstall from scratch:
 
 ### claude-mem
 
-Easiest: upgrade via installer script:
+Easiest: `claude plugin update claude-mem@thedotmack` (CLI path above).
+
+⚠️ The installer script is **interactive** — it reads `/dev/tty` and FAILS headless when the agent
+runs it (`bash: /dev/tty: Device not configured`). Only works when a **human** runs it via `!`:
 ```bash
-curl -fsSL https://install.cmem.ai/openclaw.sh | bash -s -- --upgrade
+! curl -fsSL https://install.cmem.ai/openclaw.sh | bash -s -- --upgrade
 ```
 
-Manual fallback:
+Manual fallback (human-only — `rm -rf` is policy-blocked for the agent):
 ```bash
 rm -rf ~/.claude/plugins/cache/thedotmack/
 rm -rf ~/.claude/plugins/marketplaces/thedotmack/
@@ -94,47 +114,45 @@ Reinstall from scratch:
 
 ### caveman
 
-```bash
-rm -rf ~/.claude/plugins/cache/caveman/
-rm -rf ~/.claude/plugins/marketplaces/caveman/
-```
+Easiest: `claude plugin update caveman@caveman` (CLI path above), then verify cleanup (below).
 
-Reinstall from scratch:
+Reinstall from scratch (human-only — cache-clear `rm -rf` is policy-blocked for the agent):
 ```bash
+! rm -rf ~/.claude/plugins/cache/caveman/ ~/.claude/plugins/marketplaces/caveman/
 claude plugin marketplace add JuliusBrussee/caveman
 claude plugin install caveman@caveman
 ```
 
-**IMPORTANT: After any caveman install/update/restart, ALWAYS run the cleanup below.**
+**After any caveman install/update/restart, run the cleanup CHECK below.**
 
 ## Caveman Post-Install Cleanup
 
-Caveman ships bundled artifacts that conflict with our own definitions. **You MUST execute the cleanup script below** — do not just display it.
+**As of caveman 1.9.0 this is normally a NO-OP** — the new layout no longer ships the conflicting
+cavecrew agents/skill (verified Jun 2026: a fresh `claude plugin update caveman` leaves no
+`plugins/caveman/agents/` and no `cavecrew` dir).
 
-Conflicts:
-- **plugins/caveman/agents/** — cavecrew-builder, cavecrew-investigator, cavecrew-reviewer
-- **plugins/caveman/skills/cavecrew/** — cavecrew delegation skill
-- **.junie/skills/cavecrew/**, **.roo/skills/cavecrew/**, **.kiro/skills/cavecrew/** — IDE-specific copies
+⚠️ **Do NOT blind-delete dirs named `agents`.** The old `find -name "agents"` rule is WRONG for ≥1.9.0
+— the new skill ships a legit `skills/caveman/agents/openai.yaml` example that the rule would nuke.
+Conflicts are specifically the **cavecrew** skill + the 3 cavecrew agent files, nothing else.
 
-**EXECUTE this cleanup every time caveman is installed or updated:**
-
+**Detect first — only clean if real cavecrew artifacts exist:**
 ```bash
 CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman
 CAVEMAN_CACHE=~/.claude/plugins/cache/caveman
-
-rm -rf "$CAVEMAN_MKT/plugins/caveman/agents/" "$CAVEMAN_MKT/plugins/caveman/skills/cavecrew/" "$CAVEMAN_MKT/.agents/skills/cavecrew/" "$CAVEMAN_MKT/.junie/skills/cavecrew/" "$CAVEMAN_MKT/.roo/skills/cavecrew/" "$CAVEMAN_MKT/.kiro/skills/cavecrew/"
-for d in $(find "$CAVEMAN_CACHE" -type d \( -name "agents" -o -name "cavecrew" \) 2>/dev/null); do rm -rf "$d"; done
-
-echo "Caveman agents + cavecrew skill stripped."
+found=$( { ls -d "$CAVEMAN_MKT"/plugins/caveman/agents 2>/dev/null; \
+           find "$CAVEMAN_MKT" "$CAVEMAN_CACHE" -iname 'cavecrew' 2>/dev/null; } )
+if [ -z "$found" ]; then echo "✓ no cavecrew conflicts (caveman ≥1.9.0) — nothing to strip";
+else printf '⚠ stale cavecrew artifacts present:\n%s\n' "$found"; fi
 ```
 
-**Also run on session start if agents dir exists** (catches missed cleanups):
+If conflicts ARE found (old caveman), strip them. NOTE: `rm -rf` is policy-blocked for the agent —
+a **human** runs this via `!`:
 ```bash
-[ -d ~/.claude/plugins/marketplaces/caveman/plugins/caveman/agents ] && {
-  CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman
-  rm -rf "$CAVEMAN_MKT/plugins/caveman/agents/" "$CAVEMAN_MKT/plugins/caveman/skills/cavecrew/" "$CAVEMAN_MKT/.agents/skills/cavecrew/" "$CAVEMAN_MKT/.junie/skills/cavecrew/" "$CAVEMAN_MKT/.roo/skills/cavecrew/" "$CAVEMAN_MKT/.kiro/skills/cavecrew/"
-  echo "Caveman: late cleanup applied."
-}
+! CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman; CAVEMAN_CACHE=~/.claude/plugins/cache/caveman; \
+  rm -rf "$CAVEMAN_MKT"/plugins/caveman/agents/ "$CAVEMAN_MKT"/plugins/caveman/skills/cavecrew/ \
+         "$CAVEMAN_MKT"/.{agents,junie,roo,kiro}/skills/cavecrew/; \
+  find "$CAVEMAN_CACHE" -iname cavecrew -exec rm -rf {} + 2>/dev/null; \
+  echo "cavecrew artifacts stripped."
 ```
 
 ## Force Update Cocoindex
@@ -227,48 +245,34 @@ cargo install --git https://github.com/rtk-ai/rtk rtk
 
 ## Full Update Script
 
-Run all updates at once. **Two-phase**: clear caches + update CLIs, then restart, then strip agents.
-
-### Phase 1: Clear + Update (run before restart)
+Run all updates at once — **CLI-based, non-interactive, no `rm`** (the agent can run this directly).
+Restart at the end to apply plugin updates.
 
 ```bash
 #!/bin/bash
-set -e
+echo "=== Plugins (claude plugin update — no rm, no interactive installer) ==="
+claude plugin marketplace update
+for p in context-mode@context-mode claude-mem@thedotmack caveman@caveman; do
+  claude plugin update "$p" || echo "update $p failed"
+done
+# context-mode: if hooks break post-update, run /context-mode:ctx-upgrade (rebuilds + reconfigures hooks + doctor)
 
-echo "=== Clearing plugin caches ==="
-rm -rf ~/.claude/plugins/cache/context-mode/
-rm -rf ~/.claude/plugins/cache/thedotmack/
-rm -rf ~/.claude/plugins/cache/caveman/
-
-echo "=== Clearing marketplace installs ==="
-rm -rf ~/.claude/plugins/marketplaces/context-mode/
-rm -rf ~/.claude/plugins/marketplaces/thedotmack/
-rm -rf ~/.claude/plugins/marketplaces/caveman/
-
-echo "=== Updating cocoindex-code ==="
-uv tool install --upgrade 'cocoindex-code[full]' 2>/dev/null \
+echo "=== cocoindex-code (full = local-embedding deps) ==="
+uv tool install --upgrade 'cocoindex-code[full]' \
   || echo "Cocoindex update failed - try: uv tool install 'cocoindex-code[full]'"
-ccc daemon restart 2>/dev/null || true   # daemon caches old deps; must restart
+ccc daemon restart || true   # daemon caches old deps; must restart
 
-echo "=== Updating rtk ==="
-brew upgrade rtk 2>/dev/null || echo "rtk update failed - try: brew install rtk or curl install"
+echo "=== rtk ==="
+brew upgrade rtk || echo "rtk update failed - try: brew install rtk or curl install"
 
-echo "=== Done Phase 1 ==="
-echo "Now restart Claude Code, then run Phase 2 to strip caveman agents."
+claude plugin list           # verify plugin versions
+echo "=== Done. Restart Claude Code to apply plugin updates. ==="
+echo "Then run the Caveman cleanup CHECK — normally a no-op on caveman ≥1.9.0."
 ```
 
-### Phase 2: Caveman cleanup (MUST execute after restart)
-
-**EXECUTE this automatically** — do not wait for user to ask:
-
-```bash
-CAVEMAN_MKT=~/.claude/plugins/marketplaces/caveman
-CAVEMAN_CACHE=~/.claude/plugins/cache/caveman
-
-rm -rf "$CAVEMAN_MKT/plugins/caveman/agents/" "$CAVEMAN_MKT/plugins/caveman/skills/cavecrew/" "$CAVEMAN_MKT/.agents/skills/cavecrew/" "$CAVEMAN_MKT/.junie/skills/cavecrew/" "$CAVEMAN_MKT/.roo/skills/cavecrew/" "$CAVEMAN_MKT/.kiro/skills/cavecrew/"
-for d in $(find "$CAVEMAN_CACHE" -type d \( -name "agents" -o -name "cavecrew" \) 2>/dev/null); do rm -rf "$d"; done
-echo "Caveman agents + cavecrew skill stripped."
-```
+**After restart:** run the detect block under "Caveman Post-Install Cleanup". On caveman ≥1.9.0 it
+reports `✓ no cavecrew conflicts` and stops — no `rm` needed. Only if stale cavecrew artifacts are
+found does a human run the strip command via `!`.
 
 ## Troubleshooting
 
@@ -338,7 +342,7 @@ When updating this skill, fetch latest docs via context7 MCP to verify install/u
 | [claude-mem](https://context7.com/thedotmack/claude-mem) | `/thedotmack/claude-mem` | `install.cmem.ai --upgrade` |
 | [cocoindex-code](https://context7.com/cocoindex-io/cocoindex-code) | `/cocoindex-io/cocoindex-code` | `ccc doctor` for diagnostics |
 | [rtk](https://context7.com/rtk-ai/rtk) | `/rtk-ai/rtk` | `rtk gain` for savings analytics |
-| [caveman](https://context7.com/juliusbrussee/caveman) | `/juliusbrussee/caveman` | strip agents after every update |
+| [caveman](https://context7.com/juliusbrussee/caveman) | `/juliusbrussee/caveman` | `claude plugin update caveman@caveman`; cavecrew cleanup is a no-op since 1.9.0 — verify only |
 
 ```bash
 # Fetch latest install docs for all deps (use before updating this skill)
