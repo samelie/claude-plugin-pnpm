@@ -1,36 +1,36 @@
 #!/usr/bin/env bash
 # session-start - SessionStart hook for team
-# Preserves existing team-session directory/symlink if valid.
-# Creates new session in $TMPDIR only if none exists or symlink target expired.
-# Team subfolders (YYYYMMDD-{slug}) persist across CC sessions.
+# team-session/ is a PERSISTENT, untracked real directory at the repo root.
+# Team run subfolders (YYYYMMDD-{slug}) accumulate here and are KEPT FOREVER.
+# Never stored in $TMPDIR; never deleted on session start (records must survive).
 
-TMPBASE="${TMPDIR:-/tmp}"
-SESSION_DIR="${TMPBASE}/team-kit-session-$(date +%Y%m%d-%H%M%S)"
+SESSION_ROOT="team-session"
 
-# Preserve existing team-session if valid, else create new
-if [ -L team-session ]; then
-  # Symlink — verify target exists
-  if [ -d "$(readlink team-session)" ]; then
-    SESSION_DIR="$(readlink team-session)"
-  else
-    rm -f team-session
-    mkdir -p "$SESSION_DIR"
-    ln -s "$SESSION_DIR" team-session
+# One-time migration: legacy versions symlinked team-session/ into $TMPDIR
+# (where macOS purges it). Convert that symlink into a real dir, preserving
+# whatever survived in the temp target.
+if [ -L "$SESSION_ROOT" ]; then
+  LEGACY_TARGET="$(readlink "$SESSION_ROOT")"
+  rm -f "$SESSION_ROOT"
+  mkdir -p "$SESSION_ROOT"
+  if [ -d "$LEGACY_TARGET" ]; then
+    cp -R "$LEGACY_TARGET/." "$SESSION_ROOT/" 2>/dev/null || true
   fi
-elif [ -d team-session ]; then
-  # Real directory — use as-is
-  SESSION_DIR="$(pwd)/team-session"
-else
-  # No team-session — create new
-  mkdir -p "$SESSION_DIR"
-  ln -s "$SESSION_DIR" team-session
 fi
 
-# Update meta.json with current session start
-echo "{\"startedAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"tmpPath\": \"${SESSION_DIR}\"}" > "$SESSION_DIR/meta.json"
+# Ensure the persistent dir exists. NEVER delete an existing one.
+mkdir -p "$SESSION_ROOT"
+
+SESSION_DIR="$(pwd)/$SESSION_ROOT"
+NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+# Permanent append-only log of every CC session start.
+echo "{\"startedAt\": \"${NOW}\", \"path\": \"${SESSION_DIR}\"}" >> "$SESSION_DIR/_sessions.jsonl"
+# Latest-pointer meta.json (back-compat with readers that expect it).
+echo "{\"startedAt\": \"${NOW}\", \"path\": \"${SESSION_DIR}\"}" > "$SESSION_DIR/meta.json"
 
 # Build context
-BASE="Team session directory ready at team-session/ (backed by ${SESSION_DIR}). Use write-findings and read-findings skills to exchange data between agents."
+BASE="Team session directory ready at team-session/ (persistent untracked dir at ${SESSION_DIR}). Past team runs are kept here permanently. Use write-findings and read-findings skills to exchange data between agents."
 
 if [ -f .claude/team-domain.md ]; then
   DOMAIN_RAW=$(cat .claude/team-domain.md)

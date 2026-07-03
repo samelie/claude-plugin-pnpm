@@ -31,6 +31,8 @@ uv run gcs-archive <command>
 | `restore` | Pull file back from GCS | `uv run gcs-archive restore /path/to/file` |
 | `status` | Show archived files and total space saved | `uv run gcs-archive status` |
 | `verify` | Confirm archived files still exist in GCS | `uv run gcs-archive verify` |
+| `plan` | Preview what the archive-policy would additively push (read-only) | `uv run gcs-archive plan` |
+| `push` | Additively copy policy folders → archive bucket (keeps local, no stub/delete) | `uv run gcs-archive push` |
 
 ## Scan Options
 
@@ -49,6 +51,27 @@ uv run gcs-archive <command>
 1. **Archive flow**: verify file exists in GCS (or upload) → compute MD5 → create `.gcs-archived` pointer stub → delete original → record in SQLite manifest
 2. **Restore flow**: look up in manifest → download from GCS → remove stub
 3. **Stubs**: JSON pointer files (`filename.ext.gcs-archived`) left in place of archived files
+
+## Archive Push Policy (non-destructive, repeatable)
+
+`plan` / `push` are separate from offload (`archive`). They **additively copy** configured folders to the archive bucket and **keep local files** — no stub, no delete. Idempotent: re-run to send only new/changed files.
+
+- Committed config: `packages/gcs-archive/archive-policy.yaml` (schema: `archive-policy.schema.json`, editor-validated via `# yaml-language-server` header).
+- Each rule: `include` globs (relative to `source_root`), optional `exclude`, `min_size_mb`.
+- Implementation uses `rclone copy` ONLY — never `sync`/`move`/`delete`. The backup bucket (`mac-mini-drivehard-backup`) is rejected as a destination in `policy.py`.
+- `plan` = read-only preview; `push --dry-run` = same; `push` = perform copy; `push -r <rule>` = one rule.
+
+```yaml
+version: 1
+bucket: mac-mini-drivehard-archive
+source_root: /Volumes/DriveHard
+rules:
+  - name: pictures
+    enabled: true
+    include: ["Pictures/**"]
+    exclude: ["**/.DS_Store", "**/._*", "**/*.gcs-archived"]
+    min_size_mb: 0
+```
 
 ## Configuration
 

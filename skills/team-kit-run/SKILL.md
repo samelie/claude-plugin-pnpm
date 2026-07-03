@@ -139,8 +139,8 @@ prompt.md  requirements.md  design.md  team-plan.md  team-scope.json  definition
 - **`definition-of-done.md` is the stop condition.** All `blocking` AC PASS + mechanical gates green
   ⇒ done — NOT an iteration counter. The validate (N+2) stage grades the contract's AC; the
   `build-state.md` ledger tracks them (below).
-- **Pass the ABSOLUTE session path** to every `agent()` (`team-session/` is a symlink — relative
-  paths fail from a workflow agent's cwd).
+- **Pass the ABSOLUTE session path** to every `agent()` (`team-session/` is a persistent untracked
+  dir at repo root — a relative path fails from a workflow agent's cwd).
 - **The contract is generator-immune.** Coders may NEVER edit `definition-of-done.md` or weaken a
   gate to pass it (gate-gaming guard, finalize stage).
 - **Workflow can't render.** A blocking SEMANTIC AC whose evidence is a screenshot / running UI the

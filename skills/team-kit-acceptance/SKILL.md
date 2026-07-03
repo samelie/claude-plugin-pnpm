@@ -26,7 +26,7 @@ code. It is NOT autonomy: phase boundaries stay human-gated.
 | define | `definition-of-done.md` | session **root** (canonical contract) |
 | audit | `goal-audit.md` | `goal-auditor/` (agent scratch) |
 
-> **Pass an ABSOLUTE `session_path`.** `team-session/` is a symlink; a relative path fails to
+> **Pass an ABSOLUTE `session_path`.** `team-session/` is a persistent untracked dir; a relative path fails to
 > resolve from a dispatched subagent's cwd and yields a false `BLOCKED`. (Learned from a dry-run:
 > `define` resolved a relative path by luck, `audit` did not.)
 
