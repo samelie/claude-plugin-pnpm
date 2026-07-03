@@ -1,3 +1,20 @@
+## 0.6.0
+
+### Minor Changes
+
+- aab4cf1: Add unified `gcs-drivehard` skill covering the Mac mini DriveHard GCS storage system: archive (non-destructive policy push + optional offload, browsed read-only at `~/GCS`) + backup (managed nightly mirror — `sync-config.sh` source of truth, guarded `sync.sh`, `sync-install.sh` launchd installer; guardrails against freeform mutation). Repoint the `~/GCS` mount to the archive bucket read-only (explorer/copy-out viewer); mark the redundant `mac-mini-drivehard-mount` bucket deprecated with a gated decommission procedure. Document the new `gcs-archive plan`/`push` policy commands in the `gcs-archive` skill.
+- aab4cf1: fix(team-kit): persist team sessions — replace the `$TMPDIR` symlink with a real untracked dir
+
+  The `session-start` hook stored `team-session/` as a symlink into `$TMPDIR`, which macOS purges (~3 days no-access / on reboot), and the old hook ran `rm -rf team-session` on every startup — silently destroying every past team-run record.
+
+  Now `team-session/` is a **persistent, untracked real directory** at the repo root:
+  - never stored in `$TMPDIR`, **never deleted** on session start
+  - auto-migrates a legacy symlink into a real dir, preserving its surviving contents
+  - appends each CC session start to an append-only `_sessions.jsonl` (latest pointer kept in `meta.json`)
+  - run subfolders (`YYYYMMDD-{slug}`) accumulate and are kept forever
+
+  Doc fixes: team-kit-create / team-kit-run / team-kit-acceptance / read-findings / write-findings / summarize-session no longer describe `team-session/` as a symlink (the absolute-path dispatch guidance is unchanged and still valid).
+
 ## 0.5.0
 
 ### Minor Changes
