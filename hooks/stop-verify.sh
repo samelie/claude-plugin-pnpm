@@ -25,12 +25,20 @@ RESULT=$(echo "$INPUT" | python3 -c "
 import sys, json, re
 try:
     data = json.load(sys.stdin)
+    # Anti-loop guard (canonical): if this Stop hook already fired this cycle,
+    # NEVER block again — otherwise the block reason text ('incomplete') re-enters
+    # the payload and self-perpetuates forever.
+    if data.get('stop_hook_active'):
+        print('OK'); sys.exit(0)
     text = json.dumps(data)
-    if re.search(r'(incomplete|in.progress|pending|not.done)', text, re.I):
+    # Only genuine team-protocol incompletion markers block — NOT arbitrary prose.
+    # (The old regex matched words like 'pending'/'in progress'/'incomplete' anywhere
+    # in the payload, so ordinary completion talk tripped it.)
+    if re.search(r'STATUS:[ ]*(ERRORS_REMAINING|PARTIAL)', text):
         print('INCOMPLETE')
     else:
         print('OK')
-except:
+except Exception:
     print('OK')
 " 2>/dev/null)
 

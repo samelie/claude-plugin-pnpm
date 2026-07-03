@@ -27,7 +27,7 @@ The skill determines the output directory in this order:
    - Example: "Session path: `team-session/20260420-cs-submittals/`"
    - Output: `{session_path}/{your-name}/{filename}`
 
-3. **Fallback to symlink** — if `team-session/` symlink exists, use it
+3. **Fallback to session dir** — if the `team-session/` dir exists, use it
    - Output: `team-session/{your-name}/{filename}`
    - ⚠️ This only works for single active session
 

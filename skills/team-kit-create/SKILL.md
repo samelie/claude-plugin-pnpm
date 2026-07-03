@@ -153,7 +153,7 @@ Stop until enabled.
 **Before any triage or dispatch**, save the raw user request to disk. This is the source of truth for original intent — the refine phase references it to prevent scope drift.
 
 ```javascript
-// session_path MUST be absolute — `team-session/` is a symlink (session hook), and a relative
+// session_path MUST be absolute — `team-session/` is a persistent untracked dir (session hook), and a relative
 // path fails to resolve from a dispatched subagent's cwd (silent false BLOCKED).
 const repo_root = /* `git rev-parse --show-toplevel` */
 const session_path = `${repo_root}/team-session/${team_name}/`
@@ -162,7 +162,7 @@ const session_path = `${repo_root}/team-session/${team_name}/`
 ```
 
 > **Absolute session paths (required).** Every dispatch passes this ABSOLUTE `session_path`.
-> `team-session/` is a symlink to a temp dir; relative paths resolve only from repo root, so a
+> `team-session/` is a persistent untracked dir at repo root; relative paths resolve only from repo root, so a
 > subagent running from another cwd (e.g. a plugin dir) silently fails to find session files and
 > may return a false `BLOCKED`. Always pass the absolute path. (Surfaced by a real dry-run.)
 

@@ -9,7 +9,7 @@ Read all agent outputs from the current team session and produce a consolidated 
 
 ## Steps
 
-1. **Check session exists** — verify `team-session/` symlink exists
+1. **Check session exists** — verify `team-session/` dir exists
 2. **Read session metadata** — read `team-session/meta.json` for start time
 3. **Discover agent outputs** — glob `team-session/*/` to find all agent directories
 4. **Read each agent's output** — for each directory, read all `.md` files

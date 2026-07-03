@@ -27,7 +27,7 @@ The skill determines the session directory in this order:
    - Example: "Session path: `team-session/20260420-cs-submittals/`"
    - Reads: `{session_path}/{agent-name}/*.md`
 
-3. **Fallback to symlink** — if `team-session/` symlink exists, use it
+3. **Fallback to session dir** — if the `team-session/` dir exists, use it
    - Reads: `team-session/{agent-name}/*.md`
    - ⚠️ This only works for single active session
 
