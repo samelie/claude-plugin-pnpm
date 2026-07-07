@@ -33,8 +33,9 @@ Use this path for ALL read/write operations. If missing, ask lead for clarificat
 ## Setup
 
 1. Read `team-session/{team-name}/team-plan.md` for context
-2. Create investigation files in `team-session/{team-name}/`
-3. Follow the debug-session skill exactly
+2. **Mine prior team sessions** — `team-session/` keeps ALL past team runs permanently, not just yours. List them in reverse chronological order (`ls -1t team-session/` — most are named `YYYYMMDD-{name}`, so the date prefix also sorts) and skim recent sessions whose names relate to the issue you're debugging. Use whatever search tools you prefer (Grep, ctx_batch_execute, read-findings skill) over their contents — prior investigations, root-cause docs, and findings often cover the same subsystem. Treat them as evidence leads and starting points; the CURRENT task prompt stays your anchor — stale conclusions don't override fresh evidence.
+3. Create investigation files in `team-session/{team-name}/`
+4. Follow the debug-session skill exactly
 
 ## Phase 1: Root Cause Investigation
 
