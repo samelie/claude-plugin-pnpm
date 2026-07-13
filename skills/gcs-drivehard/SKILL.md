@@ -11,7 +11,7 @@ Unified control surface for the Mac mini **DriveHard → GCS** storage system. O
 
 | Bucket | Class | Role | How it changes | This skill |
 |---|---|---|---|---|
-| `mac-mini-drivehard-archive` | Nearline | Cold vault. **Push folders up additively (keeps local)**; **browse read-only at `~/GCS`** and copy files back out. | `gcs-archive push` (additive); `mount.sh` (read-only view) | plan / push / mount(RO) / restore / scan / status |
+| `mac-mini-drivehard-archive-usw1` | Nearline | Cold vault. **Push folders up additively (keeps local)**; **browse read-only at `~/GCS`** and copy files back out. | `gcs-archive push` (additive); `mount.sh` (read-only view) | plan / push / mount(RO) / restore / scan / status |
 | `mac-mini-drivehard-backup` | Coldline | Nightly mirror of `/Volumes/DriveHard/`. | guarded `sync.sh` via launchd, 04:00 (managed by `sync-install.sh`) | manage schedule + status + guarded run; **no freeform writes** |
 
 Decision guide:
@@ -32,9 +32,9 @@ ARCHIVE_PKG=/Volumes/DriveHard/samelie-monorepo/packages/gcs-archive
 
 ## MOUNT — `~/GCS` = read-only view of the archive vault
 
-`~/GCS` mounts **`mac-mini-drivehard-archive`** via `rclone nfsmount` (NFS-based; **no macFUSE/app required**), **read-only** — an explorer/viewer over everything pushed to cold storage. Browse in Finder, copy files back OUT onto the drive on demand. VFS cache on DriveHard at `/Volumes/DriveHard/_Cache/rclone-vfs`.
+`~/GCS` mounts **`mac-mini-drivehard-archive-usw1`** via `rclone nfsmount` (NFS-based; **no macFUSE/app required**), **read-only** — an explorer/viewer over everything pushed to cold storage. Browse in Finder, copy files back OUT onto the drive on demand. VFS cache on DriveHard at `/Volumes/DriveHard/_Cache/rclone-vfs`.
 
-Defaults are set in `mount-config.sh` (`MOUNT_BUCKET=mac-mini-drivehard-archive`, `READ_ONLY=true`), so plain `start` mounts the vault read-only.
+Defaults are set in `mount-config.sh` (`MOUNT_BUCKET=mac-mini-drivehard-archive-usw1`, `READ_ONLY=true`), so plain `start` mounts the vault read-only.
 
 ```bash
 cd /Volumes/DriveHard/samelie-monorepo/mac_config/rclone
@@ -51,7 +51,7 @@ cp -Rv ~/GCS/Pictures/Paris2025/  /Volumes/DriveHard/restored/   # Finder drag-o
 ```
 To restore a specific archived file by path, prefer `gcs-archive restore` (manifest-aware).
 
-Auto-mount on login (launchd) — plist passes `--read-only --bucket mac-mini-drivehard-archive`:
+Auto-mount on login (launchd) — plist passes `--read-only --bucket mac-mini-drivehard-archive-usw1`:
 ```bash
 cp com.selie.rclone-drivehard-mount.plist ~/Library/LaunchAgents/
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.selie.rclone-drivehard-mount.plist
@@ -62,7 +62,7 @@ The mount is **read-only** — you cannot delete or alter vault objects through 
 
 ---
 
-## ARCHIVE — `mac-mini-drivehard-archive`
+## ARCHIVE — `mac-mini-drivehard-archive-usw1`
 
 Cold vault (Nearline). Deep-dive lives in the **`gcs-archive`** skill. Two modes:
 
