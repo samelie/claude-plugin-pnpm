@@ -63,7 +63,7 @@ uv run gcs-archive <command>
 
 ```yaml
 version: 1
-bucket: mac-mini-drivehard-archive
+bucket: mac-mini-drivehard-archive-usw1
 source_root: /Volumes/DriveHard
 rules:
   - name: pictures
@@ -80,7 +80,7 @@ All via environment variables (prefix `GCS_ARCHIVE_`):
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `GCS_ARCHIVE_SOURCE` | `/Volumes/DriveHard/` | Root path to scan |
-| `GCS_ARCHIVE_BUCKET` | `mac-mini-drivehard-archive` | GCS bucket for archived files |
+| `GCS_ARCHIVE_BUCKET` | `mac-mini-drivehard-archive-usw1` | GCS bucket for archived files |
 | `GCS_ARCHIVE_RCLONE_REMOTE` | `gcs-drivehard` | rclone remote name |
 | `GCS_ARCHIVE_SIZE_THRESHOLD_MB` | `100` | Default scan threshold |
 | `GCS_ARCHIVE_STUB_FORMAT` | `pointer` | Stub type: pointer, symlink, xattr |
@@ -94,7 +94,7 @@ For credentials stored in 1Password:
 
 ## Important Notes
 
-- The archive bucket (`mac-mini-drivehard-archive`) is SEPARATE from the backup bucket (`mac-mini-drivehard-backup`). This prevents `rclone sync` from deleting archived files.
+- The archive bucket (`mac-mini-drivehard-archive-usw1`) is SEPARATE from the backup bucket (`mac-mini-drivehard-backup`). This prevents `rclone sync` from deleting archived files.
 - Auth uses Application Default Credentials via gcloud login.
 - rclone.conf at `~/.config/rclone/rclone.conf` with `gcs-drivehard` remote configured.
 - Before archiving critical files, suggest running `verify` to confirm GCS connectivity.
