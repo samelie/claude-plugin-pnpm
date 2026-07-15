@@ -26,7 +26,7 @@ Fresh context = better review. Agent reads documents without planning conversati
 
 ```javascript
 Agent({
-  subagent_type: "claude-plugin-pnpm:team-plan-reviewer",
+  subagent_type: "team-plan-reviewer",
   model: "sonnet",
   description: "Review plan artifacts",
   prompt: `

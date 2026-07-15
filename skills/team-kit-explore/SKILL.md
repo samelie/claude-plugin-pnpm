@@ -36,7 +36,7 @@ lead updates designer/explore.md with selection (or re-dispatches)
 
 ```javascript
 Agent({
-  subagent_type: "claude-plugin-pnpm:team-designer",
+  subagent_type: "team-designer",
   description: "Explore implementation approaches",
   prompt: `
 Phase: explore
@@ -104,7 +104,7 @@ Options:
 
 ```javascript
 Agent({
-  subagent_type: "claude-plugin-pnpm:team-designer",
+  subagent_type: "team-designer",
   description: "Explore approaches - revised",
   prompt: `
 Phase: explore

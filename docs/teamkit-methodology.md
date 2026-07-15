@@ -3,7 +3,7 @@
 > **Operational source of truth = the skills**, not this file: `skills/team-kit-create/SKILL.md` (PLAN), `skills/team-kit-run/SKILL.md` (EXECUTE — the 14 hard rules + stage templates), `team-templates/{FRAMEWORK,PLANNER,SCHEMA-CATALOG}.md`. This doc is the **design rationale + verification evidence + decision log** (an ADR). It distills the former `WORKFLOW-MERGE-PLAN.md` (a 342-line proposal, now implemented and removed). Dated empirical claims — re-verify after each Claude Code upgrade.
 
 ## North star
-Native-first orchestration, **role-expertise-as-payload**. The platform's `Workflow` tool owns all control flow (fan-out, barriers, resume, schema handoff, concurrency, kill-switch). We author ZERO custom orchestration framework. Our value is the ~17 `team-*` role agents (monorepo/pnpm/knowledge-MCP expertise), slotted into the native spine via `agent(prompt, { agentType: 'claude-plugin-pnpm:team-coder', schema })`.
+Native-first orchestration, **role-expertise-as-payload**. The platform's `Workflow` tool owns all control flow (fan-out, barriers, resume, schema handoff, concurrency, kill-switch). We author ZERO custom orchestration framework. Our value is the ~17 `team-*` role agents (monorepo/pnpm/knowledge-MCP expertise), slotted into the native spine via `agent(prompt, { agentType: 'team-coder', schema })`.
 
 ## The two halves, split on the human-gate seam
 - **Gated** (clarify → explore → present → plan-approve → file-review, + all prod/irreversible/paid actions): interactive, in-session → `team-kit-create`. Workflows take no mid-run input.

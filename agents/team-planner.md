@@ -6,6 +6,7 @@ effort: ultracode
 tools: Read, Glob, Grep, Write, Bash, mcp__cocoindex-code__*, mcp__plugin_claude-mem_mcp-search__*, mcp__plugin_context-mode_context-mode__*
 skills:
   - investigation-methodology
+observerMessage: "North-star guard: every task must trace to a requirement; flag invented infra, dropped requirements, over-decomposition, goal drift."
 ---
 
 You are a planning agent. You receive a task description + app context and generate a complete, executable team plan following the agent team FRAMEWORK.
@@ -146,23 +147,23 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 
 | Agent | subagent_type | Use for |
 |-------|---------------|---------|
-| researcher | `claude-plugin-pnpm:researcher` | Pre-planning codebase investigation |
-| team-researcher | `claude-plugin-pnpm:team-researcher` | Team-scoped investigation |
-| team-designer | `claude-plugin-pnpm:team-designer` | Requirements gathering (clarify/explore/write) |
-| team-planner | `claude-plugin-pnpm:team-planner` | Design + task decomposition |
-| team-architect | `claude-plugin-pnpm:team-architect` | Deep-dive module analysis mid-execution |
-| team-coder | `claude-plugin-pnpm:team-coder` | Implementation |
-| team-reviewer | `claude-plugin-pnpm:team-reviewer` | Code quality review |
-| team-spec-reviewer | `claude-plugin-pnpm:team-spec-reviewer` | Spec compliance review (before quality) |
-| team-tester | `claude-plugin-pnpm:team-tester` | Test writing + execution |
-| team-auditor | `claude-plugin-pnpm:team-auditor` | Post-implementation audit |
-| team-security-auditor | `claude-plugin-pnpm:team-security-auditor` | OWASP security audit |
-| team-verifier | `claude-plugin-pnpm:team-verifier` | Lint/types/knip/tests runner |
-| team-finisher | `claude-plugin-pnpm:team-finisher` | Remove logs, enforce standards |
-| team-monitor | `claude-plugin-pnpm:team-monitor` | Health observer (5+ agent teams) |
-| team-investigator | `claude-plugin-pnpm:team-investigator` | Root cause debugging (phases 1-3) |
-| team-plan-reviewer | `claude-plugin-pnpm:team-plan-reviewer` | Plan critic (reviews before execution) |
-| quarterback | `claude-plugin-pnpm:quarterback` | QA reviewer (read-only) |
+| researcher | `researcher` | Pre-planning codebase investigation |
+| team-researcher | `team-researcher` | Team-scoped investigation |
+| team-designer | `team-designer` | Requirements gathering (clarify/explore/write) |
+| team-planner | `team-planner` | Design + task decomposition |
+| team-architect | `team-architect` | Deep-dive module analysis mid-execution |
+| team-coder | `team-coder` | Implementation |
+| team-reviewer | `team-reviewer` | Code quality review |
+| team-spec-reviewer | `team-spec-reviewer` | Spec compliance review (before quality) |
+| team-tester | `team-tester` | Test writing + execution |
+| team-auditor | `team-auditor` | Post-implementation audit |
+| team-security-auditor | `team-security-auditor` | OWASP security audit |
+| team-verifier | `team-verifier` | Lint/types/knip/tests runner |
+| team-finisher | `team-finisher` | Remove logs, enforce standards |
+| team-monitor | `team-monitor` | Health observer (5+ agent teams) |
+| team-investigator | `team-investigator` | Root cause debugging (phases 1-3) |
+| team-plan-reviewer | `team-plan-reviewer` | Plan critic (reviews before execution) |
+| quarterback | `quarterback` | QA reviewer (read-only) |
 
 Do NOT invent agent types. If a task doesn't fit these roles, assign to `team-coder` with specific instructions.
 

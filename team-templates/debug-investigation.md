@@ -32,10 +32,10 @@ Spawn agents per template. You are lead — orchestrate and gate phases only. Do
 | Name | subagent_type | Model | Role | Phase |
 |------|--------------|-------|------|-------|
 | lead | (you) | opus | Orchestrate, gate phases | all |
-| investigator | claude-plugin-pnpm:team-investigator | opus | Root cause investigation | 1 |
-| scout | claude-plugin-pnpm:team-researcher | opus | Evidence gathering | 1 |
-| fixer | claude-plugin-pnpm:team-coder | sonnet | Implement fix | 2 |
-| verifier | claude-plugin-pnpm:team-verifier | sonnet | Confirm fix | 2 |
+| investigator | team-investigator | opus | Root cause investigation | 1 |
+| scout | team-researcher | opus | Evidence gathering | 1 |
+| fixer | team-coder | sonnet | Implement fix | 2 |
+| verifier | team-verifier | sonnet | Confirm fix | 2 |
 
 ## Phases
 

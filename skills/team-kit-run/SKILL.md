@@ -38,7 +38,7 @@ These come from spikes 1–4 + the 2026-06-05 re-verification (`wf_2a347dc4-297`
 
 | # | Rule | Consequence |
 |---|------|-------------|
-| 1 | **Bridge works.** `agent(p, {agentType:'claude-plugin-pnpm:team-coder'})` loads the role agent verbatim. (It *composes* with schema — schema is reliable on the current runtime; see rule 9.) | Reuse role agents as workers — zero rewrite. |
+| 1 | **Bridge works.** `agent(p, {agentType:'team-coder'})` loads the role agent verbatim. (It *composes* with schema — schema is reliable on the current runtime; see rule 9.) | Reuse role agents as workers — zero rewrite. |
 | 2 | **Custom agentType = FIXED toolset (workflow `agent()` sandbox only — NOT ordinary Agent/Task subagents, which inherit MCP per docs).** Baseline `{Read, Bash, StructuredOutput}`; role frontmatter FILTERS in `{Write, Edit, Skill}` (cannot ADD beyond this). Measured 2026-06-05: spec-reviewer=`{Read,Bash,StructuredOutput}`; coder=`+Write+Edit+Skill`; verifier/architect/researcher=`+Write+Skill`. **Zero `mcp__*`, `ToolSearch`, `Glob`, `Grep` on ANY type.** | Role agents can't reach raw MCP. |
 | 3 | **Only the DEFAULT agent (no agentType) reaches MCP** — and it reaches it via **BOTH inheritance (direct `mcp__*` call) AND `ToolSearch`** (verified 2026-06-05; old rule said ToolSearch-only — incomplete). Loads any MCP (cocoindex/claude-mem/context-mode), no prompt for reads. | Knowledge stages use the default agent — see path A. |
 | 4 | **(a) Workflow agents auto-`acceptEdits` (DOC-CONFIRMED). (b) Scope-guard did NOT block an out-of-scope write** — re-verified 2026-06-05: a `/tmp` write SUCCEEDED unblocked for both default + custom agents, no denial. (Whether any PreToolUse hook fires at all is indeterminate — rtk-rewrite is harness-transparent; don't rely on it either way.) | A workflow agent can write anywhere, unattended. Writes need a discipline, NOT a hook. |
@@ -174,16 +174,16 @@ Pick by capability. Knowledge stages = DEFAULT agent (rule 3); execution stages 
 | Stage | agentType | Why |
 |-------|-----------|-----|
 | Research / investigate | **(none — default agent)** | needs ToolSearch→MCP (rule 3); inject researcher role + `Skill('investigation-methodology')` |
-| Deep-dive one subsystem | `claude-plugin-pnpm:team-architect` | focused module brief (read-only) |
-| Root-cause debugging | `claude-plugin-pnpm:team-investigator` | hypothesis-one-at-a-time (loop-until-dry) |
-| Implement (source write) | `claude-plugin-pnpm:team-coder` | single-writer or propose-then-apply |
-| Write/refresh tests | `claude-plugin-pnpm:team-tester` | can Edit test files |
-| Spec review (FIRST) | `claude-plugin-pnpm:team-spec-reviewer` | compliance vs requirements |
-| Quality review (AFTER spec) | `claude-plugin-pnpm:team-reviewer` | structure/quality/security |
-| Security audit | `claude-plugin-pnpm:team-security-auditor` | OWASP scan |
-| Finalize: lint/types/knip/test | `claude-plugin-pnpm:team-verifier` | mechanical gates, knip-skeptical |
-| Strip logs / comment standards | `claude-plugin-pnpm:team-finisher` | final cleanup |
-| Plan critique | `claude-plugin-pnpm:team-plan-reviewer` | fresh-context plan review |
+| Deep-dive one subsystem | `team-architect` | focused module brief (read-only) |
+| Root-cause debugging | `team-investigator` | hypothesis-one-at-a-time (loop-until-dry) |
+| Implement (source write) | `team-coder` | single-writer or propose-then-apply |
+| Write/refresh tests | `team-tester` | can Edit test files |
+| Spec review (FIRST) | `team-spec-reviewer` | compliance vs requirements |
+| Quality review (AFTER spec) | `team-reviewer` | structure/quality/security |
+| Security audit | `team-security-auditor` | OWASP scan |
+| Finalize: lint/types/knip/test | `team-verifier` | mechanical gates, knip-skeptical |
+| Strip logs / comment standards | `team-finisher` | final cleanup |
+| Plan critique | `team-plan-reviewer` | fresh-context plan review |
 
 ## Execution-stage templates (INLINE these — no imports)
 
@@ -303,7 +303,7 @@ const runImplement = (fb) => tryAgent(`impl:${name}`,
   `Edit ONLY your owned files. Write progress to <session>coder-${name}/progress.md; END with a STATUS line.`,
   // NO model override → inherits the session model (opus). implement is real design/judgment work — the
   // ONE stage class that keeps opus (rule 13). Do NOT add model:'sonnet' here; it's reserved for it + design.
-  { label: `impl:${name}`, phase: 'Implement', agentType: 'claude-plugin-pnpm:team-coder' })   // NO schema
+  { label: `impl:${name}`, phase: 'Implement', agentType: 'team-coder' })   // NO schema
 await runImplement()   // tryAgent-wrapped: on throw → STATUS: ERRORS_REMAINING text, not a run abort
 // IMPLEMENT — propose-then-apply (parallel reasoning, serial mutation). PROVEN logic (de-harness): same-path = FLAG.
 // Coders WRITE a unified diff to <session>proposals/{name}.diff (FILE handoff — robust vs schema diff-fidelity) +
@@ -320,7 +320,7 @@ if (overlaps.length) { log(`Ownership overlap (reliability-7) — NOT disjoint, 
 const proposals = await parallel(modules.map(m => () =>
   agent(`Propose ${m.task}. Do NOT edit source. Write a unified diff to <session>proposals/${m.name}.diff, ` +
     `state the target path(s), END with STATUS.`,
-    { label: `propose:${m.name}`, phase: 'Propose', agentType: 'claude-plugin-pnpm:team-coder' })))
+    { label: `propose:${m.name}`, phase: 'Propose', agentType: 'team-coder' })))
 // COVERAGE ASSERTION (rule 10) — a dropped proposer = a missing diff the apply stage would silently
 // skip, landing a partial change that reads as complete. A coverage gap MUST NOT proceed to apply.
 const proposalGap = coverage(proposals, modules.length)
@@ -350,13 +350,13 @@ while (attempt < MAX_REDISPATCH) {
   // statusOf reads 'errors' → not-ok → the loop re-dispatches/escalates instead of the throw aborting the run.
   const spec = await tryAgent(`spec#${attempt + 1}`, `Spec-review vs requirements; read the git diff. Write <session>spec-reviewer/spec-review.md; END with STATUS.`,
     // model:'sonnet' — review is a mechanical/review stage (rule 13). Reserve inherited opus for implement/design.
-    { label: `spec#${attempt + 1}`, phase: 'Review', agentType: 'claude-plugin-pnpm:team-spec-reviewer', model: 'sonnet' })
+    { label: `spec#${attempt + 1}`, phase: 'Review', agentType: 'team-spec-reviewer', model: 'sonnet' })
   const specStatus = statusOf(spec)
   if (escalates(specStatus)) { escalated = { at: `spec#${attempt + 1}`, reason: 'spec BLOCKED/NEEDS_CONTEXT — see spec-reviewer/spec-review.md' }; break }  // escalate, don't re-dispatch
   if (!ok(specStatus)) { feedback.push('spec failed — see spec-reviewer/spec-review.md'); attempt++; continue }  // spec gates quality
   const qual = await tryAgent(`qual#${attempt + 1}`, `Quality-review (structure/quality/security). Write <session>reviewer/review.md; END with STATUS.`,
     // model:'sonnet' — review is a mechanical/review stage (rule 13). Reserve inherited opus for implement/design.
-    { label: `qual#${attempt + 1}`, phase: 'Review', agentType: 'claude-plugin-pnpm:team-reviewer', model: 'sonnet' })
+    { label: `qual#${attempt + 1}`, phase: 'Review', agentType: 'team-reviewer', model: 'sonnet' })
   status = statusOf(qual)
   if (escalates(status)) { escalated = { at: `qual#${attempt + 1}`, reason: 'quality BLOCKED/NEEDS_CONTEXT — see reviewer/review.md' }; break }  // escalate, don't re-dispatch
   if (ok(status)) break
@@ -379,7 +379,7 @@ const verify = await tryAgent('finalize',
   `not a pass. Flag any edit to definition-of-done.md / requirements.md / team-plan.md (writers may not touch the contract). ` +
   `Write <session>verifier/results.md; END with a STATUS line and a one-line "failedGates:" list.`,
   // model:'sonnet' — finalize is a mechanical gate (rule 13). Reserve inherited opus for implement/design.
-  { label: 'finalize', phase: 'Finalize', agentType: 'claude-plugin-pnpm:team-verifier', model: 'sonnet' })   // NO schema
+  { label: 'finalize', phase: 'Finalize', agentType: 'team-verifier', model: 'sonnet' })   // NO schema
 
 // VALIDATE (N+2) — grade the CONTRACT's AC. Reads <session>definition-of-done.md, grades each blocking AC and
 // writes per-AC PASS/FAIL to <session>validation-report.md (orchestrator rolls these into build-state.md). The
@@ -392,7 +392,7 @@ const validate = await tryAgent('validate',
   `(do NOT pass or fail it). Write per-AC results to <session>validation-report.md; END with STATUS ` +
   `(CLEAN only if every blocking AC is PASS; PARTIAL if any NEEDS_HUMAN_EVIDENCE; ERRORS_REMAINING if any FAIL).`,
   // model:'sonnet' — validate is a mechanical gate (rule 13). Reserve inherited opus for implement/design.
-  { label: 'validate', phase: 'Validate', agentType: 'claude-plugin-pnpm:team-verifier', model: 'sonnet' })   // NO schema
+  { label: 'validate', phase: 'Validate', agentType: 'team-verifier', model: 'sonnet' })   // NO schema
 
 // SCHEMA IS FINE for LIGHT stages only — discovery/echo/tiny-verdict with little/no tool work
 // (e.g. monorepo-health's DISCOVER). Heavy stages above must NOT use schema (rule 9).

@@ -17,6 +17,12 @@ Rules for all TypeScript code written by team agents.
 - Use `type` imports (`import type { Foo }`) for type-only imports
 - Prefer interfaces for object shapes, type aliases for unions/intersections
 
+## Imports & modules
+
+- No barrel exports — never aggregate re-exports (`export * from './x'`)
+- Reserve `index.ts` for the package entry only (`src/index.ts`); no `index.ts` in subdirectories
+- Always prefer deep imports — import from the module that defines the symbol, not an aggregating index
+
 ## Comments
 
 - Single-line only: `// my comment`
@@ -33,3 +39,8 @@ Rules for all TypeScript code written by team agents.
 - Read existing code before modifying
 - Code snippets in task descriptions are sketches — adapt to real types/signatures
 - Use `pnpm -F "<pkg>"` for all package commands
+
+## Reuse & duplication
+
+- Before writing a generic utility (date, string, array, path, retry, etc.), check whether an equivalent already exists in another workspace package and prefer reusing it
+- Not mandatory — never add a new cross-package dependency just to reuse a trivial helper; reuse only when the dependency is already natural or present

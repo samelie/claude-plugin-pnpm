@@ -26,6 +26,8 @@
     "access": "public"
   },
   "scripts": {
+    "build:plugin": "node ../../.claude/scripts/build-plugin.mjs",
+    "build:plugin:check": "node ../../.claude/scripts/build-plugin.mjs --check",
     "build": "unbuild",
     "lint": "node scripts/check-manifest.mjs",
     "lint:fix": "node scripts/check-manifest.mjs",
