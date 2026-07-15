@@ -34,7 +34,7 @@ code. It is NOT autonomy: phase boundaries stay human-gated.
 
 ```javascript
 Agent({
-  subagent_type: "claude-plugin-pnpm:team-goal-auditor",
+  subagent_type: "team-goal-auditor",
   model: "opus",
   description: "Author acceptance contract (definition-of-done)",
   prompt: `
@@ -69,7 +69,7 @@ while attempt < 2:
 
 ```javascript
 Agent({
-  subagent_type: "claude-plugin-pnpm:team-goal-auditor",
+  subagent_type: "team-goal-auditor",
   model: "opus",
   description: "Adversarial plan-vs-goal audit",
   prompt: `

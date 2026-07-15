@@ -34,7 +34,7 @@ while requirements unclear:
 
 ```javascript
 Agent({
-  subagent_type: "claude-plugin-pnpm:team-designer",
+  subagent_type: "team-designer",
   description: "Clarify requirements - question {N}",
   prompt: `
 Phase: clarify

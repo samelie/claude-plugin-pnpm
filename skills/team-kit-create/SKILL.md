@@ -264,7 +264,7 @@ const session_path = `team-session/${team_name}/`
 while (!requirements_clear) {
   // Dispatch designer for ONE question
   Agent({
-    subagent_type: "claude-plugin-pnpm:team-designer",
+    subagent_type: "team-designer",
     description: `Clarify requirements - question ${N}`,
     prompt: `
 Phase: clarify
@@ -325,7 +325,7 @@ Before committing to a design, explore alternatives.
 
 ```javascript
 Agent({
-  subagent_type: "claude-plugin-pnpm:team-designer",
+  subagent_type: "team-designer",
   description: "Explore implementation approaches",
   prompt: `
 Phase: explore
@@ -358,7 +358,7 @@ const sections = ['Problem', 'Requirements', 'Approach', 'Acceptance criteria', 
 
 for (const section of sections) {
   Agent({
-    subagent_type: "claude-plugin-pnpm:team-designer",
+    subagent_type: "team-designer",
     description: `Present ${section} for approval`,
     prompt: `
 Phase: present
@@ -393,7 +393,7 @@ Final designer phase. Synthesizes all previous phases into the canonical `requir
 
 ```javascript
 Agent({
-  subagent_type: "claude-plugin-pnpm:team-designer",
+  subagent_type: "team-designer",
   description: "Write requirements.md from approved design",
   prompt: `
 Phase: write
@@ -428,7 +428,7 @@ const session_path = `team-session/${team_name}/`
 // mkdir -p ${session_path}
 
 Agent({
-  subagent_type: "claude-plugin-pnpm:team-researcher",
+  subagent_type: "team-researcher",
   model: "opus",
   run_in_background: true,
   name: "scout",
@@ -470,7 +470,7 @@ The refine loop is **semi-autonomous**. Designer self-dispatches for code explor
 let refine_complete = false;
 while (!refine_complete) {
   const result = Agent({
-    subagent_type: "claude-plugin-pnpm:team-designer",
+    subagent_type: "team-designer",
     model: "opus",
     description: `Refine requirements - round ${N}`,
     prompt: `
@@ -533,7 +533,7 @@ After refine completes, invoke planner. Planner reads from disk — no inline co
 
 ```javascript
 Agent({
-  subagent_type: "claude-plugin-pnpm:team-planner",
+  subagent_type: "team-planner",
   model: "opus",
   prompt: `
 ## Session Path
@@ -573,7 +573,7 @@ the keystone the whole pipeline converges on. **Follow `team-kit-acceptance` ski
 
 ```javascript
 Agent({
-  subagent_type: "claude-plugin-pnpm:team-goal-auditor",
+  subagent_type: "team-goal-auditor",
   model: "opus",
   description: "Author acceptance contract (definition-of-done)",
   prompt: `
@@ -603,7 +603,7 @@ goal. Cheapest place to catch intent drift — fixing a plan is free vs. fixing 
 let attempt = 0;
 while (attempt < 2) {
   const result = Agent({
-    subagent_type: "claude-plugin-pnpm:team-goal-auditor",
+    subagent_type: "team-goal-auditor",
     model: "opus",
     description: "Adversarial plan-vs-goal audit",
     prompt: `

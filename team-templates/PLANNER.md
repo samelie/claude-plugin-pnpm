@@ -96,7 +96,7 @@ Mapping mode-1 applies when authoring — `team-plan.md` elements → workflow-s
 | Phase (P1/P2/...) | `phase('Name')` group |
 | Task dependency (`blockedBy`) | `await` ordering / stage sequence |
 | File-ownership matrix | per-agent thunks over disjoint files |
-| Agent role (subagent_type) | `agent(p, { agentType: 'claude-plugin-pnpm:team-coder' })` — see team-kit-run agentType table |
+| Agent role (subagent_type) | `agent(p, { agentType: 'team-coder' })` — see team-kit-run agentType table |
 | Verify commands | a final `team-verifier` stage → `VerifyReport` |
 | AC traceability | a `team-verifier` Validate stage → `ACEvidence` |
 
