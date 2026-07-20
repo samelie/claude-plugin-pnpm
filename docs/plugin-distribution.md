@@ -1,27 +1,24 @@
 # Plugin Distribution: Technical Reference
 
-Notes on distributing adddog-team-kit via npm and Claude Code marketplace.
+Notes on distributing `claude-plugin-pnpm` via the Claude Code marketplace, sourced directly from GitHub (npm publishing is retired).
 
-## npm Distribution
+## Distribution model
 
-Published as `@adddog/adddog-team-kit` on npm. The `files` array in `package.json` controls what's included in the tarball.
+`.claude/` in the monorepo is the single source of truth. `build-plugin.mjs` regenerates the publishable shell (`packages/claude-plugin-pnpm/`) from it, and `shared-sync-package.yaml` subtree-splits that shell to the public repo `samelie/claude-plugin-pnpm`. The marketplace sources the plugin from the repo itself — no npm package.
 
 ### Installing
 
 ```bash
-claude plugin add @adddog/adddog-team-kit
-```
-
-Or via marketplace:
-```bash
-claude plugin marketplace add adddog-tools
+# add the marketplace (clones the GitHub repo), then install the plugin
+/plugin marketplace add samelie/claude-plugin-pnpm
+/plugin install claude-plugin-pnpm@adddog-tools
 ```
 
 ## Marketplace Setup
 
 ### marketplace.json
 
-Every plugin entry MUST have a `version` field. Without it, Claude Code will not populate the plugin cache.
+Lives at `.claude-plugin/marketplace.json` in the repo root. The plugin code IS the marketplace repo root (co-located with `.claude-plugin/plugin.json`), so the plugin `source` is the relative path `"./"`.
 
 ```json
 {
@@ -29,23 +26,29 @@ Every plugin entry MUST have a `version` field. Without it, Claude Code will not
   "owner": { "name": "adddog" },
   "plugins": [
     {
-      "name": "adddog-team-kit",
-      "source": { "source": "npm", "package": "@adddog/adddog-team-kit", "version": ">=0.0.1" },
-      "description": "Multi-agent team planning"
+      "name": "claude-plugin-pnpm",
+      "source": "./",
+      "version": "0.6.0",
+      "description": "..."
     }
   ]
 }
 ```
 
-**The `version` field is required.** Claude Code uses it to key the cache directory (`cache/<marketplace>/<plugin>/<version>/`). Without it, the cache is never populated, and `CLAUDE_PLUGIN_ROOT` resolves to an empty directory.
+Constraints (each of these has broken installs before):
 
-### Updating Consumers
+- `owner` MUST be an object (`{ "name": "..." }`), never a bare string.
+- `source: "./"` resolves against the cloned marketplace repo root. Only relative-path sources may be bare strings; `github`/`git`/`npm` sources are objects whose discriminator key is `source` (not `type`) — e.g. `{ "source": "github", "repo": "owner/repo" }`.
+- **`version` is required for cache keying.** Claude Code keys the plugin cache on `cache/<marketplace>/<plugin>/<version>/`. Without a version (here or in `plugin.json`), the cache is never populated and `CLAUDE_PLUGIN_ROOT` resolves to an empty dir. `build-plugin.mjs` stamps this version from `package.json`, in lockstep with `plugin.json`.
 
-After making changes:
+### Updating consumers
 
-1. Bump version in `plugin.json`
-2. Publish to npm: `pnpm publish`
-3. Consumers run `/plugin marketplace update` then `/reload-plugins`
+After changing `.claude/`:
+
+1. Bump `version` in `packages/claude-plugin-pnpm/package.json` — the single version source, stamped into both `plugin.json` and `marketplace.json`.
+2. Regenerate + commit: `pnpm -F @adddog/claude-plugin-pnpm build:plugin`.
+3. Push to `main` → `sync-public-packages` mirrors the shell to `samelie/claude-plugin-pnpm`.
+4. Consumers run `/plugin marketplace update adddog-tools` then `/reload-plugins`.
 
 If the cache isn't refreshing: `rm -rf ~/.claude/plugins/cache/adddog-tools/`
 
@@ -57,7 +60,7 @@ If the cache isn't refreshing: `rm -rf ~/.claude/plugins/cache/adddog-tools/`
 
 ### `CLAUDE_PLUGIN_ROOT`
 
-All hook commands reference scripts via `${CLAUDE_PLUGIN_ROOT}/hooks/`. This variable is set by Claude Code to the plugin's installation directory.
+Shipped hook commands reference scripts via `${CLAUDE_PLUGIN_ROOT}/hooks/` (the generator path-translates `${CLAUDE_PLUGIN_ROOT}/` → `${CLAUDE_PLUGIN_ROOT}/` on build). This variable is set by Claude Code to the plugin's installation directory.
 
 ### Testing hooks locally
 

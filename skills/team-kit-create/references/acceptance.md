@@ -1,12 +1,6 @@
----
-name: team-kit-acceptance
-description: "Dispatch instructions for the acceptance contract + goal-fidelity gate. Lead invokes after the planner returns: dispatch team-goal-auditor(define) to author definition-of-done.md, then team-goal-auditor(audit) in a bounded loop (cap 2) until the plan faithfully satisfies the original goal. Triggers: acceptance criteria, definition of done, goal audit, plan vs goal, intent drift."
----
+# Acceptance — Dispatch Goal-Auditor for the Acceptance Contract (Steps 4d/4e detail)
 
-# team-kit-acceptance — Dispatch Goal-Auditor for the Acceptance Contract
-
-Tells the lead HOW to run the two acceptance phases that sit between planning and execution
-(`team-kit-create` Steps 4d/4e). The lead stays lean — `team-goal-auditor` does the work.
+How the lead runs the two acceptance phases that sit between planning and execution. The lead stays lean — `team-goal-auditor` does the work.
 
 ## When to Use
 
@@ -86,7 +80,7 @@ Disprove each finding before reporting it. Write \`${session_path}goal-auditor/g
 
 ## Exit Condition
 
-`goal-audit.md` STATUS = CLEAN. Then proceed to `team-kit-present` (design approval). The
+`goal-audit.md` STATUS = CLEAN. Then proceed to Step 5 (design presentation). The
 `definition-of-done.md` now travels with the contract into `/team-kit-run` as the execution stop
 condition.
 
@@ -104,7 +98,7 @@ condition.
 
 | Skill / Agent | Relationship |
 |---------------|--------------|
-| `team-kit-create` | Invokes this at Steps 4d/4e, after planner, before present/review |
-| `team-goal-auditor` | The agent this skill dispatches (define + audit phases) |
-| `team-kit-review` | Runs after this — plan-quality review (complements goal-fidelity) |
+| main SKILL.md | Reads this at Steps 4d/4e, after planner, before present/review |
+| `team-goal-auditor` | The agent this reference dispatches (define + audit phases) |
+| Step 6 (post-plan review) | Runs after this — plan-quality review (complements goal-fidelity) |
 | `team-kit-run` | Boots from the sealed contract; `definition-of-done.md` = the stop condition |

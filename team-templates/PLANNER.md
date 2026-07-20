@@ -10,11 +10,11 @@
 You will receive:
 
 1. **Task description** — what needs to be done (feature, refactor, audit, etc.)
-2. **Chosen approach** — the approach user selected from options (from team-kit-explore)
+2. **Chosen approach** — the approach user selected from options (from the explore phase)
 3. **Key decisions** — specific decisions made during approach exploration
 4. **App context** — relevant codebase paths, patterns, types, package names
 5. **Package scope** — which pnpm packages are affected
-6. **Constraints** — from requirements clarification (from team-kit-clarify)
+6. **Constraints** — from requirements clarification (from the clarify phase)
 7. **FRAMEWORK.md** — the invariant rules you must follow (read it first at `${CLAUDE_PLUGIN_ROOT}/team-templates/FRAMEWORK.md`)
 
 ---
@@ -36,7 +36,7 @@ Where:
 - Task: "Add user profile API endpoints" → `20260420-user-profile-api`
 - Task: "Fix race condition in queue processor" → `20260420-fix-queue-race`
 
-**For templates**: Use template name without date prefix (e.g., `knip-audit`, `monorepo-health`).
+**For templates**: Use template name without date prefix (e.g., `debug`).
 
 This naming ensures:
 1. Teams ordered chronologically in `team-session/`
@@ -60,28 +60,12 @@ Complete team plan the lead agent reads and executes. Must include ALL of:
 - Dependency graph
 - Phase transitions with gates
 - Orchestration flow diagram
-- Agent prompt templates (lead, QB, each implementer, finalization)
+- Per-stage agent prompts (coder, reviewer, verifier, finalization)
 - Verification commands
 
-### 2. `team-scope.json` — Hook config for scope enforcement
+### 2. Ownership & disjointness (no separate output — lives in `team-plan.md`)
 
-```json
-{
-  "team_name": "{team-name}",
-  "allowed_paths": [
-    "packages/my-pkg/src/**",
-    "packages/my-pkg/__tests__/**"
-  ],
-  "agents": {
-    "{agent-name}": {
-      "files_owned": ["packages/my-pkg/src/module-a/**"],
-      "packages": ["@scope/my-pkg"]
-    }
-  }
-}
-```
-
-Hook wiring note: the plugin's `hooks/hooks.json` already registers `PreToolUse`, `SubagentStop`, `SessionStart`, and `Stop` hooks. They run automatically whenever the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json` — nothing to wire per team. NOTE: these hooks do NOT fire for `/team-kit-run` workflow agents (verified) — they apply only to the legacy native-team path.
+There is NO separate scope-config output. File ownership and disjointness live entirely inside `team-plan.md`'s File Ownership Matrix. `/team-kit-run` enforces disjointness via the `disjoint(owners)` glob pre-flight computed from that matrix before any parallel source-write fan-out — not from a config file. Emit provably-disjoint `files_owned` globs in the matrix (see Decision Framework → file ownership).
 
 ### 3. `plan.workflow.js` (AUTHORED by team-kit-run mode-1) — executable workflow spine
 
@@ -117,11 +101,11 @@ ALWAYS emit `team-plan.md` only — it is the ground truth. `/team-kit-run` mode
 
 | Signal | Agent count |
 |--------|-------------|
-| 1-3 files, single module | 1 implementer, no QB |
-| 3-10 files, cohesive module | 1-2 implementers + QB |
-| 10+ files, multiple modules | N implementers (1 per module) + QB |
+| 1-3 files, single module | 1 coder, no separate review stage |
+| 3-10 files, cohesive module | 1-2 coders + spec/quality review stage |
+| 10+ files, multiple modules | N coders (1 per module) + spec/quality review stage |
 | Mechanical-only (lint/types/knip) | Skip implementers, use dedicated agents directly |
-| Audit/sweep (100+ files) | QB dispatches sub-agents dynamically (deep-clean pattern) |
+| Audit/sweep (100+ files) | dynamic fan-out over package groups (see `/monorepo-fix` workflow) |
 
 **Default**: prefer fewer agents. 2-3 implementers covers most tasks. Only scale up when modules are truly independent.
 
@@ -153,33 +137,25 @@ Anti-pattern: one agent per function/file. Group by module, not by line item.
 4. **Within implementation**: further split if there's a clear dependency chain
 5. **Default**: 2 phases (implement + finalize) unless dependencies require more
 
-### When to include a QB
+### When to include a spec/quality review stage
 
 Include when:
-- Multiple implementers (need cross-agent review)
+- Multiple coders (need cross-agent review)
 - Requirements are nuanced (subjective judgment needed)
 - Code quality matters more than speed
 
+→ add `team-spec-reviewer` (spec compliance) + `team-reviewer` (quality) stages.
+
 Skip when:
-- Single implementer (lead can review directly)
+- Single coder (review directly)
 - Purely mechanical work (lint, types, knip)
 - Speed matters more than review depth
-
-### When to include hooks
-
-| Hook | Include when |
-|------|-------------|
-| `PreToolUse` scope check | 3+ agents, risk of cross-module edits |
-| `SubagentStop` verify | Agents need to report STATUS or to QB |
-| `Stop` completion check | Complex orchestration, easy to miss tasks |
-
-Skip hooks for small teams (1-2 agents) — overhead isn't worth it.
 
 ---
 
 ## Generating Agent Prompts
 
-> **NOTE (execution model):** The `Task(...)` spawn snippets below are the LEGACY native-team path (lead `TeamCreate` + delegate mode). The default executor is now `/team-kit-run`, which drives the SAME role agents through the native `Workflow` tool via `agent(prompt, { agentType })` — no `Task`/`mode:"plan"`/`TeamCreate`. The prompt CONTENT (identity, tasks, scope, rules, STATUS) is identical either way; only the spawn mechanism differs. See `../skills/team-kit-run/SKILL.md`.
+> **NOTE (execution model):** `/team-kit-run` drives the role agents through the native `Workflow` tool via `agent(prompt, { agentType })`. The prompt CONTENT below (identity, tasks, scope, rules, STATUS) is what matters — author it well; the workflow supplies the spawn mechanism. See `../skills/team-kit-run/SKILL.md`.
 
 Each agent prompt must include:
 
@@ -188,49 +164,18 @@ Each agent prompt must include:
 3. **Task references**: which task IDs they own
 4. **Context loading**: "Read `team-session/{team-name}/team-plan.md`"
 5. **File scope**: their `files_owned` paths
-6. **Reporting**: who to message when done (QB or lead)
+6. **Reporting**: write findings to the session + end with STATUS (the review stage / orchestrator reads it)
 7. **Rules**: monorepo rules from FRAMEWORK.md
 
-### Implementer spawning
+### Stage spawning (workflow)
+
+`/team-kit-run` spawns each stage with the role agent as its `agentType`:
 
 ```
-Task(
-  subagent_type = "general-purpose",
-  model = "opus",
-  mode = "plan",
-  team_name = "{team-name}",
-  name = "{agent-name}",
-  prompt = <generated implementer prompt>
-)
+agent(prompt, { agentType: 'team-coder' })   // or team-spec-reviewer, team-reviewer, team-verifier, team-finisher
 ```
 
-Key: `mode: "plan"` forces plan approval before implementing.
-
-### QB spawning
-
-```
-Task(
-  subagent_type = "quarterback",
-  model = "opus",
-  team_name = "{team-name}",
-  name = "qb",
-  prompt = <generated QB prompt>
-)
-```
-
-Key: uses the tool-restricted `quarterback` agent definition.
-
-### Finalization spawning
-
-```
-Task(
-  subagent_type = "pnpm-lint",     // or pnpm-types, pnpm-knip, pnpm-test
-  model = "sonnet",
-  team_name = "{team-name}",
-  name = "lint-agent",
-  prompt = "Run lint:fix on {packages}. Iterate until clean."
-)
-```
+The `agentType` loads the role agent verbatim (fixed toolset). The generated `prompt` carries identity, task IDs, file scope, rules, and the STATUS convention. Finalization stages use `team-verifier` (lint/types/knip/test) at `model: 'sonnet'`.
 
 ---
 
@@ -239,10 +184,7 @@ Task(
 | Anti-pattern | Why it's bad | Do this instead |
 |-------------|-------------|-----------------|
 | One agent per file | Overhead, context waste | Group by module |
-| Implementer with no plan mode | Goes off-track, wastes tokens | Always `mode: "plan"` |
-| QB that also implements | Role confusion, missed reviews | Tool-restricted QB agent |
 | All opus for mechanical work | 3x cost for same result | Sonnet for lint/types/knip |
-| Hooks on small teams | Overhead exceeds benefit | Prompt-based for 1-2 agents |
 | No file ownership | Agents clobber each other's work | Always define ownership |
 | Serial tasks that could parallel | Wastes time | Parallelize independent work |
 | Fresh spawn for every issue | Wastes context | Resume for small fixes |
@@ -296,13 +238,10 @@ Before outputting:
 [ ] Set phase ordering from dependency analysis
 [ ] Defined file ownership with non-overlapping globs
 [ ] Chose agent count (prefer fewer)
-[ ] Decided QB: yes/no based on team size + task complexity
-[ ] Decided scope enforcement: yes/no based on team size + risk
-[ ] Generated team-scope.json (if scope enforcement enabled)
+[ ] Decided review stage (spec/quality): yes/no based on team size + task complexity
 [ ] Generated team-plan.md with ALL required sections
 [ ] Each task has verify command + acceptance criteria
 [ ] Agent prompts include identity, tasks, scope, rules
-[ ] Implementers use mode: "plan"
 [ ] Finalization agents use dedicated subagent types + sonnet
 ```
 
@@ -356,7 +295,7 @@ Is this focused enough for single execution?
 
 **Action**: If too broad → recommend decomposition to lead.
 
-**Note**: QB will run `team-kit-review` after you return. This self-review is defense-in-depth — catch what you can before handoff.
+**Note**: the lead runs team-kit-create Step 6 (post-plan review) after you return. This self-review is defense-in-depth — catch what you can before handoff.
 
 ---
 
@@ -365,8 +304,7 @@ Is this focused enough for single execution?
 ```
 team-session/{team-name}/
 ├── design.md             # Human-readable architecture summary
-├── team-plan.md          # The executable team template
-└── team-scope.json       # Scope config (if scope enforcement enabled)
+└── team-plan.md          # The executable team template
 ```
 
-The lead agent reads `team-plan.md` and follows its orchestration checklist. If scope enforcement is enabled, `team-scope.json` is written to `team-session/{team-name}/` — the plugin's hooks discover it automatically via the `team-session/*/team-scope.json` glob.
+`/team-kit-run` reads `team-plan.md` as the ground truth for the workflow it authors and runs. Ownership/disjointness live in the plan's File Ownership Matrix (enforced by the `disjoint(owners)` pre-flight, not a config file).

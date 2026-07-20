@@ -20,13 +20,6 @@ Other trigger phrases: "team up on", "work as a team on", "let's team up", "team
 |-------|---------|
 | `team-kit-create` | Orchestrator — scope problem, create team plan (PLAN only) |
 | `team-kit-run` | Executor — run a task as a native-workflow multi-agent run over the role agents (EXECUTE). Single-branch, prod-safe. See `docs/teamkit-methodology.md` |
-| `team-kit-clarify` | Requirements extraction — one question at a time |
-| `team-kit-explore` | Approach exploration — propose 2-3 options with tradeoffs |
-| `team-kit-acceptance` | Acceptance contract — author `definition-of-done.md` + adversarial plan-vs-goal audit (Steps 4d/4e) |
-| `team-kit-present` | Section-by-section design approval |
-| `team-kit-review` | Post-plan review checklist |
-| `debug-session` | Root cause investigation methodology — single-agent or team escalation |
-| `brainstorm-session` | Requirements gathering and design — single-agent or team escalation |
 
 ## Ultracode Policy
 
@@ -78,14 +71,12 @@ Each phase reads previous phase's file from `team-session/{team-name}/`. No in-m
 
 | Agent | subagent_type | Role |
 |-------|--------------|------|
-| `team-monitor` | `claude-plugin-pnpm:team-monitor` | Health observer — tracks agent activity, task state, flags anomalies. Read-only. Use for 5+ agent teams. |
 | `team-investigator` | `claude-plugin-pnpm:team-investigator` | Root cause investigation — systematic debugging Phases 1-3. Used by debug-investigation template. |
 | `team-architect` | `claude-plugin-pnpm:team-architect` | Deep-dive module analyst — used mid-execution when a specific subsystem needs investigation before coders start. NOT for initial planning. |
 | `team-coder` | `claude-plugin-pnpm:team-coder` | Implement assigned subtasks |
 | `team-spec-reviewer` | `claude-plugin-pnpm:team-spec-reviewer` | Spec compliance review — runs BEFORE quality review |
 | `team-reviewer` | `claude-plugin-pnpm:team-reviewer` | Code quality review — runs AFTER spec review |
 | `team-tester` | `claude-plugin-pnpm:team-tester` | Write + run tests |
-| `team-auditor` | `claude-plugin-pnpm:team-auditor` | Post-implementation audit |
 | `team-security-auditor` | `claude-plugin-pnpm:team-security-auditor` | OWASP security audit |
 | `team-verifier` | `claude-plugin-pnpm:team-verifier` | Run lint/types/knip/tests |
 | `team-finisher` | `claude-plugin-pnpm:team-finisher` | Remove logs, enforce comment standards |

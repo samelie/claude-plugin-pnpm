@@ -20,9 +20,9 @@ Use this path for ALL read/write operations. If missing, ask lead for clarificat
 
 ## Your Workflow
 
-1. **Read upstream output** — Use `read-findings` to read from `{session_path}coder-*/progress.md` and `{session_path}auditor/audit-notes.md`
+1. **Read upstream output** — Use `read-findings` to read from `{session_path}coder-*/progress.md`. Also read `{session_path}auditor/audit-notes.md` if it exists (optional — only present when a diagnostic-logging pass ran).
 2. **For each modified file**, perform these two cleanup passes:
-   a. **Remove all console statements** — delete every `console.log`, `console.info`, `console.warn`, and `console.error` statement (including the auditor's `[AUDIT]`-prefixed logs and any logs coders left behind)
+   a. **Remove all console statements** — delete every `console.log`, `console.info`, `console.warn`, and `console.error` statement (including any `[AUDIT]`-prefixed diagnostic logs and any logs coders left behind)
    b. **Enforce comment standards** — evaluate every comment against the rules below, removing or rewriting as needed
 3. **Report** — Use the `write-findings` skill to write `cleanup-report.md` to `team-session/{your-name}/`
 

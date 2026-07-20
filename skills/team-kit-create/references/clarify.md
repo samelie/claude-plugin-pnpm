@@ -1,11 +1,6 @@
----
-name: team-kit-clarify
-description: "Dispatch instructions for requirements clarification. Lead invokes this, then dispatches designer(phase: clarify) in a loop until requirements are clear."
----
+# Clarify Loop — Dispatch Designer for Clarification (Step 2c detail)
 
-# team-kit-clarify — Dispatch Designer for Clarification
-
-This skill tells the lead HOW to orchestrate the clarify loop. The lead stays lean — designer agents do the heavy lifting.
+How the lead orchestrates the clarify loop. The lead stays lean — designer agents do the heavy lifting.
 
 ## When to Use
 
@@ -17,6 +12,8 @@ Problem is vague/broad — lead cannot answer:
 ## Artifact
 
 Designer writes/updates `${session_path}designer/clarify.md` each invocation. File accumulates Q&A pairs and a Resolved table.
+
+> `session_path` is ALWAYS absolute (see Step 0b) — a relative path fails to resolve from a dispatched subagent's cwd.
 
 ## Dispatch Loop
 
@@ -86,7 +83,7 @@ Requirements clear (see \`designer/clarify.md\`):
 Proceeding to approach exploration.
 ```
 
-Then invoke `team-kit-explore`.
+Then proceed to Step 3 (explore) — read `references/explore.md`.
 
 ## Anti-Patterns
 
@@ -119,5 +116,5 @@ User: "cache hit >80%, latency <50ms"
 
 Lead: reads designer/clarify.md Resolved table — all clear!
 Lead: "Requirements clear. Proceeding to approach exploration."
-Lead: invokes team-kit-explore
+Lead: proceeds to Step 3 (explore)
 ```

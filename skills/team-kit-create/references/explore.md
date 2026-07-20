@@ -1,15 +1,10 @@
----
-name: team-kit-explore
-description: "Dispatch instructions for approach exploration. Lead invokes this after clarify, dispatches designer(phase: explore) to propose options."
----
+# Explore — Dispatch Designer for Approach Exploration (Step 3 detail)
 
-# team-kit-explore — Dispatch Designer for Approach Exploration
-
-This skill tells the lead HOW to run the explore phase. Designer does codebase research and proposes approaches — lead stays lean.
+How the lead runs the explore phase. Designer does codebase research and proposes approaches — lead stays lean.
 
 ## When to Use
 
-After `team-kit-clarify` completes (or when problem was already well-scoped). Before present phase.
+After the clarify loop completes (Step 2c), or when problem was already well-scoped. Before present phase.
 
 **Purpose**: Surface alternatives. Get user buy-in before investing in detailed planning.
 
@@ -20,6 +15,8 @@ designer/clarify.md (input) → designer/explore.md (output)
 ```
 
 Designer reads `clarify.md` for resolved requirements, writes `explore.md` with approaches + chosen approach.
+
+> `session_path` is ALWAYS absolute (see Step 0b).
 
 ## Dispatch Flow
 
@@ -90,7 +87,7 @@ Approach selected: **[Name]** (see \`designer/explore.md\`)
 Proceeding to requirements presentation.
 ```
 
-Proceed to designer(present) phase — Step 3b in `team-kit-create`.
+Proceed to designer(present) phase — Step 3b in the main SKILL.md.
 
 ## Alternative Handling
 

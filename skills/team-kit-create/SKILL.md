@@ -1,23 +1,11 @@
 ---
 name: team-kit-create
-description: "Scope a problem and create a multi-agent team plan with roles, task lists, and handoff to /team-kit-run. Triggers: team, agent team, multi-agent, create team, team plan, orchestrate agents, team template, team-kit, parallel team, as a team, team up, work as a team, fork"
+description: "Scope a problem and create a multi-agent team plan with roles, task lists, and handoff to /team-kit-run. Triggers: team, agent team, multi-agent, create team, team plan, orchestrate agents, team template, team-kit, parallel team, as a team, team up, work as a team"
 ---
 
 # /team-kit-create — Scope, Plan, and Structure a Multi-Agent Team
 
 Turn a problem into an agent team plan. This skill handles **planning only** — scoping the problem, defining roles, building the task list, and emitting the plan. Execution is `/team-kit-run` (native-workflow multi-agent run), handed off at Step 7. create=PLAN, run=EXECUTE.
-
-## Fork Mode Detection
-
-If user's request contains **"fork"** (e.g., "as a team (fork), implement..."):
-- Set `fork_mode: true` in team-plan.md frontmatter
-- Lead will spawn children WITHOUT subagent_type (triggers fork caching)
-- Children self-discover their agent definition via `${CLAUDE_PLUGIN_ROOT}/agents/{agent}.md`
-- ~10x cost reduction for children 2-N
-
-**Requires**: `CLAUDE_CODE_FORK_SUBAGENT=1` env var.
-
-See `FRAMEWORK.md` → Fork Mode for full documentation.
 
 ## Core Pattern: Lead Dispatches, Designers Execute
 
@@ -72,9 +60,9 @@ digraph team_kit_create {
   "Dispatch goal-auditor(define)" [shape=box];
   "Dispatch goal-auditor(audit)" [shape=box];
   "Plan satisfies goal?" [shape=diamond];
-  "Invoke team-kit-present" [shape=box];
+  "Present design (Step 5)" [shape=box];
   "Design approved?" [shape=diamond];
-  "Invoke team-kit-review" [shape=box];
+  "Post-plan review (Step 6)" [shape=box];
   "Review passed?" [shape=diamond];
   "User file review gate" [shape=box];
   "Hand off to /team-kit-run" [shape=doublecircle];
@@ -108,11 +96,11 @@ digraph team_kit_create {
   "Dispatch goal-auditor(define)" -> "Dispatch goal-auditor(audit)";
   "Dispatch goal-auditor(audit)" -> "Plan satisfies goal?";
   "Plan satisfies goal?" -> "Dispatch planner" [label="gaps (cap 2)"];
-  "Plan satisfies goal?" -> "Invoke team-kit-present" [label="clean"];
-  "Invoke team-kit-present" -> "Design approved?";
-  "Design approved?" -> "Invoke team-kit-present" [label="no, revise"];
-  "Design approved?" -> "Invoke team-kit-review" [label="yes"];
-  "Invoke team-kit-review" -> "Review passed?";
+  "Plan satisfies goal?" -> "Present design (Step 5)" [label="clean"];
+  "Present design (Step 5)" -> "Design approved?";
+  "Design approved?" -> "Present design (Step 5)" [label="no, revise"];
+  "Design approved?" -> "Post-plan review (Step 6)" [label="yes"];
+  "Post-plan review (Step 6)" -> "Review passed?";
   "Review passed?" -> "Dispatch planner" [label="major issues"];
   "Review passed?" -> "User file review gate" [label="yes"];
   "User file review gate" -> "Hand off to /team-kit-run";
@@ -124,9 +112,8 @@ digraph team_kit_create {
 ```
 /team-kit-create                        # interactive — asks what you need
 /team-kit-create <description>          # scope + plan a team for this task
-/team-kit-create health                 # existing template: monorepo health
-/team-kit-create deep-clean             # existing template: full sweep
-/team-kit-create knip-audit             # existing template: dead code audit
+/team-kit-create health                 # saved workflow: monorepo health
+/team-kit-create deep-clean             # saved workflow: full sweep
 /team-kit-create list                   # show available templates
 ```
 
@@ -193,7 +180,8 @@ Parse input to determine path:
 | Input | Path |
 |-------|------|
 | `list` | **List** — show templates, stop |
-| `health`, `deep-clean`, `knip-audit`, `debug` | **Template** — present existing template |
+| `health`, `deep-clean` | **Saved workflow** — point at `/monorepo-health` / `/monorepo-fix` |
+| `debug` | **Template** — present debug-investigation template |
 | Contains "debug", "investigate", "root cause", "why is...broken" | **Debug** — use debug template with issue extracted |
 | Contains "design", "spec", "requirements", "what should we build" | **Design** — dispatch designer phases, then planner |
 | Clear, detailed spec | **Plan** — skip clarification, go to Step 3 |
@@ -216,16 +204,15 @@ If any are unclear → clarify first.
 Read `${CLAUDE_PLUGIN_ROOT}/team-templates/` and present:
 
 ```
-Available team templates:
-  health             — lint/types/knip/test on changed packages
-  deep-clean         — full workspace sweep, all checks
-  knip-audit         — dead code audit across workspace
-  debug              — systematic debugging for complex bugs
-  k8s-jobs-migration — migrate k8s job definitions
-  migrate-scripts    — migrate monorepo scripts
+Recurring shapes — run the saved workflow directly (no planning needed):
+  health      — lint/types/knip/test on changed packages   →  /monorepo-health
+  deep-clean  — full workspace sweep, all checks            →  /monorepo-fix
+
+Template docs (read → summarize → hand to /team-kit-run):
+  debug       — systematic debugging for complex bugs       →  debug-investigation.md
 
 Usage:
-  /team-kit-create <name>           — use a template
+  /team-kit-create <name>           — use a template / point to a saved workflow
   /team-kit-create <description>    — plan a custom team
   /team-kit-create debug <issue>    — debug investigation team
 ```
@@ -234,15 +221,16 @@ Stop after listing.
 
 ## Step 2b: Template mode
 
-Map shortcut to file:
+Map shortcut to target:
 
-| Shortcut | Template |
-|----------|---------|
-| `health` | `${CLAUDE_PLUGIN_ROOT}/team-templates/monorepo-health.md` |
-| `deep-clean` | `${CLAUDE_PLUGIN_ROOT}/team-templates/monorepo-deep-clean.md` |
-| `knip-audit` | `${CLAUDE_PLUGIN_ROOT}/team-templates/knip-config-audit.md` |
-| `debug` | `${CLAUDE_PLUGIN_ROOT}/team-templates/debug-investigation.md` |
+| Shortcut | Target | Action |
+|----------|--------|--------|
+| `health` | `/monorepo-health` saved workflow | point user at the workflow (already canned — no plan step) |
+| `deep-clean` | `/monorepo-fix` saved workflow | point user at the workflow |
+| `debug` | `${CLAUDE_PLUGIN_ROOT}/team-templates/debug-investigation.md` | read template → summarize → hand to `/team-kit-run` |
 
+For a **saved-workflow** shortcut (health/deep-clean): name the workflow and stop — the user runs it directly.
+For the **template-doc** shortcut (debug):
 1. Read the template
 2. Present summary (name, agents, phases, cost estimate)
 3. Hand off to `/team-kit-run` (see Step 7)
@@ -252,7 +240,7 @@ Map shortcut to file:
 
 When problem is vague/broad, run the clarify loop.
 
-**Follow `team-kit-clarify` skill** — it tells you HOW to dispatch.
+**Read `references/clarify.md`** (this skill dir) — full dispatch detail, anti-patterns, example flow.
 
 ### The Loop
 
@@ -319,7 +307,7 @@ If team-sized: proceed to Step 3.
 
 Before committing to a design, explore alternatives.
 
-**Follow `team-kit-explore` skill** — it tells you HOW to dispatch.
+**Read `references/explore.md`** (this skill dir) — full dispatch detail, alternative handling, anti-patterns.
 
 ### Dispatch
 
@@ -560,16 +548,15 @@ The designer refined requirements against research — honor refine decisions.
 
 Planner produces:
 - `design.md` — human-readable architecture summary
-- `team-plan.md` — full plan with roles, tasks, ownership, phases
-- `team-scope.json` — scope config for hook enforcement (legacy native-team path)
+- `team-plan.md` — full plan with roles, tasks, ownership matrix (disjoint globs), phases
 - `plan.workflow.js` — the committed, re-runnable workflow spine. The planner does NOT emit it; `/team-kit-run` mode-1 **AUTHORS it (native "Claude writes the script") from `team-plan.md`, then lints + saves** it (md is the ground truth; re-author on change). See PLANNER.md → `### 3. plan.workflow.js` + team-kit-run → "committed spine (native author → lint → save)".
 
 ---
 
-## Step 4d: Author Acceptance Contract (invoke team-kit-acceptance)
+## Step 4d: Author Acceptance Contract (read references/acceptance.md)
 
 After the planner returns, turn requirements + plan into a checkable **acceptance contract** —
-the keystone the whole pipeline converges on. **Follow `team-kit-acceptance` skill.**
+the keystone the whole pipeline converges on. **Read `references/acceptance.md`** (this skill dir) for full dispatch detail.
 
 ```javascript
 Agent({
@@ -593,7 +580,7 @@ checkable) → route back to planner/designer to sharpen, then re-run define. Pr
 
 ---
 
-## Step 4e: Plan-vs-Goal Audit (invoke team-kit-acceptance)
+## Step 4e: Plan-vs-Goal Audit (read references/acceptance.md)
 
 Adversarial, fresh-context check that the plan + contract faithfully satisfy the **original**
 goal. Cheapest place to catch intent drift — fixing a plan is free vs. fixing built code.
@@ -633,43 +620,74 @@ the contract into `/team-kit-run` as the execution stop condition. Proceed to St
 
 ---
 
-## Step 5: Present Design (invoke team-kit-present)
+## Step 5: Present Design (inline — design approval gates)
 
-After planner returns, present design section-by-section:
+After acceptance passes, present the DESIGN section-by-section. Distinct from Step 3b: that presented REQUIREMENTS via the designer; this presents the planner's `design.md` + `team-plan.md`. Lead presents inline — no dispatch.
 
-```
-Skill tool: team-kit-present
-```
+**Purpose**: catch misunderstandings early. Incremental approval = incremental correction.
 
-This skill handles incremental approval:
-1. Components/Architecture → approve
-2. Data Flow/Interfaces → approve
-3. File Ownership → approve
-4. Task List → approve
+Present 4 sections; each gets explicit approval before the next:
 
-If any section rejected → revise → re-present.
+| # | Section | Source | Present |
+|---|---------|--------|---------|
+| 1 | Components / Architecture | `design.md` | component table (name + 1-line role) + how they connect |
+| 2 | Data Flow / Interfaces | `design.md` | data-flow summary + key signatures/types |
+| 3 | File Ownership | `team-plan.md` | ownership matrix — no overlaps, one owner per file |
+| 4 | Task List | `team-plan.md` | task table (id, title, phase, agent, blockedBy) + per-phase counts |
 
-After all sections approved, proceed to Step 6.
+End each section with an explicit approval question ("Does this structure look right?" / "Approve ownership distribution?").
+
+**Rejection handling**: ask specifically what's wrong → clarify → minor fix = edit `design.md`/`team-plan.md` inline; major issue = re-run planner with feedback. Re-present the revised section showing what changed. Don't proceed until the current section is approved.
+
+**Style**: scannable tables not prose walls; reference files ("full detail in `design.md`"); highlight decisions ("chose X over Y because…"); invite questions.
+
+Anti-patterns: whole design at once; moving on without explicit approval; re-presenting unchanged content; skipping sections for "simple" designs.
+
+After all 4 approved → Step 6.
 
 ---
 
-## Step 6: Post-Plan Review (invoke team-kit-review)
+## Step 6: Post-Plan Review (inline — fresh-eyes whole-document check)
 
-Run review checklist on design.md + team-plan.md:
+Catch what section-by-section approval misses — placeholders, cross-document inconsistency, ambiguity visible only in the whole.
 
+**Option A (recommended): dispatch `team-plan-reviewer`** — fresh context, no planning bias:
+
+```javascript
+Agent({
+  subagent_type: "team-plan-reviewer",
+  model: "sonnet",
+  description: "Review plan artifacts",
+  prompt: `
+Review the team plan for completeness, consistency, and clarity.
+
+Session path: \`${session_path}\`   // ABSOLUTE (Step 0b)
+
+Read and review:
+- \`${session_path}requirements.md\`
+- \`${session_path}design.md\`
+- \`${session_path}team-plan.md\`
+- \`${session_path}definition-of-done.md\` — every AC maps to a task, every deliverable covered
+- \`${session_path}goal-auditor/goal-audit.md\` — confirm STATUS CLEAN, no unresolved findings
+
+Write findings to \`${session_path}plan-review.md\`.
+`
+})
 ```
-Skill tool: team-kit-review
-```
 
-This skill checks:
-- Placeholder scan (no TBD/TODO)
-- Internal consistency
-- Type consistency
-- Ambiguity check
-- Scope check
+Agent writes `plan-review.md` with verdict.
 
-If review passes → proceed to Step 7.
-If issues found → fix or re-run planner → re-review.
+**Option B: inline checklist** (simple plans) — run 5 checks against `design.md` + `team-plan.md` yourself:
+
+| Check | Catches |
+|-------|---------|
+| 1. Placeholder scan | TBD / TODO / `...` / `[placeholder]` / empty sections / vague reqs ("appropriate error handling") |
+| 2. Internal consistency | every design component ↔ ≥1 task; every task file ↔ an owner; blockedBy ↔ phase ordering |
+| 3. Type consistency | same function/type/module names across `design.md` and `team-plan.md` |
+| 4. Ambiguity | any requirement interpretable two ways → make explicit (exact behavior, file:line refs) |
+| 5. Scope | 10+ tasks → consider splitting; multiple independent features → separate plans |
+
+**Decision**: no issues / minor fixed inline → Approved → Step 7. Issues needing planner revision → re-run planner with findings → re-review. Zero tolerance for placeholders; block on real issues only, not style.
 
 ---
 
@@ -686,7 +704,7 @@ Before the human file review, validate the sealed contract — mostly mechanical
 | every AC has a `verify` method (command or grader agent) | un-checkable "done" |
 | every blocking **semantic** AC has a producible evidence artifact (a task writes it to a known path) | ungradeable "done" (semantic AC with no input) |
 | `goal-auditor/goal-audit.md` STATUS = CLEAN | intent drift vs `prompt.md` |
-| `team-scope.json` file globs disjoint | parallel write collisions |
+| `team-plan.md` ownership-matrix globs disjoint (the `disjoint(owners)` pre-flight input) | parallel write collisions |
 
 Any check fails → fix (re-dispatch planner or goal-auditor) before proceeding. These files are
 the contract `/team-kit-run` boots from: a **fresh** orchestrator with zero planning context must
@@ -722,13 +740,6 @@ Wait for user approval. If changes requested → edit → re-present relevant se
 For **template mode**, the handoff names the saved workflow if one exists:
 > `/team-kit-run` → saved `/{template}` workflow (entry mode 3), or the template file via entry mode 2.
 
-**Legacy fallback (native team, only if workflows unavailable):** a manual spawn prompt —
-```
-Read `team-session/{team-name}/team-plan.md`. Create a team via TeamCreate, Shift+Tab for delegate mode,
-spawn agents per template. Lead orchestrates + gates only. Do NOT implement.
-```
-Prefer `/team-kit-run` — the legacy path lacks deterministic control flow, resume, and schema handoff.
-
 **Skill ends here.** Execution is `/team-kit-run` (a separate, gated action).
 
 ---
@@ -753,7 +764,7 @@ Lead owns:
 - User communication (presenting questions, getting approvals)
 - Phase transitions (deciding when clarify is complete, when to proceed)
 - Context accumulation (building clarify_context, explore_result)
-- Skill invocation (team-kit-present, team-kit-review)
+- Design presentation + post-plan review gates (Steps 5-6, inline)
 - Final handoff to `/team-kit-run` (execution) after file approval
 
 Lead does NOT:
@@ -810,17 +821,14 @@ Handoff data shapes between workflow stages: `team-templates/SCHEMA-CATALOG.md` 
 
 ## Relationship to Other Skills
 
-| Skill | Relationship |
+| Skill / Reference | Relationship |
 |-------|-------------|
 | `team-kit-run` | **EXECUTOR** — runs the approved plan: mode-1 authors `plan.workflow.js` from `team-plan.md` (native), lints + saves it, then executes (or mode-2 ad-hoc). create=PLAN, run=EXECUTE. The Step 7 handoff target. |
-| `team-kit-clarify` | Dispatch guide for designer(phase: clarify) loop |
-| `team-kit-explore` | Dispatch guide for designer(phase: explore) |
-| `team-kit-acceptance` | Dispatch guide for goal-auditor(define) + goal-auditor(audit) — Steps 4d/4e |
-| `team-kit-present` | Invoked in Step 5 for planner output approval (design.md sections) |
-| `team-kit-review` | Invoked in Step 6 for post-plan review |
+| `references/clarify.md` | In-skill dispatch guide for designer(phase: clarify) loop — Step 2c |
+| `references/explore.md` | In-skill dispatch guide for designer(phase: explore) — Step 3 |
+| `references/acceptance.md` | In-skill dispatch guide for goal-auditor(define) + goal-auditor(audit) — Steps 4d/4e |
 | `investigation-methodology` | Used by designer and researcher for codebase exploration |
 | `team-session-writing` | Compressed doc style for all team-session artifacts |
-| `context-mode:grill-with-docs` | Used by designer during clarify for domain challenges |
 
 ## Related Agents
 

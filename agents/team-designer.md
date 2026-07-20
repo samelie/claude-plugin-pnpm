@@ -1,7 +1,7 @@
 ---
 name: team-designer
 description: "Phase-aware requirements specialist. Dispatched by lead with specific phase (clarify|explore|present|write|refine). Each invocation does ONE thing and returns. Stateless — lead maintains context between dispatches."
-model: opus
+model: inherit
 effort: ultracode
 tools: Read, Glob, Grep, Write, Bash, mcp__cocoindex-code__*, mcp__plugin_claude-mem_mcp-search__*, mcp__plugin_context-mode_context-mode__*
 skills:

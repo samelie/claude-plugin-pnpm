@@ -1,6 +1,6 @@
 {
   "name": "claude-plugin-pnpm",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Agent teams, workspace-aware fixing, changeset shipping, and team-role agents (architect, coder, reviewer, tester, auditor) for pnpm monorepos",
   "author": {
     "name": "adddog",
@@ -19,18 +19,15 @@
   "skills": "./skills/",
   "agents": [
     "./agents/team-planner.md",
-    "./agents/quarterback.md",
     "./agents/team-plan-reviewer.md",
     "./agents/team-goal-auditor.md",
     "./agents/pnpm-workspace-filter.md",
     "./agents/researcher.md",
     "./agents/team-architect.md",
-    "./agents/team-auditor.md",
     "./agents/team-coder.md",
     "./agents/team-designer.md",
     "./agents/team-finisher.md",
     "./agents/team-investigator.md",
-    "./agents/team-monitor.md",
     "./agents/team-researcher.md",
     "./agents/team-reviewer.md",
     "./agents/team-security-auditor.md",

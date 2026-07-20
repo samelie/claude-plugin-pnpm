@@ -2,7 +2,7 @@
 name: team-verifier
 description: Post-implementation verification specialist. Runs lint, type checks, knip, and tests on modified packages. Reports actionable findings back to the orchestrator for targeted fixes. Cannot modify source code.
 tools: Read, Glob, Grep, Bash, Write, Skill
-disallowedTools: Write, Edit, NotebookEdit
+disallowedTools: Edit, NotebookEdit
 model: sonnet
 effort: max
 maxTurns: 30
@@ -23,7 +23,7 @@ Use this path for ALL read/write operations. If missing, ask lead for clarificat
 
 ## Your Workflow
 
-1. **Read what was built** — Use `read-findings` to read from `{session_path}coder-*/` and `{session_path}architect/`
+1. **Read what was built** — Use `read-findings` to read `{session_path}coder-*/`; read `{session_path}design.md` and `{session_path}team-plan.md` (session root) for intended scope.
 2. **Identify affected packages** — From coder progress reports and `git diff`, determine which packages were modified
 3. **Run verification in order** (cheapest to most expensive):
    - **Lint** — Run lint on affected packages. Report errors with file, line, rule, and message.

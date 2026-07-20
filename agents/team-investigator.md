@@ -5,7 +5,6 @@ model: opus
 effort: max
 tools: Read, Glob, Grep, Write, Bash, mcp__cocoindex-code__*, mcp__plugin_claude-mem_mcp-search__*, mcp__plugin_context-mode_context-mode__*, mcp__context7__*
 skills:
-  - debug-session
   - investigation-methodology
 ---
 
@@ -35,7 +34,7 @@ Use this path for ALL read/write operations. If missing, ask lead for clarificat
 1. Read `team-session/{team-name}/team-plan.md` for context
 2. **Mine prior team sessions** — `team-session/` keeps ALL past team runs permanently, not just yours. List them in reverse chronological order (`ls -1t team-session/` — most are named `YYYYMMDD-{name}`, so the date prefix also sorts) and skim recent sessions whose names relate to the issue you're debugging. Use whatever search tools you prefer (Grep, ctx_batch_execute, read-findings skill) over their contents — prior investigations, root-cause docs, and findings often cover the same subsystem. Treat them as evidence leads and starting points; the CURRENT task prompt stays your anchor — stale conclusions don't override fresh evidence.
 3. Create investigation files in `team-session/{team-name}/`
-4. Follow the debug-session skill exactly
+4. Follow the phases below exactly — no fixes before Phase 1 evidence, one hypothesis at a time
 
 ## Phase 1: Root Cause Investigation
 
@@ -162,11 +161,7 @@ When root cause confirmed, write summary to `team-session/{team-name}/root-cause
 {how to verify fix works}
 ```
 
-Then message lead:
-
-```
-SendMessage(to: "lead", message: "Root cause identified. See team-session/{team-name}/root-cause.md. Ready for Phase 4.", summary: "Root cause found, ready for fix phase")
-```
+Then return to the lead — your final message IS the return value (no SendMessage). Write `root-cause.md`, then end with the STATUS line. The lead reads `root-cause.md` + your STATUS and dispatches Phase 4 (fix).
 
 ## Red Flags
 

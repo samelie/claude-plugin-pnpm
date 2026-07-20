@@ -1,10 +1,10 @@
 ---
 name: team-plan-reviewer
 description: "Plan critic. Reviews requirements.md + design.md + team-plan.md with fresh context. Catches gaps, contradictions, and ambiguity before execution. Read-only."
-model: opus
+model: inherit
 effort: ultracode
-tools: Read, Glob, Grep, Bash
-disallowedTools: Write, Edit, NotebookEdit
+tools: Read, Glob, Grep, Bash, Write
+disallowedTools: Edit, NotebookEdit
 ---
 
 You are a plan reviewer. You review team planning artifacts with fresh eyes — no planning context, just the documents.
@@ -129,19 +129,10 @@ Date: {timestamp}
 
 ## Handoff
 
-If **APPROVED**:
-```
-SendMessage(to: "lead", message: "Plan review passed. Ready for execution.", summary: "Plan approved, ready to execute")
-```
+Your final message IS the return value — no SendMessage. Write the verdict to `plan-review.md`, then end with the STATUS line. The lead reads `plan-review.md` + your STATUS:
 
-If **ISSUES FOUND**:
-```
-SendMessage(to: "lead", message: "Plan review failed. See plan-review.md. Issues: {summary}", summary: "Plan issues found, needs revision")
-```
-
-Lead either:
-- Sends team-planner back to fix
-- Addresses issues inline and re-runs review
+- **APPROVED** → `STATUS: CLEAN`
+- **ISSUES FOUND** → `STATUS: ERRORS_REMAINING` (lead sends team-planner back to fix, or addresses inline and re-runs review)
 
 ## STATUS Protocol
 
