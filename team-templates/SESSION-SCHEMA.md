@@ -28,8 +28,7 @@ team-session/{team-name}/
 ├── [PLANNING PHASE - root level]
 ├── requirements.md          ← team-designer (write phase, updated by refine phase)
 ├── design.md                ← team-planner (reads requirements.md + refine.md)
-├── team-plan.md             ← team-planner (reads requirements.md + refine.md)
-├── team-scope.json          ← team-planner (hook config)
+├── team-plan.md             ← team-planner (reads requirements.md + refine.md; ownership matrix carries disjoint globs)
 ├── definition-of-done.md    ← team-goal-auditor (define phase, acceptance contract — the stop condition)
 ├── plan-review.md           ← team-plan-reviewer
 │
@@ -57,9 +56,6 @@ team-session/{team-name}/
 ├── tester/
 │   └── test-plan.md         ← team-tester
 │   └── test-results.md
-│
-├── auditor/
-│   └── audit-notes.md       ← team-auditor
 │
 ├── security-auditor/
 │   └── security-audit.md    ← team-security-auditor
@@ -104,7 +100,7 @@ Each agent writes to its own subfolder:
 Examples:
 - `team-session/20260424-feature/researcher/findings.md`
 - `team-session/20260424-feature/coder-alice/progress.md`
-- `team-session/20260424-feature/auditor/audit-notes.md`
+- `team-session/20260424-feature/verifier/results.md`
 
 ### 3. Multiple instances use `{agent-type}-{name}/`
 
@@ -133,9 +129,8 @@ When same agent type runs multiple times:
 | team-spec-reviewer | `requirements.md`, coder output | `spec-reviewer/spec-review-{task-id}.md` |
 | team-reviewer | coder output, spec-reviewer output | `reviewer/review-{task-id}.md` |
 | team-tester | `design.md`, coder output | `tester/test-plan.md`, `tester/test-results.md` |
-| team-auditor | `design.md`, coder output | `auditor/audit-notes.md` |
 | team-verifier | all source files | `verifier/results.md`, `validation-report.md` (phase N+2) |
-| team-finisher | auditor output, coder output | `finisher/cleanup-report.md` |
+| team-finisher | coder output | `finisher/cleanup-report.md` |
 | lead/orchestrator (execution) | `validation-report.md`, `verifier/results.md`, `definition-of-done.md` | `build-state.md` (AC ledger, re-read each gate) |
 
 ### 5. Phase gates check file existence

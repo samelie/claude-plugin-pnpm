@@ -1,7 +1,7 @@
 # Team Framework
 
-> Invariant rules for all agent teams. The planner reads this as constraints.
-> The lead reads this as execution protocol. Agents read the sections relevant to their role.
+> Invariant rules for all agent teams. team-kit-run reads the execution sections; the planner reads the rest as constraints.
+> Agents read the sections relevant to their role.
 >
 > Customize monorepo-specific rules (branch prefix, tsconfig policy, etc.) in your project's CLAUDE.md.
 
@@ -9,49 +9,23 @@
 
 ## Roles
 
-### Lead (the orchestrator)
-
-- Creates team via `TeamCreate`
-- Creates team-session folder: `team-session/YYYYMMDD-{team-name}/`
-- Enables delegate mode (Shift+Tab) immediately after TeamCreate
-- Spawns designer first (if requirements unclear) — waits for approved spec
-- Creates ALL tasks via `TaskCreate` with `blockedBy` dependencies before spawning agents
-- Spawns agents via `Task` tool with `team_name`, `name`, `mode` params
-- **CRITICAL**: Provides session path to ALL agents in their prompts (see Session Path below)
-- **Does NOT implement** — only orchestrates and gates phase transitions
-- Monitors `TaskList`; advances phases when dependencies resolve
-- Runs final verification after all phases
-- Sends `shutdown_request` to all agents when done, then `TeamDelete`
-
 ### Designer (phase-based requirements)
 
 - Uses `team-designer` agent definition
 - **Stateless, phase-aware** — dispatched multiple times with specific phase
 - Phases: `clarify` (one question) | `explore` (2-3 approaches) | `present` (one section) | `write` (requirements.md) | `refine` (post-research grilling)
 - Each dispatch does ONE thing and returns — lead maintains state between dispatches
-- Lead dispatches via `team-kit-clarify` and `team-kit-explore` skill patterns
+- Lead dispatches via the `skills/team-kit-create/references/clarify.md` and `explore.md` patterns
 - Outputs `requirements.md` to team-session folder (in `write` phase)
 - In `refine` phase: **semi-autonomous** — self-dispatches for code exploration questions (no lead round-trip), returns to lead only for human-judgment questions or when complete. Reads researcher findings, cross-references against requirements, updates `requirements.md` inline. Max 10 rounds (configurable by lead). Has full research capability.
 - **Does NOT plan tasks, make technical decisions, or write code** — only gathers and refines requirements (WHAT, not HOW)
 
-### Quarterback (QA reviewer)
-
-- Uses the `quarterback` agent definition — **tool-restricted** (no Edit/Write)
-- Structurally cannot modify code — only reads and reviews
-- Focuses on **subjective review**: does code match requirements, follow patterns, avoid bugs?
-- Hooks handle mechanical checks (build/test/lint) — QB doesn't duplicate that
-- Receives completion messages from implementers, reviews changed files
-- Sends approval or rejection (with specifics) to lead
-- See [QB Protocol](#quarterback-protocol) below
-
 ### Implementers
 
-- Spawned with `mode: "plan"` — must submit plan for lead approval before implementing
 - Each agent owns a **cohesive group of related tasks** (not one per micro-task)
-- Only modifies files in its `files_owned` (enforced by scope hook when active)
-- After completing a task, self-claims next unassigned unblocked task from `TaskList`
-- Reports to QB with change summary when done
+- Only modifies files in its `files_owned`
 - Runs build/verify for their package(s) before reporting done
+- The review stage reviews changed files
 
 **Use only supported agent types.** See team-planner.md for the full list with `subagent_type` values. Do not invent agent types — if a task doesn't fit existing roles, assign to `team-coder` with specific instructions.
 
@@ -65,35 +39,17 @@
   - `pnpm-test` for test fixes
 - Use `model: "sonnet"` (sufficient for mechanical work)
 
-### Team Monitor (optional)
-
-- Uses `team-monitor` agent definition — **read-only** (no Edit/Write)
-- Observes team health, does NOT orchestrate or implement
-- Tracks: agent activity, task state, message patterns, anti-patterns
-- Reports periodic health summaries to lead
-- Flags anomalies: stuck agents, blocked tasks, missing STATUS, scope concerns
-
-**When to spawn:**
-- Team has 5+ agents
-- Execution expected to run 20+ turns
-- Complex dependency chains
-- Previous teams had coordination issues
-
-**Skip for:** Small teams (2-3 agents) — lead can track directly.
-
 ---
 
 ## Session Path (CRITICAL)
 
 **Every agent prompt MUST include the session path.** Without it, agents write to wrong locations.
 
-### Lead creates session folder
+### Session folder
 
-```bash
-mkdir -p team-session/YYYYMMDD-{team-name}
-```
+The session-start hook creates `team-session/YYYYMMDD-{team-name}/` automatically.
 
-### Lead includes in EVERY agent prompt
+### Each agent prompt includes
 
 ```markdown
 ## Session Path
@@ -134,11 +90,11 @@ All teams follow this phase pattern:
 
 | Phase | What happens | Gate to advance |
 |-------|-------------|-----------------|
-| 0 | TeamCreate, delegate mode, TaskCreate all tasks, spawn all agents | All agents spawned |
-| 1..N | Implementers work in parallel, QB reviews | All phase tasks complete + QB approved |
+| 0 | Workflow authored + launched | All agents spawned |
+| 1..N | Implementers work in parallel, review stage checks | All phase tasks complete + review (spec→quality) passed |
 | N+1 | Finalization agents (lint/types/knip/test) | All exit clean |
 | N+2 | Validation — verify feature/fix works beyond unit tests | Acceptance criteria verified |
-| Final | Lead runs verification, shutdown all agents, TeamDelete | Verification passes |
+| Final | team-verifier validate + human-gated prod checklist | Verification passes |
 
 Phases are sequential. Tasks within a phase can be parallel. Use `blockedBy` to enforce ordering.
 
@@ -208,6 +164,8 @@ The phase ladder above has two execution counterparts, split on the **human-gate
 5. **No mid-run input; resume within-session only.** A multi-gate job = several sequential workflow runs, human gates BETWEEN runs.
 6. **Schema is reliable** (re-verified 2026-06-05, 4/4 heavy agents returned). Heavy stages STILL default to FILE + `STATUS:` for lean context + bulk handoff, NOT because schema breaks. Wrap critical-path `await agent()` in `tryAgent` for transport aborts (stall/rate-limit/subprocess).
 
+**Scope/STATUS not hook-enforced (verified):** in `/team-kit-run` workflows, scope and STATUS are NOT hook-enforced — rely on single-writer / propose-then-apply discipline (rule 4) and the STATUS Protocol convention instead.
+
 **Handoff:** stages pass the 5 canonical schemas in `SCHEMA-CATALOG.md` (data) + `sessionFile` pointers (bulk). The N+2 Validation phase is the workflow's Validate stage → `ACEvidence` (automatable AC only; `automatable:false` → in-session manual).
 
 **Prod-gating (mandatory):** deploys, migrations, deletes, kubectl, scaling, ingest kicks, paid live calls NEVER run inside the autonomous workflow — they return as a human-gated checklist.
@@ -226,29 +184,6 @@ The phase ladder above has two execution counterparts, split on the **human-gate
 
 ---
 
-## Hook Enforcement Points
-
-Hooks provide structural guardrails beyond prompt instructions.
-
-| Hook Event | Script | What it enforces |
-|-----------|--------|-----------------|
-| `PreToolUse` (Edit\|Write) | `check-team-scope.sh` | File must be within team's package scope |
-| `SubagentStop` | `subagent-stop-verify.sh` | Agent must have reported STATUS before stopping |
-| `Stop` | (optional) | Lead can't stop until all tasks complete |
-
-Scope enforcement comes from the plugin's own `hooks/hooks.json` — always active when the plugin is enabled. The scope hook auto-discovers `team-session/*/team-scope.json`. No per-team wiring needed.
-
-**Workflow caveat (verified):** these hooks fire for the legacy native-team / Task-tool path ONLY. They do NOT fire for `/team-kit-run` workflow-spawned agents — so in workflows, scope/STATUS are NOT hook-enforced. Use the single-writer / propose-then-apply discipline (see Workflow Execution) instead.
-
-### Hook input/output contract
-
-- **Command hooks** receive tool input JSON on stdin
-- **PreToolUse** can output `hookSpecificOutput` with `permissionDecision: "deny"` to block
-- **SubagentStop** returns `{"decision": "approve"}` or `{"decision": "block", "reason": "..."}`
-- Exit code 0 = allow, exit code 2 = reject with feedback
-
----
-
 ## Model Selection
 
 Use the least powerful model that can handle each role — conserve cost + speed. In a `/team-kit-run` workflow, set per-stage model via `opts.model` (omit to inherit the session model).
@@ -258,7 +193,7 @@ Use the least powerful model that can handle each role — conserve cost + speed
 | Role / task | Model | Why |
 |-------------|-------|-----|
 | Lead / orchestration | `opus` | judgment for orchestration |
-| Quarterback / review judgment | `opus` | judgment for code review |
+| Plan / design critique | `opus` | fresh-eyes plan review (team-plan-reviewer / goal-auditor) |
 | Implementation (feature, multi-file) | `opus` | implementation quality matters |
 | Architecture / design / planning | `opus` | design judgment, broad understanding |
 | Investigation / root cause | `opus` | deep-dive analysis |
@@ -272,160 +207,17 @@ Use the least powerful model that can handle each role — conserve cost + speed
 
 ---
 
-## Fork Mode (Cost Optimization)
-
-When user explicitly requests **fork** (e.g., "as a team (fork), implement..."), lead uses fork spawning for ~10x cost reduction on parallel agents.
-
-> **Fork = native-team path ONLY (verified, mutually exclusive with workflows).** Fork inherits the parent prompt cache via the **Agent tool** (omit `subagent_type`) — i.e. a real lead conversation (this team / `team-kit-create` path). It does NOT work on the `/team-kit-run` workflow path: workflow `agent()` calls are named subagents with **isolated caches** (live probe `wf_16f795f9-f2d`: followers re-create ~14.5k tokens each, even warm + serial — no cross-agent prefix reuse). The workflow cost lever is model tiering + lean per-agent context, NOT cache sharing. **Routing: shared-context-heavy fan-out → native-team + fork (this lane); deterministic / resumable / independent stages → workflow (`/team-kit-run`).** Native-team is a first-class sanctioned fork lane, not a legacy fallback.
-
-### Prerequisites
-
-```bash
-export CLAUDE_CODE_FORK_SUBAGENT=1
-```
-
-Add to shell profile or CI/CD environment.
-
-### How It Works
-
-1. Lead accumulates project context (design, decisions, codebase patterns)
-2. Lead spawns children **without subagent_type** → triggers fork
-3. Children inherit lead's full context via prompt cache (children 2-N pay ~10% of normal cost)
-4. Each child self-discovers its role by reading its agent definition
-
-### Fork Spawn Pattern
-
-```markdown
-Agent(prompt: """
-You are agent: team-coder
-
-Read your instructions from: ${CLAUDE_PLUGIN_ROOT}/agents/team-coder.md
-Follow those instructions for this task.
-
-## Session Path
-team-session/{team-name}/
-
-## Your Task
-{task details from team-plan.md}
-""")
-```
-
-**CRITICAL**: Omit `subagent_type` parameter. If subagent_type is specified, fork does not trigger.
-
-### Agent Reference (for Lead)
-
-Lead picks agent by role, tells child which definition to load:
-
-| Agent | Definition Path | Use For |
-|-------|-----------------|---------|
-| team-coder | `agents/team-coder.md` | Implementation |
-| team-reviewer | `agents/team-reviewer.md` | Code quality review |
-| team-spec-reviewer | `agents/team-spec-reviewer.md` | Spec compliance (before quality) |
-| team-tester | `agents/team-tester.md` | Test writing + execution |
-| team-researcher | `agents/team-researcher.md` | Investigation + evidence gathering |
-| team-architect | `agents/team-architect.md` | Deep-dive module analysis |
-| team-auditor | `agents/team-auditor.md` | Post-implementation audit |
-| team-security-auditor | `agents/team-security-auditor.md` | OWASP security audit |
-| team-verifier | `agents/team-verifier.md` | Lint/types/knip/tests |
-| team-finisher | `agents/team-finisher.md` | Remove logs, enforce standards |
-| team-investigator | `agents/team-investigator.md` | Root cause debugging |
-
-### Fork Constraints
-
-- **Children cannot spawn sub-agents** — recursive guard prevents infinite forking
-- **Incompatible with coordinator mode** — don't use fork for lead itself
-- **First child pays full price** — cache populated after first spawn
-- **Context scales with session length** — long sessions = more tokens even with cache
-
-### When to Use Fork
-
-| Scenario | Use Fork? |
-|----------|-----------|
-| 3+ parallel coders on independent modules | ✅ Yes |
-| Single implementer | ❌ No benefit |
-| QB reviewing (needs specialized tools restriction) | ❌ Use subagent_type |
-| Parallel researchers exploring different areas | ✅ Yes |
-| Lead orchestrator | ❌ Never fork lead |
-
-### When NOT Mentioned
-
-If user does NOT say "fork", use standard pattern with explicit `subagent_type`. Fork is opt-in.
-
----
-
 ## Recovery Protocol
 
-### Stuck agent (no response)
+### Respawn caps
 
-1. Lead messages agent for status
-2. No response -> spawn fresh agent with same task + progress summary
-3. Use `resume` parameter if agent is still alive and context isn't polluted
-
-### Failed verification (QB rejection or hook failure)
-
-1. **Small fix** (missing import, typo) -> original agent fixes, or `resume` the agent
-2. **Wrong approach** -> spawn fresh agent with clean context + fix instructions
-3. Max respawns per task: **3**
+- **Small fix** (missing import, typo) → same agent fixes, or fresh spawn with fix instructions
+- **Wrong approach** → fresh spawn with clean context + fix instructions
+- Max respawns per task: **3**
 
 ### Context exhaustion
 
-Agent summarizes progress, reports to lead, requests fresh spawn with handoff context.
-
-### When to resume vs fresh spawn
-
-| Situation | Action |
-|-----------|--------|
-| Small fix, agent context is clean | `resume` with agent ID |
-| Agent went wrong direction | Fresh spawn, clean context |
-| Agent hit max_turns | Fresh spawn with progress summary |
-| Agent idle, unknown state | Message first, then fresh if no response |
-
----
-
-## Interrupt Protocol
-
-Structured interrupt handling for long-running or scope-changing situations. This is a messaging convention — no hook required.
-
-### Lead-initiated interrupt
-
-Lead sends structured message to agent:
-
-```
-INTERRUPT: {reason}
-Action: {pause | abort | report_status}
-```
-
-### Agent response to interrupt
-
-Agent MUST:
-1. Complete current atomic operation (don't leave file half-written)
-2. Write current progress to disk (`team-session/{name}/progress.md`)
-3. Respond with STATUS line
-4. If action=pause → wait for lead's next message
-5. If action=abort → clean up, write final status, stop
-6. If action=report_status → respond with progress, continue working
-
-### When to interrupt
-
-| Trigger | Recommended Action |
-|---------|-------------------|
-| Agent running >5 min with no output | `report_status` |
-| Scope change from user mid-execution | `pause` → reassess → resume or abort |
-| Another agent's findings invalidate task | `abort` with handoff context |
-| User requests status check | `report_status` |
-| Self-dispatch loop approaching max rounds | `report_status` (designer handles automatically) |
-
-### Interrupt message format
-
-```markdown
-@{agent-name} INTERRUPT: {reason}
-Action: report_status
-
-Expected response:
-- Current progress summary
-- STATUS line
-- Continue working after response
-```
+Agent summarizes progress and requests a fresh spawn with handoff context (maps to the workflow `tryAgent` / fresh-spawn retry).
 
 ---
 
@@ -469,7 +261,7 @@ Some work done, more remains. Include summary of progress.
 
 **Handling statuses:**
 
-| Status | Lead Action |
+| Status | Orchestrator/host action |
 |--------|-------------|
 | CLEAN | Proceed to next step (review or next task) |
 | DONE_WITH_CONCERNS | Read concerns, address if needed, then proceed |
@@ -484,36 +276,14 @@ Include a brief summary of completed work so the next agent doesn't redo it.
 
 ---
 
-## Quarterback Protocol
-
-1. **Receive** completion message from implementer
-2. **Read** all files the implementer changed
-3. **Check** (subjective — hooks gate mechanical):
-   - Does the code match the task requirements?
-   - Does it follow existing patterns in the codebase?
-   - Are there obvious bugs, missing edge cases?
-   - Were the acceptance criteria met?
-4. **If OK**: message lead with approval -> lead marks task complete
-5. **If NOT OK**: message lead with specific issues -> lead either:
-   - Sends fix instructions to original agent
-   - Spawns fresh agent with clean context + fix instructions
-
-### Skip QB when
-
-- Task is purely mechanical (lint fix, type fix, knip cleanup)
-- Team has <=2 agents (overhead not worth it)
-- Work is reviewed by hooks (build passes, tests pass)
-
----
-
 ## Post-Plan Review Protocol
 
 After planner generates design.md + team-plan.md, run review before execution:
 
 ### Who reviews
 
-- Lead can self-review using `team-kit-review` skill
-- Lead can dispatch QB for independent review
+- Lead can self-review using team-kit-create Step 6 (inline post-plan review checklist)
+- Dispatch team-plan-reviewer for independent review
 
 ### What to check
 
@@ -604,21 +374,3 @@ Optional sections: Reference files, Implementation sketch.
 | 7+ agents | 10x+ | Audits, mass migrations |
 
 Prefer fewer agents with grouped tasks over many micro-task agents.
-
----
-
-## Lead Orchestration Checklist
-
-```
-[ ] 1. TeamCreate
-[ ] 2. Enable delegate mode (Shift+Tab)
-[ ] 3. TaskCreate ALL tasks with blockedBy deps
-[ ] 4. Spawn QB agent (if team needs one)
-[ ] 5. Spawn implementer agents with mode: "plan"
-[ ] 6. Approve implementer plans as they come in
-[ ] 7. Monitor: QB reviews + hooks gate completions
-[ ] 8. All implementation approved -> spawn finalization agents
-[ ] 9. Finalization complete -> final verification
-[ ] 10. shutdown_request to all agents
-[ ] 11. TeamDelete
-```

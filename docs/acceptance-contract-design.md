@@ -125,15 +125,17 @@ Insert after Plan (current Step 4c) and before the existing Present/Review gates
 ... Step 4c Plan (team-planner → design.md + team-plan.md + team-scope.json)
     Step 4d  [NEW] AC-define     → team-goal-auditor(phase: define)  → definition-of-done.md
     Step 4e  [NEW] plan-vs-goal  → team-goal-auditor(phase: audit) ⇄ team-planner  (reiterate)
-    Step 5   Present design      (team-kit-present, unchanged)
-    Step 6   Review              (team-kit-review, unchanged)
+    Step 5   Present design      (inline in team-kit-create, unchanged)
+    Step 6   Review              (inline in team-kit-create, unchanged)
     Step 7   Handoff gate        [TIGHTENED] validate contract, then SEAL → team-kit-run
 ══════════════════ context firebreak ══════════════════
     team-kit-run boots fresh from the sealed contract
 ```
 
-Dispatch orchestration codified in a new dispatch-guide skill
-`skills/team-kit-acceptance/SKILL.md` (same style as `team-kit-clarify` / `team-kit-explore`).
+Dispatch orchestration codified in `skills/team-kit-create/references/acceptance.md`
+(same style as `references/clarify.md` / `references/explore.md`).
+(Historical note: these were once standalone `team-kit-*` skills; merged into
+`team-kit-create` references 2026-07-17.)
 
 ## 7. Handoff gate (completeness critic) — tighten Step 7
 
@@ -224,7 +226,7 @@ Bounds (asymmetric — plans are cheap to fix, code is not):
 
 **New**
 - `agents/team-goal-auditor.md` — the agent (§5)
-- `skills/team-kit-acceptance/SKILL.md` — dispatch guide for `define` + `audit` phases (§6)
+- `skills/team-kit-create/references/acceptance.md` — dispatch guide for `define` + `audit` phases (§6)
 - `team-templates/DEFINITION-OF-DONE.md` — artifact template/schema (§4)
 - `docs/acceptance-contract-design.md` — this doc
 
@@ -250,10 +252,10 @@ Bounds (asymmetric — plans are cheap to fix, code is not):
 
 ## 14. Resolved decisions (judgment calls)
 
-1. **Name = `team-goal-auditor`.** Kept. The `goal-` qualifier disambiguates from `team-auditor`
-   (which instruments diagnostic logging). Roster entry must state the distinction explicitly:
-   *team-goal-auditor = guards goal-fidelity (plan/impl vs original `prompt.md`) + authors the
-   acceptance contract; team-auditor = post-impl `[AUDIT]` diagnostic logging.*
+1. **Name = `team-goal-auditor`.** Kept. The `goal-` qualifier originally disambiguated from
+   `team-auditor` (post-impl `[AUDIT]` diagnostic logging), now retired with the native-team path
+   (2026-07-17). `team-goal-auditor` = guards goal-fidelity (plan/impl vs original `prompt.md`) +
+   authors the acceptance contract.
 2. **Single phase-aware agent (`define` + `audit`).** The independence that matters (Fable-5) is
    the auditor being blind to the *generator's reasoning* — satisfied because `audit` is a fresh
    stateless dispatch reading only `prompt.md` + `definition-of-done.md` + `team-plan.md`. It

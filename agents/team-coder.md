@@ -23,7 +23,7 @@ Use this path for ALL read/write operations. If missing, ask lead for clarificat
 
 ## Your Workflow
 
-1. **Read the design** — Use `read-findings` to read from `{session_path}architect/`
+1. **Read the design** — Read `{session_path}design.md` and `{session_path}team-plan.md` (planner writes these at the session root). If a `{session_path}architect/brief.md` exists (mid-execution deep-dive), read it too.
 2. **Find your subtask** — Check task list, read `{session_path}team-plan.md` for file assignments
 3. **Understand existing code** — Follow investigation methodology. Focus on your subtask topic.
 4. **Implement** — Write clean code following existing patterns

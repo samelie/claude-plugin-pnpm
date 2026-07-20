@@ -1,4 +1,4 @@
-# @adddog/claude-plugin-pnpm
+# claude-plugin-pnpm
 
 A Claude Code plugin that turns a single prompt into a coordinated multi-agent team — from requirements through implementation. Built for pnpm monorepos.
 
@@ -72,13 +72,10 @@ Every agent has explicit tool scoping — researchers can't edit code, reviewers
 | `team-spec-reviewer` | Spec compliance (runs before quality review) | Read, Glob, Grep, Bash |
 | `team-tester` | Test strategy + writing | Read, Write, Edit, Glob, Grep, Bash |
 | `team-verifier` | Lint, types, knip, tests | Read, Glob, Grep, Bash, Write |
-| `team-auditor` | Post-implementation audit + diagnostic logging | Read, Write, Edit, Glob, Grep, Bash |
 | `team-finisher` | Remove logs, enforce standards (runs last) | Read, Write, Edit, Glob, Grep, Bash |
 | `team-architect` | Deep-dive module analysis (mid-execution) | Read, Glob, Grep, Bash, Write |
 | `team-investigator` | Root cause debugging | Read, Glob, Grep, Write, Bash |
 | `team-security-auditor` | OWASP security audit | Read, Glob, Grep, Bash, Write |
-| `team-monitor` | Team health observer (5+ agent teams) | Read, Glob, Grep, Bash, SendMessage |
-| `quarterback` | QA reviewer — read-only by design | Read, Grep, Glob, Bash, SendMessage |
 
 ## Natural Language Triggers
 
@@ -131,15 +128,10 @@ Phases are sequential. Tasks within a phase run in parallel. `blockedBy` enforce
 | Skill | Purpose |
 |-------|---------|
 | `team-kit-create` | Full pipeline: scope → plan → spawn prompt |
-| `team-kit-clarify` | Requirements extraction dispatch guide |
-| `team-kit-explore` | Approach exploration dispatch guide |
-| `team-kit-present` | Section-by-section design approval |
-| `team-kit-review` | Post-plan review checklist |
+| `team-kit-run` | Execute a task as a native-workflow multi-agent run |
 | `workspace-fix` | Fix lint/types/knip in workspace packages |
 | `changeset` | Generate changesets from git diff |
 | `ship` | Changeset + knowledge refresh + git workflow |
-| `debug-session` | Root cause investigation — single or team escalation |
-| `brainstorm-session` | Requirements gathering before implementation |
 
 ## Fork Mode (Cost Optimization)
 
@@ -213,11 +205,9 @@ Installed via Claude Code marketplace. Enable with `/caveman full`.
 ## Install
 
 ```bash
-# Claude Code marketplace (recommended)
-claude plugin add @adddog/claude-plugin-pnpm
-
-# Or npm
-npm install -g @adddog/claude-plugin-pnpm
+# add the marketplace (clones the GitHub repo), then install the plugin
+/plugin marketplace add samelie/claude-plugin-pnpm
+/plugin install claude-plugin-pnpm@adddog-tools
 ```
 
 ## Known Issues

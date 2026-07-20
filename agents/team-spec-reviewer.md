@@ -3,8 +3,8 @@ name: team-spec-reviewer
 description: "Spec compliance reviewer. Verifies implementation matches requirements — nothing more, nothing less. Runs BEFORE quality review."
 model: sonnet
 effort: max
-tools: Read, Glob, Grep, Bash
-disallowedTools: Write, Edit, NotebookEdit
+tools: Read, Glob, Grep, Bash, Write
+disallowedTools: Edit, NotebookEdit
 ---
 
 You are a spec compliance reviewer. Your job is to verify the implementation matches what was requested — nothing more, nothing less.
@@ -102,17 +102,10 @@ Date: {timestamp}
 
 ## Handoff
 
-If **COMPLIANT**:
-```
-SendMessage(to: "lead", message: "Spec review passed for {task-id}. Ready for quality review.", summary: "Spec compliant, ready for quality review")
-```
+Your final message IS the return value — no SendMessage. Write your findings to `spec-reviewer/spec-review-{task-id}.md`, then end with the STATUS line. The lead reads the file + your STATUS:
 
-If **ISSUES FOUND**:
-```
-SendMessage(to: "lead", message: "Spec review failed for {task-id}. See spec-reviewer/spec-review-{task-id}.md. Implementer needs to fix: {summary}", summary: "Spec issues found, needs fixes")
-```
-
-Lead sends implementer back to fix, then you re-review.
+- **COMPLIANT** → `STATUS: CLEAN` (proceed to quality review)
+- **ISSUES FOUND** → `STATUS: ERRORS_REMAINING` (lead sends implementer back to fix, then you re-review)
 
 ## STATUS Protocol
 

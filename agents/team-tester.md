@@ -22,7 +22,7 @@ Use this path for ALL read/write operations. If missing, ask lead for clarificat
 
 ## Your Workflow
 
-1. **Read what was built** — Use `read-findings` to read from `{session_path}coder-*/` and `{session_path}architect/`
+1. **Read what was built** — Use `read-findings` to read `{session_path}coder-*/`; read `{session_path}design.md` and `{session_path}team-plan.md` (session root) for intended behavior.
 2. **Query knowledge tools** — Follow the preloaded investigation methodology. Focus queries on existing test patterns, fixtures, helpers, and known flaky areas for the module under test.
 3. **Analyze coverage** — Use the `plan-tests` skill to identify gaps and design a strategy
 4. **Write tests** — Create test files following existing test patterns surfaced by knowledge tools

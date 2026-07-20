@@ -1,31 +1,25 @@
 # Team Template: Debug Investigation
 
-> Systematic debugging for complex, multi-component bugs.
-> Methodology adapted from [obra/superpowers](https://github.com/obra/superpowers)
+> Systematic root-cause-first debugging for complex, multi-component bugs (no fixes before evidence).
 
 ---
 
 ```yaml
 name: "debug-{issue-slug}"
-version: 1
+version: 2
 description: "Root cause investigation and fix for {issue}"
 packages: ["{affected-packages}"]
 phases: 2
-delegate_mode: true
-plan_approval_default: true
-task_claim: lead-assigned
+dispatch: agent-tool   # lead dispatches subagents via the Agent tool (interactive, human-gated)
 ```
 
 ---
 
-## Spawn Prompt
+## How the lead runs this
 
-```
-Read `${CLAUDE_PLUGIN_ROOT}/team-templates/debug-investigation.md`.
-Create a team named "YYYYMMDD-debug-{issue-slug}" using TeamCreate.
-Press Shift+Tab to enable delegate mode.
-Spawn agents per template. You are lead — orchestrate and gate phases only. Do NOT investigate or fix.
-```
+The lead orchestrates via the **Agent tool** (plain `subagent_type` dispatch — interactive, human-gated; no TeamCreate/delegate). Dispatch each agent, read its returned artifact + STATUS line, gate the phase, then dispatch the next. You are lead — orchestrate and gate phases only. Do NOT investigate or fix.
+
+Session dir: the session-start hook creates `team-session/`; use `team-session/YYYYMMDD-debug-{issue-slug}/` and pass the ABSOLUTE path into every dispatch.
 
 ## Team Structure
 
@@ -136,23 +130,17 @@ acceptance:
 
 ```
 Phase 1: Investigation
-[ ] 1. TeamCreate with name "YYYYMMDD-debug-{issue}"
-[ ] 2. TaskCreate for T1, T2 (no blockedBy)
-[ ] 3. Spawn scout with T1
-[ ] 4. Spawn investigator with T2
-[ ] 5. Wait for both to complete
-[ ] 6. Review root-cause.md — is cause clear with evidence?
-[ ] 7. If unclear: request clarification before Phase 2
+[ ] 1. Ensure session dir team-session/YYYYMMDD-debug-{issue}/ (hook-created); write prompt.md (the issue)
+[ ] 2. Dispatch scout (Agent subagent_type: team-researcher) with T1 AND
+       investigator (Agent subagent_type: team-investigator) with T2 — send both in ONE message (parallel)
+[ ] 3. Both return; read root-cause.md — is cause clear with evidence?
+[ ] 4. If unclear: re-dispatch investigator with feedback, or ask user, before Phase 2
 
 Phase 2: Fix
-[ ] 8. TaskCreate for T3 (blockedBy: [T2])
-[ ] 9. TaskCreate for T4 (blockedBy: [T3])
-[ ] 10. Spawn fixer with T3
-[ ] 11. Wait for fixer to complete
-[ ] 12. Spawn verifier with T4
-[ ] 13. Wait for verifier to complete
-[ ] 14. If verifier reports issues: loop fixer
-[ ] 15. All clean → report success
+[ ] 5. Dispatch fixer (Agent subagent_type: team-coder) with T3 (reads root-cause.md)
+[ ] 6. fixer returns; dispatch verifier (Agent subagent_type: team-verifier) with T4
+[ ] 7. verifier returns; if STATUS ERRORS_REMAINING → re-dispatch fixer with the feedback
+[ ] 8. All clean → report success to user
 ```
 
 ---
@@ -187,7 +175,7 @@ Your tasks: T2 — Root cause investigation
 
 Instructions:
 - Read team-session/{team-name}/team-plan.md for context
-- Follow debug-session skill exactly
+- Follow your systematic phases exactly (investigation → patterns → hypotheses; no fixes before evidence)
 - Write to investigation.md, patterns.md, hypotheses.md
 - When root cause confirmed, write root-cause.md
 - Do NOT propose code fixes — describe what fixer should do
