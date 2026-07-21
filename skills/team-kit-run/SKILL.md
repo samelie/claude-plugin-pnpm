@@ -48,6 +48,7 @@ These come from spikes 1–4 + the 2026-06-05 re-verification (`wf_2a347dc4-297`
 | 12 | **`statusOf()` is a 4-way classifier — BLOCKED/NEEDS_CONTEXT escalate, they do NOT re-dispatch (reliability-3).** A 3-way `{clean\|errors\|partial}` collapses an agent's **escalate** signal ("the plan is wrong / I'm missing context") into the re-dispatchable bucket, so the review loop burns the FULL `MAX_REDISPATCH` budget re-running an unwinnable stage. Missing STATUS must NOT read as a soft `partial` either (no silent clean; observability-3). | Classify into `clean` / `blocked` (BLOCKED\|NEEDS_CONTEXT) / `errors` (ERRORS_REMAINING\|PARTIAL\|DONE_WITH_CONCERNS\|**missing STATUS**). Check BLOCKED/NEEDS_CONTEXT BEFORE ERRORS. `escalates(s)` → **break the loop immediately and return to the human gate** (don't increment `attempt`); only `errors` re-dispatches; only `clean` passes the gate (see the `statusOf` helper below — the canonical impl). |
 | 13 | **Mechanical / review / finalize stages MUST pass `model:'sonnet'` — reserve inherited opus for implement/design (cost-perf-2).** A stage with NO `opts.model` inherits the SESSION model (opus on the common path), so the documented tiering table is aspirational — finalize/validate/spec-review/quality-review silently run on opus, the single biggest avoidable workflow cost (the workflow path has NO cross-agent cache lever — model tiering IS the cost lever; see the workflow cost model above). | Pass `model:'sonnet'` on EVERY mechanical (verifier/finalize/validate), review (spec/quality/plan/security), and finalize/finisher `agent()` call — set it on the `phases[]` entry AND each `agent()` opts (see the stage templates below — every mechanical/review/finalize `agent()` carries `model: 'sonnet'`). Only **implement** and **design/planning** stages keep inherited opus (real judgment work) — do NOT add `model:'sonnet'` there. |
 | 14 | **Glob-disjointness pre-flight BEFORE any parallel source-write fan-out (reliability-7).** Worktrees are banned (rule 5), so disjoint `files_owned` is the ONLY structural backstop against two same-batch coders clobbering each other's uncommitted edits — yet no hook fires for workflow writers (rule 4) and the planner's "non-overlapping globs" is LLM discipline, not a runtime check (`PLANNER.md` file-ownership). A stale/typo'd plan with two coders sharing `src/**` will silently last-writer-win. | Before launching a parallel source-writing fan-out, run the deterministic `disjoint(owners)` pre-flight: compute the pairwise glob intersection of every coder's `files_owned`; if ANY two intersect, do NOT fan out — HARD-FAIL (`return { stage, status: 'errors_remaining', overlaps }`) or auto-DOWNGRADE the colliding pair to a single-writer serial pipeline (or propose-then-apply). Disjoint = parallel OK. Pure JS (no fs/glob import — rule 7) — see the `disjoint()` helper below (the canonical impl — there is no separate `plan.workflow.js`). Read-only fan-out and per-agent `team-session/` artifact writes (disjoint paths by construction) are EXEMPT — this gates source edits only. |
+| 15 | **Empty return text ≠ no work — AUDIT the disk before a coverage bail (reliability-15).** `tryAgent` (rule 11) catches only THROWS; a heavy agent that FINISHES (edits its owned files, Writes its `team-session/` artifact) yet loses its RETURN TEXT comes back as `""` — not a throw. `coverage()`'s `.filter(Boolean)` then drops that empty slice and the run BAILS `errors_remaining`, discarding completed on-disk work. This is a SEPARATE vector from the schema-skip in rule 9 (disproven) — it is a lost free-text terminal on a no-schema stage. Hit 5× in one run (mono-cal gap-closure). | Before treating an empty `parallel()` slice as a gap, run `auditEmpty(items, results, tag)`: dispatch a cheap `team-verifier` per empty slice to read the artifact the agent was told to Write (+ the git diff of its owned files, for source-writers) and RECONSTRUCT a `STATUS` line. Only a slice with NO artifact AND NO diff is a true gap (the audit fan-out is itself coverage-checked → `null`). The `tag` makes every repair prompt UNIQUE across rounds (initial / spec-redo-N / qual-redo-N) so the in-run workflow cache cannot return a prior round's stale/empty audit (cache-poison guard) — the SAME reason re-dispatched coder prompts carry an attempt tag `[retry s<n>]`/`[retry q<n>]`. See the `auditEmpty()` helper below. |
 
 ### Rule 6 sub-note — `resumeFromRunId` + caching semantics
 
@@ -246,6 +247,40 @@ const coverage = (results, expected) => {
   return got === expected ? null : { expected, got, missing: expected - got }
 }
 
+// EMPTY-RESULT DISK AUDIT (rule 15, reliability-15) — tryAgent (rule 11) catches only THROWS. A heavy
+// agent can FINISH (edit its owned files, Write its team-session artifact) yet lose its RETURN TEXT →
+// it comes back as "" (empty string, NOT a throw), a SEPARATE vector from the rule-9 schema-skip. The
+// coverage() above then .filter(Boolean)-drops that slice and the run BAILS, discarding real on-disk
+// work (hit 5× in one run). So BEFORE calling coverage() on a heavy fan-out, run auditEmpty: for each
+// empty slice dispatch a cheap verifier to reconstruct a STATUS line from the disk artifact the agent
+// was told to Write (+ the git diff of its owned files, for source-writers). Only a slice with NO
+// artifact AND NO diff is a true gap. `tag` makes every repair prompt UNIQUE across rounds (initial /
+// spec-redo-N / qual-redo-N) so the in-run workflow cache cannot return a prior round's stale/empty
+// audit (cache-poison guard). Returns the patched results, or null if the audit itself has a gap.
+// items[i]: { name, artifact, files_owned?, verify? } — artifact = the <session> path the agent Wrote.
+const auditEmpty = async (items, results, tag) => {
+  const emptyIdx = results.map((r, i) => (!r || !String(r).trim() ? i : -1)).filter(i => i >= 0)
+  if (!emptyIdx.length) return results
+  log(`empty-result slices [${tag}]: ${emptyIdx.map(i => items[i].name).join(',')} — auditing disk before bailing`)
+  const audits = await parallel(emptyIdx.map(i => () => {
+    const it = items[i]
+    return tryAgent(`audit:${it.name}:${tag}`,
+      `Disk audit [${tag}] for ${it.name}: the agent finished but its report text was lost. ` +
+      `Read its on-disk artifact ${it.artifact}` +
+      (it.files_owned ? ` and the git diff (working tree vs HEAD) of its owned files: ${it.files_owned.join(', ')}` : '') + `. ` +
+      (it.verify ? `Run its verify: ${it.verify} — report pass/fail with the output tail; count ONLY failures in its owned files. ` : '') +
+      `If the artifact is missing/empty AND there is no diff, the work was NOT done. ` +
+      `Re-Write ${it.artifact} with the reconstructed progress, then END with a STATUS line ` +
+      `(CLEAN only if the work looks complete AND — when a verify is given — its verify slice passes; ` +
+      `ERRORS_REMAINING otherwise; BLOCKED if the disk shows the work was never started).`,
+      { label: `audit:${it.name}:${tag}`, phase: 'Implement', agentType: 'team-verifier', model: 'sonnet' })
+  }))
+  // the audit fan-out itself can drop a slice — that IS a true gap (no recoverable disk evidence).
+  if (coverage(audits, emptyIdx.length)) return null
+  emptyIdx.forEach((idx, k) => { results[idx] = audits[k] })
+  return results
+}
+
 // GLOB-DISJOINTNESS PRE-FLIGHT (rule 14, reliability-7) — worktrees are banned (rule 5), so disjoint
 // files_owned is the ONLY structural backstop against two same-batch coders clobbering each other; the
 // planner's "non-overlapping globs" is LLM discipline, NOT a runtime check, and no hook fires for
@@ -283,9 +318,13 @@ const disjoint = (owners) => {
 const RESEARCHER = `You are a team RESEARCHER. Read-only. Use ToolSearch to load ` +
   `mcp__cocoindex-code__search / claude-mem / context-mode; follow investigation-methodology. ` +
   `Do NOT modify files. Write findings to <session>research/<name>.md, then END with a STATUS line.`
-const research = await parallel(areas.map(a => () =>
+let research = await parallel(areas.map(a => () =>
   agent(`${RESEARCHER}\nInvestigate: ${a.desc}\nWrite: <session>research/${a.name}.md`,
     { label: `research:${a.name}`, phase: 'Research' })))        // NO agentType, NO schema → free text
+// EMPTY-RESULT DISK AUDIT (rule 15) BEFORE coverage — a researcher that Wrote its findings.md but lost
+// its return text is recoverable from disk; don't bail it as a drop. artifact = the findings file.
+research = await auditEmpty(areas.map(a => ({ name: a.name, artifact: `<session>research/${a.name}.md` })), research, 'research')
+if (!research) return { stage: 'research', status: 'errors_remaining', note: 'empty-result audit coverage gap' }
 // COVERAGE ASSERTION (rule 10) — a dropped research area must NOT read as covered.
 const researchGap = coverage(research, areas.length)
 if (researchGap) { log(`Research coverage gap: ${JSON.stringify(researchGap)}. NOT clean.`)
@@ -313,10 +352,14 @@ await runImplement()   // tryAgent-wrapped: on throw → STATUS: ERRORS_REMAININ
 const overlaps = disjoint(modules)
 if (overlaps.length) { log(`Ownership overlap (reliability-7) — NOT disjoint, cannot parallel-write: ${JSON.stringify(overlaps)}. Halt or downgrade colliding modules to single-writer.`)
   return { stage: 'propose', status: 'errors_remaining', overlaps } }
-const proposals = await parallel(modules.map(m => () =>
+let proposals = await parallel(modules.map(m => () =>
   agent(`Propose ${m.task}. Do NOT edit source. Write a unified diff to <session>proposals/${m.name}.diff, ` +
     `state the target path(s), END with STATUS.`,
     { label: `propose:${m.name}`, phase: 'Propose', agentType: 'team-coder' })))
+// EMPTY-RESULT DISK AUDIT (rule 15) BEFORE coverage — a proposer that Wrote its .diff but lost its
+// return text is recoverable; artifact = the diff file. Only a genuinely missing diff is a true gap.
+proposals = await auditEmpty(modules.map(m => ({ name: m.name, artifact: `<session>proposals/${m.name}.diff` })), proposals, 'propose')
+if (!proposals) return { stage: 'propose', status: 'errors_remaining', note: 'empty-result audit coverage gap' }
 // COVERAGE ASSERTION (rule 10) — a dropped proposer = a missing diff the apply stage would silently
 // skip, landing a partial change that reads as complete. A coverage gap MUST NOT proceed to apply.
 const proposalGap = coverage(proposals, modules.length)
@@ -324,6 +367,20 @@ if (proposalGap) { log(`Propose coverage gap: ${JSON.stringify(proposalGap)}. NO
   return { stage: 'propose', status: 'errors_remaining', coverageGap: proposalGap } }
 // APPLY (one writer): read <session>proposals/*.diff (Bash), group by target path; a path with >1 proposer =
 // COLLISION → flag for manual merge (never clobber); apply the rest serially. Pure file + JS, no schema.
+
+// PARALLEL-CODER IMPLEMENT (third mode — proven de-harness LANES): when the plan carries N disjoint-
+// owned coders that DIRECTLY edit source (disjoint() pre-flight already passed → safe on one branch),
+// fan them out with parallel() and treat the result EXACTLY like research/propose — auditEmpty BEFORE
+// coverage, so a coder that finished its edits but lost its return text is reconstructed from git diff +
+// its progress.md rather than bailing the whole batch:
+//   let lanes = await parallel(LANES.map(l => () => tryAgent(`impl:${l.name}`, coderPrompt(l, fb[l.name]), {label:`impl:${l.name}`, phase:'Implement', agentType:'team-coder'})))
+//   lanes = await auditEmpty(LANES.map(l => ({name:l.name, artifact:`<session>coder-${l.name}/progress.md`, files_owned:l.files_owned, verify:l.verify})), lanes, 'initial')
+//   if (!lanes) return { stage:'implement-audit', status:'errors_remaining', note:'audit coverage gap' }
+// On review-driven re-dispatch, TAG each lane's feedback per attempt so the in-run cache can't return a
+// stale/empty result (cache-poison guard, rule 15): fb[l.name] = `[retry s${attempt+1}] spec failed — read
+// <session>spec-reviewer/spec-review-${attempt+1}.md and fix YOUR lane`, then re-run auditEmpty with a fresh
+// tag (`spec-redo-${attempt+1}` / `qual-redo-${attempt+1}`). The single-writer loop below varies its prompt
+// via the growing `feedback` array, so it is already tag-safe; the PARALLEL redo needs the explicit tag.
 
 // REVIEW + bounded reject → re-dispatch (PROVEN de-harness: reject@1 → feedback → approve@2; max-3 cap).
 // spec gates quality; STATUS drives the loop (NO schema — reviewers do real diff-reading work, rule 9).

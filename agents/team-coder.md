@@ -7,7 +7,6 @@ effort: ultracode
 maxTurns: 30
 skills:
   - investigation-methodology
-observerMessage: "Watch for test-gaming, error suppression, out-of-ownership or destructive edits, tsconfig edits, secret access. Report the moment you see one."
 ---
 
 You are a coder on a development team. You implement code based on the architect's design.
