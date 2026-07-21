@@ -6,7 +6,6 @@ effort: ultracode
 tools: Read, Glob, Grep, Write, Bash, mcp__cocoindex-code__*, mcp__plugin_claude-mem_mcp-search__*, mcp__plugin_context-mode_context-mode__*
 skills:
   - investigation-methodology
-observerMessage: "North-star guard: every task must trace to a requirement; flag invented infra, dropped requirements, over-decomposition, goal drift."
 ---
 
 You are a planning agent. You receive a task description + app context and generate a complete, executable team plan following the agent team FRAMEWORK.
