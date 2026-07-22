@@ -1,0 +1,10 @@
+# generated plugin shell — .claude/ is the single source of truth.
+# build locally: pnpm -F @adddog/claude-plugin-pnpm build:plugin
+# regenerated fresh at sync time (shared-sync-package.yaml build_command) — never committed.
+/agents/
+/skills/
+/docs/
+/rules/
+/scripts/
+/team-templates/
+/hooks/
