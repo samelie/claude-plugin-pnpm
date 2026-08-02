@@ -180,7 +180,9 @@ AST-based semantic code search — 70% token savings vs grep.
 - **Repo**: https://github.com/cocoindex-io/cocoindex-code
 
 ```bash
-pipx install cocoindex-code
+# [full] extra ships torch + sentence-transformers for local embeddings.
+# The slim package makes search silently return zero results.
+uv tool install --upgrade 'cocoindex-code[full]'
 ccc init && ccc index
 ```
 
