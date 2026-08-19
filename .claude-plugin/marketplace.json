@@ -7,7 +7,7 @@
     {
       "name": "claude-plugin-pnpm",
       "source": "./",
-      "version": "0.7.0",
+      "version": "0.6.0",
       "description": "Agent teams, workspace-aware fixing, changeset shipping, and team-role agents for pnpm monorepos",
       "keywords": [
         "pnpm",
