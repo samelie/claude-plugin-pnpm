@@ -1,3 +1,37 @@
+## 0.7.0
+
+### Minor Changes
+
+- 62e2392: Regenerate the published plugin from `.claude/` as the single source of truth.
+
+  After the plugin→project-root migration, the live team-kit agents/skills/docs moved to `.claude/` and the `packages/claude-plugin-pnpm` shell went stale. A new generator (`.claude/scripts/build-plugin.mjs`) rebuilds the shell from `.claude/`: curates the shipped set (19 team-kit agents from `plugin.json`, 24 skills, docs), translates `${CLAUDE_PROJECT_DIR}/.claude/` → `${CLAUDE_PLUGIN_ROOT}/`, strips project-only `observer:` frontmatter, and stamps `plugin.json` from `package.json`. A `plugin-freshness` CI check fails PRs when the shell drifts from source.
+
+- ee05592: Ship the opt-in Codex execution lane with the plugin.
+
+  A verify stage can now be delegated to an OpenAI Codex worker instead of a Claude subagent, for consumers of the plugin and not just this monorepo. Delegation rides the `Agent` field a task already has — name `team-codex-verifier` instead of `team-verifier` — so there is no config file, no plan-format field and no repo-level flag, and a plan that never names the role never touches the lane.
+
+  What made it shippable:
+  - `packages/team-codex-lane` now bundles `src/cli.ts` with tsup into a single dependency-free `dist/cli.mjs` (it imports only `node:*`), staged with its vendored subtree into `.claude/codex-lane/`. `build-plugin.mjs` copies that tree **raw** into the shell — the Apache-2.0 vendored code must ship byte-identical, so it never passes through a text transform.
+  - The agent file carries **one** invocation literal. The generator's existing `${CLAUDE_PROJECT_DIR}/.claude/` → `${CLAUDE_PLUGIN_ROOT}/` translation produces the shipped path, so the local path exercises the same relocation a consumer gets rather than being a second, untested shape.
+  - **Portability fix**: `verifierProfile.cwd` derived the repo root from the module's own directory depth (`../../../..` from `src/profiles/`), which is meaningless once the bundle relocates into a plugin install. It now reads `CLAUDE_PROJECT_DIR` with a `process.cwd()` fallback.
+  - `dist/cli.mjs` must sit beside `vendor/` and must keep the `.mjs` extension: the CLI resolves its companion relative to its own module, and a plugin install has no `package.json` above the bundle to declare `type: module`.
+
+  Requires `codex` on `PATH` and a completed `codex login`; no API key. The upstream `openai/codex-plugin-cc` marketplace plugin must not be installed — the needed scripts are vendored here at `v1.0.6 @ db52e28`, Apache-2.0, © OpenAI, with `LICENSE` and `NOTICE` shipped beside them.
+
+  `packages/team-codex-lane/SHIPPING.md` records the two assertions from the lane's discharged acceptance contract that shipping supersedes, and why each no longer applies.
+
+### Patch Changes
+
+- ca1fdc8: Make the Codex execution lane discoverable and correctly documented for consumers.
+
+  The lane shipped mechanically usable but was near-undiscoverable: `team-codex-verifier` appeared only in the planner roster (one line) and the README, and in **neither** team-kit skill — so a planner learned the role was legal without learning when, why or how to use it. Worse, the one Codex auth signal in the run skill named `CODEX_API_KEY`, which is correct for a `codex exec` child and exactly wrong for this lane: it inherits a local `codex login` and reads no API key at all. A consumer following the published docs would have set a key and still got a dead turn.
+  - `team-kit-run` gains a **Codex delegation (opt-in, OFF by default)** section: how to opt in (one `Agent` field), the two real preconditions (`command -v codex`, `codex login status`), the measured cost (~1.4pp of a 30-day window per turn), the transport-failure-is-not-gate-failure rule, and the measured verdict parity.
+  - The `CODEX_API_KEY` precondition row is scoped to the child that actually reads it, and now names both Codex paths — the generic lesson ("assert the var the child authenticates with") is strengthened rather than removed. `stage-templates.js` gains a matching `codex-login` precondition row.
+  - Skill trigger vocabulary extended so "delegate verify to codex" / "use the codex lane" reach the skill.
+  - The wrapper now **diagnoses** a transport failure instead of only reporting it: a missing binary or absent login produces an actionable `setup:` line rather than a bare `nonzero-exit`. Diagnosis runs only on the failure branch, so a healthy run pays nothing, and it changes only the advice — never the classification (M14 intact).
+
+  The advice text is covered by tests asserting it carries no `STATUS:`/`CLEAN` token (D-P5 Rule B) and never fires on a healthy run.
+
 ## 0.6.0
 
 ### Minor Changes
