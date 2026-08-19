@@ -76,6 +76,34 @@ Every agent has explicit tool scoping — researchers can't edit code, reviewers
 | `team-architect` | Deep-dive module analysis (mid-execution) | Read, Glob, Grep, Bash, Write |
 | `team-investigator` | Root cause debugging | Read, Glob, Grep, Write, Bash |
 | `team-security-auditor` | OWASP security audit | Read, Glob, Grep, Bash, Write |
+| `team-codex-verifier` | Verify stage delegated to a Codex worker — **opt-in**, see below | Read, Write, Bash |
+
+## Codex Execution Lane (opt-in)
+
+A verify stage can run on an OpenAI Codex worker instead of a Claude subagent. It is **off unless a
+plan asks for it**: delegation rides the `Agent` field a task already has — name
+`team-codex-verifier` instead of `team-verifier`. There is no config file, no plan-format field and
+no repo-level flag, so a plan that never names the role never touches the lane.
+
+**Requirements**: `codex` on `PATH` and a completed `codex login`. No API key — auth rides your
+local login. The upstream `openai/codex-plugin-cc` marketplace plugin must **not** be installed;
+this plugin vendors the pieces it needs (installing it injects slash commands, a proactive subagent
+and a Stop-hook loop that fight the run lane).
+
+**What you get**: the worker runs the same gates and writes the same `team-session/` artifact, and
+the `STATUS:` protocol classifies its output unchanged. Transport failures (dead turn, unreachable
+binary, timeout, unparseable envelope) are classified apart from gate verdicts and surface as
+`STATUS: BLOCKED` — they go to a human gate rather than burning re-dispatch retries on a worker
+that never ran.
+
+**Measured, on a free plan**: ≈1.4 percentage points of a 30-day window per turn. Verdict parity
+against the Claude path was identical on a seeded 4-failure set — same file, line, column and error
+text. A *failed* turn cost more than the passing turn and the smoke turn combined, so the lane
+front-loads zero-cost preconditions rather than retrying.
+
+**Licensing**: `codex-lane/vendor/codex-plugin-cc/**` is Apache-2.0, © OpenAI, vendored verbatim at
+`v1.0.6 @ db52e28` and never patched; `LICENSE` and `NOTICE` ship beside it. Everything else in this
+plugin is MIT.
 
 ## Natural Language Triggers
 
