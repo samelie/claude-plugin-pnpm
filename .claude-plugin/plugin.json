@@ -28,6 +28,7 @@
     "./agents/team-designer.md",
     "./agents/team-finisher.md",
     "./agents/team-investigator.md",
+    "./agents/team-measurer.md",
     "./agents/team-researcher.md",
     "./agents/team-reviewer.md",
     "./agents/team-security-auditor.md",
