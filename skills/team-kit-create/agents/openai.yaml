@@ -1,0 +1,4 @@
+interface:
+  display_name: "Team Kit Create"
+  short_description: "Scope a problem into a multi-agent team plan"
+  default_prompt: "Use $team-kit-create to scope a problem into a multi-agent team plan."
