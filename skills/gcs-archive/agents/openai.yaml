@@ -1,0 +1,4 @@
+interface:
+  display_name: "GCS Archive"
+  short_description: "Archive large files to GCS cold storage and free local disk"
+  default_prompt: "Use $gcs-archive to archive large files to GCS cold storage and free local disk."
