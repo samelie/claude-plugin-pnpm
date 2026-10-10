@@ -1,0 +1,4 @@
+interface:
+  display_name: "Security Audit"
+  short_description: "OWASP-informed security audit of code changes"
+  default_prompt: "Use $audit-security to run an OWASP-informed audit of my code changes."

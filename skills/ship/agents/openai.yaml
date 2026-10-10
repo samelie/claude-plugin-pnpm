@@ -1,0 +1,6 @@
+interface:
+  display_name: "Ship"
+  short_description: "Ship a feature with a changeset and the git workflow"
+  default_prompt: "Use $ship to ship a feature with a changeset and the git workflow."
+policy:
+  allow_implicit_invocation: false

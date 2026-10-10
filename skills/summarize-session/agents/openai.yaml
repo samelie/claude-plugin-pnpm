@@ -1,0 +1,4 @@
+interface:
+  display_name: "Summarize Session"
+  short_description: "Consolidate all agent outputs from a team session"
+  default_prompt: "Use $summarize-session to consolidate all agent outputs from a team session."
