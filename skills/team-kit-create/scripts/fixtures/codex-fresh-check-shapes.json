@@ -1,0 +1,163 @@
+{
+  "version": 1,
+  "kind": "codex-fresh-check-projected-wire-shapes",
+  "note": "actual explorer fork:all investigation plus native plan-review literal batches; mutation tests change role/fork/path explicitly; no native check success claimed",
+  "entries": [
+    {
+      "lane": "parent",
+      "provenance": {
+        "path": "/Users/selie/.codex/sessions/2026/10/25/rollout-2026-10-25T23-39-33-01a176ef-900c-7c30-94fc-645d4bfff722.jsonl",
+        "line": 0,
+        "ordinal": 0,
+        "sha256": "c83ae9891d5ed2e8c8450b5ae47edba643dcab7ddea6dbf7d5c336cdc65a59ba"
+      },
+      "record": {
+        "type": "session_meta",
+        "ordinal": 0,
+        "payload": {
+          "id": "01a176ef-900c-7c30-94fc-645d4bfff722",
+          "session_id": "01a176ef-900c-7c30-94fc-645d4bfff722",
+          "cwd": "/Volumes/DriveHard/samelie-monorepo",
+          "cli_version": "0.162.1",
+          "source": "vscode"
+        }
+      }
+    },
+    {
+      "lane": "parent",
+      "provenance": {
+        "path": "/Users/selie/.codex/sessions/2026/10/25/rollout-2026-10-25T23-39-33-01a176ef-900c-7c30-94fc-645d4bfff722.jsonl",
+        "line": 1259,
+        "ordinal": 1259,
+        "sha256": "3c8a221a3843b0df52f5430352aa0ca0b2cfc0884931cbd74e06ff57821741a5"
+      },
+      "record": {
+        "type": "response_item",
+        "ordinal": 1259,
+        "payload": {
+          "type": "function_call",
+          "name": "spawn_agent",
+          "namespace": "collaboration",
+          "arguments": "{\"task_name\":\"native_probe_evidence\",\"agent_type\":\"explorer\",\"fork_turns\":\"all\"}"
+        }
+      }
+    },
+    {
+      "lane": "child",
+      "provenance": {
+        "path": "/Users/selie/.codex/sessions/2026/10/26/rollout-2026-10-26T16-40-35-01a17a96-589e-7f93-9493-1520e6f2c3b6.jsonl",
+        "line": 0,
+        "ordinal": 0,
+        "sha256": "1cf39f5e083a0ef0eeab5777b4b41d1d9da2b5dc228fba95a69ad29c2a8a19ad"
+      },
+      "record": {
+        "type": "session_meta",
+        "ordinal": 0,
+        "payload": {
+          "id": "01a17a96-589e-7f93-9493-1520e6f2c3b6",
+          "session_id": "01a176ef-900c-7c30-94fc-645d4bfff722",
+          "cwd": "/Volumes/DriveHard/samelie-monorepo",
+          "cli_version": "0.162.1",
+          "subagent_history_start_ordinal": 230,
+          "source": {
+            "subagent": {
+              "thread_spawn": {
+                "parent_thread_id": "01a176ef-900c-7c30-94fc-645d4bfff722",
+                "agent_path": "/root/native_probe_evidence",
+                "agent_role": "explorer"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "lane": "child",
+      "provenance": {
+        "path": "/Users/selie/.codex/sessions/2026/10/26/rollout-2026-10-26T16-40-35-01a17a96-589e-7f93-9493-1520e6f2c3b6.jsonl",
+        "line": 245,
+        "ordinal": 245,
+        "sha256": "a9ebac3e80267ae9c01503f175c8d05f0f14ecfcf2c959e68b1ff91bf686d052"
+      },
+      "record": {
+        "type": "event_msg",
+        "ordinal": 245,
+        "payload": {
+          "type": "item_completed",
+          "item": {
+            "type": "CommandExecution",
+            "command": [
+              "/bin/zsh",
+              "-lc",
+              "cat /Volumes/DriveHard/samelie-monorepo/.agents/skills/ccc/SKILL.md"
+            ],
+            "cwd": "file:///Volumes/DriveHard/samelie-monorepo",
+            "parsed_cmd": [
+              {
+                "type": "read",
+                "cmd": "cat /Volumes/DriveHard/samelie-monorepo/.agents/skills/ccc/SKILL.md",
+                "name": "SKILL.md",
+                "path": "/Volumes/DriveHard/samelie-monorepo/.agents/skills/ccc/SKILL.md"
+              }
+            ],
+            "exit_code": 0
+          }
+        }
+      }
+    },
+    {
+      "lane": "native-batch",
+      "provenance": {
+        "path": "/Users/selie/.codex/sessions/2026/10/26/rollout-2026-10-26T16-57-46-01a17aa6-12cf-72a1-8b8b-9e4a03c20e60.jsonl",
+        "line": 28,
+        "ordinal": 28,
+        "sha256": "b749de54ad9da574d79f4191e8902cdbb788252ecf925a85f5e51ef320764ba1"
+      },
+      "record": {
+        "type": "response_item",
+        "ordinal": 28,
+        "payload": {
+          "type": "custom_tool_call",
+          "name": "exec",
+          "input": "text(await tools.mcp__context_mode__ctx_execute({language: \"shell\", code: \"cat '/Users/selie/.codex/plugins/cache/context-mode/context-mode/1.0.169/skills/context-mode/SKILL.md'\"}));\ntext(await tools.mcp__context_mode__ctx_execute({language: \"shell\", code: \"cat '/Volumes/DriveHard/samelie-monorepo/.agents/skills/ccc/SKILL.md'\"}));\n"
+        }
+      }
+    },
+    {
+      "lane": "native-batch",
+      "provenance": {
+        "path": "/Users/selie/.codex/sessions/2026/10/26/rollout-2026-10-26T16-57-46-01a17aa6-12cf-72a1-8b8b-9e4a03c20e60.jsonl",
+        "line": 38,
+        "ordinal": 38,
+        "sha256": "18ebfa031cbb4dd75a5e8b8909dc0dc8d512733472dadd05d99cef13cf8bd988"
+      },
+      "record": {
+        "type": "response_item",
+        "ordinal": 38,
+        "payload": {
+          "type": "custom_tool_call",
+          "name": "exec",
+          "input": "text(await tools.mcp__context_mode__ctx_execute({language: \"shell\", code: \"cat '/Volumes/DriveHard/samelie-monorepo/team-session/teamkit-codex-hardening/native-probes/fixtures/p-ece69ae469/prompt.md'\"}));\ntext(await tools.mcp__context_mode__ctx_execute({language: \"shell\", code: \"cat '/Volumes/DriveHard/samelie-monorepo/team-session/teamkit-codex-hardening/native-probes/fixtures/p-ece69ae469/requirements.md'\"}));\ntext(await tools.mcp__context_mode__ctx_execute({language: \"shell\", code: \"cat '/Volumes/DriveHard/samelie-monorepo/team-session/teamkit-codex-hardening/native-probes/fixtures/p-ece69ae469/design.md'\"}));\ntext(await tools.mcp__context_mode__ctx_execute({language: \"shell\", code: \"cat '/Volumes/DriveHard/samelie-monorepo/team-session/teamkit-codex-hardening/native-probes/fixtures/p-ece69ae469/team-plan.md'\"}));\ntext(await tools.mcp__context_mode__ctx_execute({language: \"shell\", code: \"cat '/Volumes/DriveHard/samelie-monorepo/team-session/teamkit-codex-hardening/native-probes/fixtures/p-ece69ae469/definition-of-done.md'\"}));\ntext(await tools.mcp__context_mode__ctx_execute({language: \"shell\", code: \"sed -n '1,7p' '/Volumes/DriveHard/samelie-monorepo/team-session/teamkit-codex-hardening/native-probes/fixtures/p-ece69ae469/map.md'\"}));\ntext(await tools.mcp__context_mode__ctx_execute({language: \"shell\", code: \"sed -n '25,26p' '/Volumes/DriveHard/samelie-monorepo/team-session/teamkit-codex-hardening/native-probes/fixtures/p-ece69ae469/map.md'\"}));\ntext(await tools.mcp__context_mode__ctx_execute({language: \"shell\", code: \"sed -n '27,32p' '/Volumes/DriveHard/samelie-monorepo/team-session/teamkit-codex-hardening/native-probes/fixtures/p-ece69ae469/map.md'\"}));\n"
+        }
+      }
+    },
+    {
+      "lane": "native-batch",
+      "provenance": {
+        "path": "/Users/selie/.codex/sessions/2026/10/26/rollout-2026-10-26T16-57-46-01a17aa6-12cf-72a1-8b8b-9e4a03c20e60.jsonl",
+        "line": 59,
+        "ordinal": 59,
+        "sha256": "e94f15b66369741147016b78ad246e5e932f634c8ba1a9c10597a7a312ed332b"
+      },
+      "record": {
+        "type": "response_item",
+        "ordinal": 59,
+        "payload": {
+          "type": "custom_tool_call",
+          "name": "exec",
+          "input": "// @exec: {\"max_output_tokens\": 20000}\ntext(await tools.mcp__context_mode__ctx_execute({language: \"shell\", code: \"cat '/Volumes/DriveHard/samelie-monorepo/.claude/team-templates/FRAMEWORK.md'\"}));\n"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan Tests"
+  short_description: "Plan a test strategy from coverage gaps and edge cases"
+  default_prompt: "Use $plan-tests to plan a test strategy from coverage gaps and edge cases."

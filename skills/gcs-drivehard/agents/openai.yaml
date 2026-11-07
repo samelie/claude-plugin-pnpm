@@ -1,0 +1,4 @@
+interface:
+  display_name: "GCS DriveHard"
+  short_description: "Manage the DriveHard two-bucket rclone archive and backup"
+  default_prompt: "Use $gcs-drivehard to manage the DriveHard two-bucket rclone archive and backup."

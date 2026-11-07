@@ -1,0 +1,4 @@
+interface:
+  display_name: "Team Session Writing"
+  short_description: "Compressed writing style for team-session documents"
+  default_prompt: "Use $team-session-writing to write a compressed team-session document."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Team Kit Run"
+  short_description: "Execute a team plan as a multi-agent workflow run"
+  default_prompt: "Use $team-kit-run to execute a team plan as a multi-agent workflow run."

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Investigation Methodology"
+  short_description: "Shared investigation methodology for research agents"
+  default_prompt: "Use $investigation-methodology to run a disciplined investigation before reading code."
+policy:
+  allow_implicit_invocation: false
