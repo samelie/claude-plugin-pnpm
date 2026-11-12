@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update Dependencies"
+  short_description: "Force-update Claude Code plugin dependencies"
+  default_prompt: "Use $update-deps to force-update Claude Code plugin dependencies."

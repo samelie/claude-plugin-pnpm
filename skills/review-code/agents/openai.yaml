@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Code"
+  short_description: "Structured review of code for quality, security and correctness"
+  default_prompt: "Use $review-code to review a change for quality, security and correctness."

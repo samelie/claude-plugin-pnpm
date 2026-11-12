@@ -1,0 +1,4 @@
+interface:
+  display_name: "pnpm Workspace Filter"
+  short_description: "Lint, typecheck, test or knip the changed workspace packages"
+  default_prompt: "Use $pnpm-workspace-filter to lint, typecheck, test or knip the changed workspace packages."

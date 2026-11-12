@@ -1,0 +1,4 @@
+interface:
+  display_name: "Third-Party Manager"
+  short_description: "Install, update and verify third-party plugins and MCP servers"
+  default_prompt: "Use $third-party-manager to install, update and verify third-party plugins and MCP servers."
