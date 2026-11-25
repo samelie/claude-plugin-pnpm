@@ -1,0 +1,4 @@
+interface:
+  display_name: "Changeset"
+  short_description: "Generate a changesets entry from the current git diff"
+  default_prompt: "Use $changeset to generate a changesets entry from the current git diff."

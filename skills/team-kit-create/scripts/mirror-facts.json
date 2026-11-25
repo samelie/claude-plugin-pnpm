@@ -1,0 +1,643 @@
+{
+  "$comment": "mirrored facts of the team kit, each declared once; check-mirrors.mjs verifies every site. a site is file + at (anchor text, matched on flattened text) + to (end anchor) or lines (default 1, counted from the anchor's line); no at = the whole file. sources are read from the tree under check. limits: tokens prove a rule's words are present at a site, not that the sentence still means the rule (a negated or paraphrased copy passes), and banned phrases catch stale wordings, not paraphrases of them.",
+  "files": {
+    "SKILL": ".claude/skills/team-kit-create/SKILL.md",
+    "ACC": ".claude/skills/team-kit-create/references/acceptance.md",
+    "DISC": ".claude/skills/team-kit-create/references/discovery.md",
+    "FRESH": ".claude/skills/team-kit-create/references/fresh-checks.md",
+    "RIGOR": ".claude/skills/team-kit-create/references/rigor.md",
+    "EXP": ".claude/skills/team-kit-create/references/experiment.md",
+    "CC": ".claude/skills/team-kit-create/scripts/check-contract.mjs",
+    "CDC": ".claude/skills/team-kit-create/scripts/check-design-critique.mjs",
+    "GA": ".claude/agents/team-goal-auditor.md",
+    "PR": ".claude/agents/team-plan-reviewer.md",
+    "DC": ".claude/agents/team-design-critic.md",
+    "DS": ".claude/agents/team-designer.md",
+    "RS": ".claude/agents/team-researcher.md",
+    "PN": ".claude/agents/team-planner.md",
+    "SCHEMA": ".claude/team-templates/SESSION-SCHEMA.md",
+    "PLANNER": ".claude/team-templates/PLANNER.md",
+    "DOD": ".claude/team-templates/DEFINITION-OF-DONE.md",
+    "FRAMEWORK": ".claude/team-templates/FRAMEWORK.md",
+    "CRITIQUE": ".claude/team-templates/DESIGN-CRITIQUE.md",
+    "KIT": ".claude/team-kit.md",
+    "METHOD": ".claude/docs/teamkit-methodology.md",
+    "EXPL": ".claude/skills/team-kit-create/references/explore.md",
+    "AFK": ".claude/skills/team-kit-create/references/afk.md",
+    "CODER": ".claude/agents/team-coder.md",
+    "RUN": ".claude/skills/team-kit-run/SKILL.md",
+    "AR": ".claude/skills/team-kit-create/scripts/assess-rigor.mjs"
+  },
+  "sources": {
+    "checkContract": {"type":"module","file":".claude/skills/team-kit-create/scripts/check-contract.mjs"},
+    "assessRigor": {"type":"module","file":".claude/skills/team-kit-create/scripts/assess-rigor.mjs"},
+    "freshChecks": {"type":"jsonFence","file":".claude/skills/team-kit-create/references/fresh-checks.md"},
+    "shapes": {
+      "type": "regexAlternatives",
+      "file": ".claude/skills/team-kit-create/scripts/check-contract.mjs",
+      "pattern": "^const SHAPE = /\\^Shape: \\(([a-z|]+)\\)",
+      "drop": ["pending"]
+    },
+    "deferrals": {"type":"regexAlternatives","file":".claude/skills/team-kit-create/scripts/check-contract.mjs","pattern":"unmeasured:\\\\s\\*\\(([^)]+)\\)"},
+    "pinWord": {
+      "type": "regexAlternatives",
+      "file": ".claude/skills/team-kit-create/scripts/assess-rigor.mjs",
+      "pattern": "pinned: match\\[2\\]\\.includes\\('([a-z]+)'\\)"
+    }
+  },
+  "mapSections": ["Destination","Premises","Decisions so far","Not yet specified","Out of scope","Next slices","Phase deltas","Notes"],
+  "scans": {
+    "kit": [
+      {"dir":".claude/skills/team-kit-create","recursive":true,"ext":[".md",".js",".mjs"]},
+      {"dir":".claude/skills/team-kit-run","recursive":true,"ext":[".md",".js",".mjs"]},
+      {"dir":".claude/skills/team-kit-resume","recursive":true,"ext":[".md",".js",".mjs"]},
+      {"dir":".claude/agents","prefix":"team-","ext":[".md"]},
+      {"dir":".claude/team-templates","ext":[".md"]},
+      {"dir":".claude","ext":["team-kit.md"]},
+      {"dir":".claude/docs","prefix":"teamkit-","ext":[".md"]}
+    ]
+  },
+  "facts": [
+    {
+      "id": "readset:frame-check",
+      "kind": "readset",
+      "check": "frame-check",
+      "sites": [
+        {"file":"FRESH","at":"| `frame-check` |","restate":"full"},
+        {"file":"SKILL","at":"header `Fresh-check: frame-check`, read-set","pointer":true},
+        {"file":"DISC","at":"header `Fresh-check: frame-check`; read-set","to":"(NO discovery history","restate":"full","pointer":true},
+        {"file":"DS","at":"Canonical: `fresh-checks.md` → `frame-check`","pointer":true},
+        {"file":"SCHEMA","at":"| team-designer (frame-check) |","restate":"full","pointer":true},
+        {"file":"DS","at":"**Reads (FRESH context — ONLY these four)**","restate":"full"},
+        {"file":"DS","at":"Read four files, answer"}
+      ]
+    },
+    {
+      "id": "readset:sat",
+      "kind": "readset",
+      "check": "sat",
+      "sites": [
+        {"file":"FRESH","at":"| `sat` |","restate":"full"},
+        {"file":"SKILL","at":"| **Option A** (any (a)–(d) AC exists) |","restate":"full","pointer":true},
+        {"file":"ACC","at":"Read \\`${session_path}definition-of-done.md\\`","to":"Reading outside this set","restate":"full","pointer":true},
+        {"file":"GA","at":"**Reads**: `definition-of-done.md`","to":"**Writes**","restate":"full","pointer":true},
+        {"file":"SCHEMA","at":"| team-goal-auditor (sat) |","restate":"full","pointer":true}
+      ]
+    },
+    {
+      "id": "readset:goal-audit",
+      "kind": "readset",
+      "check": "goal-audit",
+      "sites": [
+        {"file":"FRESH","at":"| `goal-audit` |","restate":"full"},
+        {"file":"SKILL","at":"Dispatch `team-goal-auditor` (phase: audit) with FRESH CONTEXT","to":"(no clarify","restate":"full"},
+        {"file":"SKILL","at":"read-set `references/fresh-checks.md` → `goal-audit`","pointer":true},
+        {"file":"ACC","at":"FRESH CONTEXT. Read ONLY:","to":"Do NOT read","restate":"full"},
+        {"file":"ACC","at":"**Why the map is split for this agent**","to":"**Decisions so far**","restate":"sections"},
+        {"file":"GA","at":"**Fresh context. Read ONLY**","to":"**Do NOT read**","restate":"full"},
+        {"file":"GA","at":"Canonical: `fresh-checks.md` → `goal-audit`","pointer":true},
+        {"file":"GA","at":"The split is principled:","to":"**Decisions so far**","restate":"sections"},
+        {"file":"GA","at":"Read (fresh context): prompt.md","restate":"full"},
+        {"file":"SCHEMA","at":"| team-goal-auditor (audit) |","restate":"full","pointer":true},
+        {"file":"ACC","at":"map.md sections by line range or section extraction — never the whole file"}
+      ]
+    },
+    {
+      "id": "readset:plan-review",
+      "kind": "readset",
+      "check": "plan-review",
+      "sites": [
+        {"file":"FRESH","at":"| `plan-review` |","restate":"full"},
+        {"file":"SKILL","at":"**Option A — the only sealing route**","to":"Never `map.md`","restate":"full","pointer":true},
+        {"file":"PR","at":"## Read-set (Step 6 — canonical","pointer":true},
+        {"file":"PR","at":"1. `{session_path}prompt.md`","to":"Plus read-only repo source","restate":"full"},
+        {"file":"PR","at":"- [ ] prompt.md — {line count} lines","to":"Read-set actual:","restate":"full"},
+        {"file":"SCHEMA","at":"| team-plan-reviewer |","restate":"full","pointer":true}
+      ]
+    },
+    {
+      "id": "readset:refuter",
+      "kind": "readset",
+      "check": "refuter",
+      "sites": [
+        {"file":"FRESH","at":"| `refuter` |","restate":"full"},
+        {"file":"SKILL","at":"read-set `references/fresh-checks.md` → `refuter`","pointer":true},
+        {"file":"DISC","at":"| **premise strike** |","pointer":true},
+        {"file":"DISC","at":"| a finding graduating to a Decision","pointer":true},
+        {"file":"RS","at":"**Refuter mode**","pointer":true},
+        {"file":"SCHEMA","at":"| team-researcher (refuter) |","restate":"full","pointer":true}
+      ]
+    },
+    {
+      "id": "readset:design-critique",
+      "kind": "readset",
+      "check": "design-critique",
+      "sites": [
+        {"file":"FRESH","at":"| `design-critique` |","restate":"full"},
+        {"file":"SKILL","at":"Step 4c-a design critique. Read ONLY","to":"Apply ","restate":"full","pointer":true},
+        {"file":"SKILL","at":"Reads ONLY `requirements.md` + `design.md`","to":" Never `prompt.md`","restate":"full","pointer":true},
+        {"file":"DC","at":"## Read-set (Step 4c-a — canonical","pointer":true},
+        {"file":"DC","at":"1. `{session_path}requirements.md`","to":"Plus read-only repo source","restate":"full"},
+        {"file":"SCHEMA","at":"| team-design-critic |","restate":"full","pointer":true}
+      ]
+    },
+    {
+      "id": "slice-budget",
+      "kind": "values",
+      "sites": [
+        {
+          "file": "SKILL",
+          "at": "| slice |",
+          "re": "(\\d+) blocking ACs?\\b",
+          "expect": ["checkContract.MAX_BLOCKING_ACS"],
+          "note": "blocking ACs",
+          "to": "| the sealed contract"
+        },
+        {
+          "file": "SKILL",
+          "at": "| slice |",
+          "re": "(\\d+) ?KB\\b",
+          "expect": ["checkContract.MAX_PLAN_BYTES/1000"],
+          "note": "plan KB",
+          "to": "| the sealed contract"
+        },
+        {
+          "file": "SKILL",
+          "at": "**Plan one slice",
+          "re": "(\\d+) blocking ACs?\\b",
+          "expect": ["checkContract.MAX_BLOCKING_ACS"],
+          "note": "blocking ACs",
+          "to": "(→ Loop budgets)"
+        },
+        {
+          "file": "SKILL",
+          "at": "**Plan one slice",
+          "re": "(\\d+) ?KB\\b",
+          "expect": ["checkContract.MAX_PLAN_BYTES/1000"],
+          "note": "plan KB",
+          "to": "(→ Loop budgets)"
+        },
+        {
+          "file": "SKILL",
+          "at": "--seal returns 0 — the slice budget",
+          "re": "(\\d+) blocking ACs?\\b",
+          "expect": ["checkContract.MAX_BLOCKING_ACS"],
+          "note": "blocking ACs",
+          "to": "plan, or"
+        },
+        {
+          "file": "SKILL",
+          "at": "--seal returns 0 — the slice budget",
+          "re": "(\\d+) ?KB\\b",
+          "expect": ["checkContract.MAX_PLAN_BYTES/1000"],
+          "note": "plan KB",
+          "to": "plan, or"
+        },
+        {
+          "file": "ACC",
+          "at": "Slice budget: at most",
+          "re": "(\\d+) blocking ACs?\\b",
+          "expect": ["checkContract.MAX_BLOCKING_ACS"],
+          "note": "blocking ACs",
+          "to": "not counted"
+        },
+        {
+          "file": "PLANNER",
+          "at": "[ ] Slice budget",
+          "re": "(\\d+) blocking ACs?\\b",
+          "expect": ["checkContract.MAX_BLOCKING_ACS"],
+          "note": "blocking ACs",
+          "to": ", or slice 1"
+        },
+        {
+          "file": "PLANNER",
+          "at": "[ ] Slice budget",
+          "re": "(\\d+) ?KB\\b",
+          "expect": ["checkContract.MAX_PLAN_BYTES/1000"],
+          "note": "plan KB",
+          "to": ", or slice 1"
+        },
+        {
+          "file": "PLANNER",
+          "at": "One sealed contract is one slice",
+          "re": "(\\d+) blocking ACs?\\b",
+          "expect": ["checkContract.MAX_BLOCKING_ACS"],
+          "note": "blocking ACs",
+          "to": "(`skills/"
+        },
+        {
+          "file": "PLANNER",
+          "at": "One sealed contract is one slice",
+          "re": "(\\d+) ?KB\\b",
+          "expect": ["checkContract.MAX_PLAN_BYTES/1000"],
+          "note": "plan KB",
+          "to": "(`skills/"
+        },
+        {
+          "file": "DOD",
+          "at": "**One slice (efforts whose",
+          "re": "(\\d+) blocking ACs?\\b",
+          "expect": ["checkContract.MAX_BLOCKING_ACS"],
+          "note": "blocking ACs",
+          "to": "not counted"
+        },
+        {
+          "file": "PN",
+          "at": "- [ ] Slice budget",
+          "re": "(\\d+) blocking ACs?\\b",
+          "expect": ["checkContract.MAX_BLOCKING_ACS"],
+          "note": "blocking ACs",
+          "to": "— else"
+        },
+        {"file":"PN","at":"- [ ] Slice budget","re":"(\\d+) ?KB\\b","expect":["checkContract.MAX_PLAN_BYTES/1000"],"note":"plan KB","to":"— else"},
+        {
+          "file": "KIT",
+          "at": "and seals ONE slice",
+          "re": "(\\d+) blocking ACs?\\b",
+          "expect": ["checkContract.MAX_BLOCKING_ACS"],
+          "note": "blocking ACs",
+          "to": ")"
+        },
+        {"file":"KIT","at":"and seals ONE slice","re":"(\\d+) ?KB\\b","expect":["checkContract.MAX_PLAN_BYTES/1000"],"note":"plan KB","to":")"},
+        {
+          "file": "METHOD",
+          "at": "a sealed contract is one slice",
+          "re": "(\\d+) blocking ACs?\\b",
+          "expect": ["checkContract.MAX_BLOCKING_ACS"],
+          "note": "blocking ACs",
+          "to": ")"
+        },
+        {
+          "file": "METHOD",
+          "at": "a sealed contract is one slice",
+          "re": "(\\d+) ?KB\\b",
+          "expect": ["checkContract.MAX_PLAN_BYTES/1000"],
+          "note": "plan KB",
+          "to": ")"
+        }
+      ]
+    },
+    {
+      "id": "rigor-budgets",
+      "kind": "values",
+      "sites": [
+        {
+          "file": "RIGOR",
+          "at": "| Discovery rounds / plan revisions / dispatches |",
+          "re": "\\| (\\d+) / (\\d+) / (\\d+) \\| (\\d+) / (\\d+) / (\\d+) \\| (\\d+) / (\\d+) / (\\d+) \\|",
+          "expect": [
+            "assessRigor.BUDGETS.low.rounds",
+            "assessRigor.BUDGETS.low.planRevisions",
+            "assessRigor.BUDGETS.low.dispatches",
+            "assessRigor.BUDGETS.medium.rounds",
+            "assessRigor.BUDGETS.medium.planRevisions",
+            "assessRigor.BUDGETS.medium.dispatches",
+            "assessRigor.BUDGETS.high.rounds",
+            "assessRigor.BUDGETS.high.planRevisions",
+            "assessRigor.BUDGETS.high.dispatches"
+          ],
+          "note": "Levels table"
+        },
+        {
+          "file": "RIGOR",
+          "at": "| Level | Rule",
+          "lines": 4,
+          "re": "(\\d+)\\+ packages",
+          "expect": ["assessRigor.THRESHOLDS.highPackages"],
+          "note": "rule table, high"
+        },
+        {
+          "file": "RIGOR",
+          "at": "| Level | Rule",
+          "lines": 4,
+          "re": "at most (\\d+) packages, at most (\\d+) rows",
+          "expect": ["assessRigor.THRESHOLDS.lowPackages","assessRigor.THRESHOLDS.lowRows"],
+          "note": "rule table, low"
+        },
+        {
+          "file": "SKILL",
+          "at": "| discovery rounds |",
+          "re": "\\| discovery rounds \\| (\\d+) \\|",
+          "expect": ["assessRigor.BUDGETS.high.rounds"],
+          "note": "Loop budgets"
+        },
+        {
+          "file": "SKILL",
+          "at": "| plan revisions |",
+          "re": "\\| plan revisions \\| (\\d+) \\|",
+          "expect": ["assessRigor.BUDGETS.high.planRevisions"],
+          "note": "Loop budgets"
+        },
+        {
+          "file": "SKILL",
+          "at": "| dispatches |",
+          "re": "\\| dispatches \\| (\\d+) \\|",
+          "expect": ["assessRigor.BUDGETS.high.dispatches"],
+          "note": "Loop budgets"
+        },
+        {
+          "file": "FRAMEWORK",
+          "at": "routes every open question to one of **five exits**",
+          "re": "round budget (\\d+)",
+          "expect": ["assessRigor.BUDGETS.high.rounds"]
+        }
+      ]
+    },
+    {
+      "id": "discovery-exits",
+      "kind": "tokens",
+      "ordered": true,
+      "tokens": ["self-resolve","research or experiment","prototype","grill","fog"],
+      "sites": [
+        {"file":"SKILL","at":"| **self-resolve** — code answers it","lines":5},
+        {"file":"DISC","at":"| 1 | **self-resolve**","lines":5},
+        {"file":"DS","at":"| 1 | **self-resolve** |","lines":5},
+        {"file":"FRAMEWORK","at":"routes every open question to one of **five exits**"}
+      ]
+    },
+    {
+      "id": "verify-dry-run",
+      "kind": "tokens",
+      "tokens": ["## Verify dry-run","red-as-expected","green-already","unrunnable:","broken:","none runnable — "],
+      "sites": [
+        {"file":"ACC","at":"- Verify dry-run","lines":9},
+        {"file":"GA","at":"when the dispatch asks for a Verify dry-run"},
+        {
+          "file": "SKILL",
+          "at": "**Verify dry-run.** SAT executes",
+          "need": ["## Verify dry-run","red-as-expected","green-already","unrunnable:","broken:"],
+          "loose": true,
+          "note": "prose, hyphens read as spaces"
+        },
+        {"file":"CC","need":["## Verify dry-run","none runnable — "],"note":"whole file"}
+      ]
+    },
+    {
+      "id": "premise-basis",
+      "kind": "tokens",
+      "tokens": ["read:","measured:","unmeasured:"],
+      "sites": [
+        {"file":"SKILL","at":"<!-- status = holds + its basis"},
+        {"file":"SKILL","at":"**Premises get a basis before the planner runs"},
+        {"file":"DISC","at":"**Basis before fog-drain.**"},
+        {"file":"DS","at":"A `map.md` premise with no basis in its Status cell"},
+        {"file":"CC","at":"has no basis — its Status cell needs"}
+      ]
+    },
+    {
+      "id": "card-fields",
+      "kind": "tokens",
+      "ordered": true,
+      "source": "checkContract.CARD_FIELDS",
+      "sites": [
+        {"file":"EXP","at":"# X-1 pg17-tmpfs","lines":6,"lineStart":true,"note":"card template"},
+        {"file":"DS","at":"first write its card `experiments/X-{n}-{slug}.md`","strip":":"},
+        {"file":"RS","at":"**Experiment mode**","need":["Measures","Stop rule","Side"],"strip":":"}
+      ]
+    },
+    {
+      "id": "verdict-files",
+      "kind": "set",
+      "source": "checkContract.VERDICTS",
+      "sites": [
+        {
+          "file": "SKILL",
+          "at": "| every terminal verdict artifact THAT EXISTS",
+          "to": " ends on its own STATUS line",
+          "extract": "([\\w/-]+\\.md)",
+          "note": "Step 7 row"
+        }
+      ]
+    },
+    {
+      "id": "validate-clause",
+      "kind": "tokens",
+      "tokens": ["validate task executes every deterministic DoD verify cell","grade-seal-gate","grade task"],
+      "sites": [
+        {"file":"FRAMEWORK","at":"never restates those rows: one validate task","note":"Required verification coverage"},
+        {"file":"PLANNER","at":"one validate task executes every deterministic DoD verify cell except"},
+        {"file":"PLANNER","at":"[ ] One validate task executes"},
+        {"file":"PN","at":"- [ ] Verification commands exist for each phase"},
+        {"file":"SKILL","at":"**Verification coverage:** apply","note":"Step 6"},
+        {"file":"SKILL","at":"| a `team-plan.md` validate task executes","note":"Step 7"},
+        {"file":"PR","at":"| Required verification coverage |"}
+      ]
+    },
+    {
+      "id": "skip-forms",
+      "kind": "tokens",
+      "source": "freshChecks.skipLines",
+      "sites": [
+        {"file":"FRESH","at":"- `skipWhenArtifactLine` = the line"},
+        {"file":"RIGOR","at":"`design-critic/design-critique.md` (`Rigor: low`;","lines":6,"need":["rigor low"]},
+        {"file":"RIGOR","at":"`designer/frame-check.md` (`Rigor: low` or `medium`","lines":6,"need":["premises minted"]},
+        {"file":"SKILL","at":"**Skip form** (role not installed","need":["not installed"]},
+        {"file":"SKILL","at":"| **Option B** (small","need":["Option B"]},
+        {"file":"CRITIQUE","at":"- skip: exactly three nonempty lines","need":["not installed"]},
+        {"file":"CRITIQUE","at":"- rigor skip (Claude lane","need":["rigor low"]},
+        {"file":"CDC","need":["not installed","rigor low"],"note":"whole file"}
+      ]
+    },
+    {
+      "id": "shapes",
+      "kind": "set",
+      "source": "shapes",
+      "sites": [
+        {"file":"KIT","at":"Triage picks the shape either way","to":".","raw":true,"extract":"`([a-z]+)`"},
+        {"file":"SKILL","at":"**Shape** — write one into","to":"Symptom of a wrong","raw":true,"extract":"`([a-z]+)`:"},
+        {"file":"METHOD","at":"create routes by shape","to":")","raw":true,"extract":"`([a-z]+)`"}
+      ]
+    },
+    {
+      "id": "fresh-check-ids",
+      "kind": "set",
+      "source": "freshChecks.ids",
+      "sites": [{"file":"FRESH","at":"Fresh-check: <frame-check|","extract":"Fresh-check: <([a-z|-]+)>","split":"|","note":"dispatch header"}]
+    },
+    {
+      "id": "fresh-check-headers",
+      "kind": "member",
+      "source": "freshChecks.ids",
+      "scan": "kit",
+      "extract": "Fresh-check:\\s*([A-Za-z][\\w-]*)",
+      "exclusions": [{"re":"\\.test\\.mjs$|/tests/","why":"test files carry deliberate mutants and fixtures of headers; the suites that own them assert them"}]
+    },
+    {
+      "id": "banned-phrases",
+      "kind": "banned",
+      "scan": "kit",
+      "exclusions": [{"re":"\\.test\\.mjs$|/tests/","why":"test files quote the stale phrases on purpose, as mutants and as fixtures of the fail-closed cases"}],
+      "phrases": [
+        {
+          "id": "latitude-low-medium",
+          "re": "Rigor: low\\W{0,4}or\\W{0,4}(Rigor: )?medium\\b[^.]{0,40}latitude|latitude[^.]{0,80}Rigor: low\\W{0,4}or\\W{0,4}(Rigor: )?medium|reads Rigor: low or Rigor: medium",
+          "why": "latitude applies at every rigor level since 2026-11-18 (rigor.md → Plan latitude)"
+        },
+        {
+          "id": "latitude-below-high",
+          "re": "below high[^.]{0,80}Plan latitude|latitude[^.]{0,40}only below high",
+          "why": "latitude applies at every rigor level since 2026-11-18"
+        },
+        {
+          "id": "two-map-sections",
+          "re": "Read the two map\\.md sections",
+          "why": "the goal audit reads three map.md sections (Destination, Out of scope, Next slices)"
+        },
+        {"id":"rows-rule-high","re":"\\| high \\|[^|]*50\\+ rows","why":"research rows left the high rule (DD-6): only 10+ packages reach high"},
+        {"id":"exit2-plain-research","re":"\\| 2 \\| research \\||\\| research — ","why":"discovery exit 2 is \"research or experiment\""},
+        {
+          "id": "one-task-every-cell",
+          "re": "one task that executes every DoD verify cell",
+          "flags": "i",
+          "why": "validate, grade and seal split the verify cells (FRAMEWORK.md → Required verification coverage)"
+        },
+        {"id":"destination-without-shape","re":"Budget, Rigor lines\\)","why":"the Destination header block includes the Shape line"},
+        {
+          "id": "rigor-pin-unpinned",
+          "re": "Rigor: medium \\(raised from <pin>",
+          "why": "a pinned level keeps \"pinned\" in its line or assess-rigor --check demands the assessed level"
+        },
+        {
+          "id": "lane-decisions-observation",
+          "re": "needs no ruling,? is still CLEAN: record it under ## Lane decisions",
+          "why": "an observation goes under ## Reviewer Notes; ## Lane decisions holds latitude choices"
+        },
+        {
+          "id": "premise-deferral-basis",
+          "source": "deferrals",
+          "re": "unmeasured: (?:{alts})\\b",
+          "flags": "i",
+          "why": "a deferral is no basis: check-contract.mjs rejects it (its deferred list)"
+        }
+      ]
+    },
+    {
+      "id": "premise-parser",
+      "kind": "tokens",
+      "tokens": ["\\b(read|measured):","\\bmeasured:"],
+      "sites": [
+        {"file":"CC","at":"const deferred =","need":["\\b(read|measured):"]},
+        {"file":"CC","at":"export const measuredPath","lines":3,"need":["\\bmeasured:"]}
+      ]
+    },
+    {
+      "id": "shape-gate",
+      "kind": "tokens",
+      "tokens": ["Shape"],
+      "sites": [
+        {"file":"PLANNER","at":"[ ] Slice budget","note":"slice budget"},
+        {"file":"PLANNER","at":"One sealed contract is one slice","note":"slice budget"},
+        {"file":"PN","at":"- [ ] Slice budget","note":"slice budget"},
+        {"file":"SKILL","at":"| slice |","note":"slice budget"},
+        {"file":"SKILL","at":"**Plan one slice","note":"slice budget"},
+        {"file":"DOD","at":"**One slice (efforts whose","note":"slice budget"},
+        {"file":"ACC","at":"Hybrid grading:","to":"Apply this reference's","note":"define slice + deferred lines"},
+        {"file":"DS","at":"A `map.md` premise with no basis in its Status cell","note":"premise basis"},
+        {"file":"SKILL","at":"**Premises get a basis before the planner runs","note":"premise basis"},
+        {"file":"DISC","at":"**Basis before fog-drain.**","note":"premise basis"},
+        {"file":"ACC","at":"- Verify dry-run","note":"dry-run bullet, lead keeps it"},
+        {"file":"SKILL","at":"Most rows are one line:","note":"dry-run under the proportionality skip"}
+      ]
+    },
+    {
+      "id": "dry-run-on-request",
+      "kind": "tokens",
+      "tokens": ["when the dispatch asks for a Verify dry-run"],
+      "sites": [{"file":"GA","at":"Executor feasibility always runs","lines":2}]
+    },
+    {
+      "id": "broken-verify-silent",
+      "kind": "tokens",
+      "tokens": ["broken","silent"],
+      "sites": [
+        {"file":"ACC","at":"| `loud` | the run fails visibly","note":"Finding classes exception"},
+        {"file":"ACC","at":"- Verify dry-run","lines":9},
+        {"file":"GA","at":"Executor feasibility always runs","lines":2}
+      ]
+    },
+    {
+      "id": "define-next-slices",
+      "kind": "tokens",
+      "tokens": ["Next slices","deferred — Next slices","ungraded — deferred: Next slices"],
+      "sites": [
+        {"file":"ACC","at":"Hybrid grading:","to":"Apply this reference's","note":"define prompt"},
+        {"file":"GA","at":"## Phase `define`","to":"**Writes**"},
+        {"file":"SCHEMA","at":"| team-goal-auditor (define) |","need":["Next slices"]}
+      ]
+    },
+    {
+      "id": "slice-grant-row",
+      "kind": "tokens",
+      "tokens": ["D-n slice-budget","Source: user"],
+      "sites": [
+        {"file":"SKILL","at":"Sealing over the slice budget needs"},
+        {"file":"CC","at":"const SPLIT ="},
+        {"file":"DOD","at":"**One slice (efforts whose"}
+      ]
+    },
+    {
+      "id": "slice-gate-row-not-counted",
+      "kind": "tokens",
+      "tokens": ["grade-seal-gate"],
+      "sites": [
+        {"file":"SKILL","at":"| slice |"},
+        {"file":"SKILL","at":"**Plan one slice"},
+        {"file":"SKILL","at":"--seal returns 0 — the slice budget"},
+        {"file":"ACC","at":"Slice budget: at most"},
+        {"file":"PLANNER","at":"One sealed contract is one slice"},
+        {"file":"DOD","at":"**One slice (efforts whose"}
+      ]
+    },
+    {
+      "id": "sat-skip-owes-dry-run",
+      "kind": "tokens",
+      "tokens": ["proportionality skip","## Verify dry-run"],
+      "sites": [{"file":"SKILL","at":"Most rows are one line:"},{"file":"CC","at":"is the one-line proportionality skip, but the DoD holds"}]
+    },
+    {
+      "id": "concern-records",
+      "kind": "tokens",
+      "tokens": ["## Lane decisions","## Reviewer Notes"],
+      "sites": [
+        {"file":"CODER","at":"- `STATUS: CLEAN` — subtask fully implemented"},
+        {"file":"FRAMEWORK","at":"Use it only when someone must rule before dependent work"}
+      ]
+    },
+    {
+      "id": "final-message-order",
+      "kind": "tokens",
+      "ordered": true,
+      "tokens": ["Blocked on you","Changed","Found","Next"],
+      "sites": [{"file":"RUN","at":"**Final message to the human"},{"file":"AFK","at":"- run final message under afk:"}]
+    },
+    {
+      "id": "destination-header",
+      "kind": "tokens",
+      "tokens": ["Destination","Phase","Updated","Budget","Rigor","Shape"],
+      "sites": [
+        {"file":"FRESH","at":"- `#Destination` = the header block"},
+        {"file":"SKILL","at":"Destination: <one line","lines":6,"lineStart":true,"note":"map template"}
+      ]
+    },
+    {"id":"rigor-pin-word","kind":"tokens","source":"pinWord","sites":[{"file":"RIGOR","at":"keeps the word the check reads:","to":"risk class>)"}]},
+    {
+      "id": "experiment-runner",
+      "kind": "tokens",
+      "tokens": ["team-researcher"],
+      "sites": [
+        {"file":"EXP","at":"Plain dispatch; cards with disjoint directories"},
+        {"file":"SCHEMA","at":"Commands + Results by the runner","lines":2},
+        {"file":"SCHEMA","at":"| team-researcher (experiment mode"}
+      ]
+    },
+    {
+      "id": "campaign-vs-slices",
+      "kind": "tokens",
+      "tokens": ["Next slices","its own effort"],
+      "sites": [
+        {"file":"SKILL","at":"**Shape** — write one into","need":["Next slices"]},
+        {"file":"SKILL","at":"Each patch is its own effort","need":["its own effort"]}
+      ]
+    }
+  ]
+}

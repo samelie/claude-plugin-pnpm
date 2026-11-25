@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write Findings"
+  short_description: "Write agent findings to the team session directory"
+  default_prompt: "Use $write-findings to write agent findings to the team session directory."

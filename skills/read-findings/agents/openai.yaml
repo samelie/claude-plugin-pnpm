@@ -1,0 +1,4 @@
+interface:
+  display_name: "Read Findings"
+  short_description: "Read agent findings from the team session directory"
+  default_prompt: "Use $read-findings to read agent findings from the team session directory."
